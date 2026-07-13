@@ -14,7 +14,11 @@ import {
   CheckCircle,
   AlertTriangle,
   XCircle,
+  Download,
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const Dashboard: React.FC = () => {
   const { user, logout, isSuperviseur, isAgent } = useAuth();
@@ -287,10 +291,79 @@ const LignesTab: React.FC<{ lignes: LigneControle[]; loading: boolean }> = ({
   lignes,
   loading,
 }) => {
+  const [search, setSearch] = useState('');
+  const filtered = lignes.filter(
+    (l) => l.nomLigne?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const exportExcel = () => {
+    const data = filtered.map((l) => ({
+      Date: new Date(l.controleDate?.dateControle).toLocaleDateString('fr-FR'),
+      'Nom ligne': l.nomLigne,
+      Heure: l.heure || '-',
+      Note: l.note,
+      Délai: l.delais + ' min',
+      Responsable: l.responsable,
+      Agent: `${l.agent?.firstName} ${l.agent?.lastName}`,
+      Détails: l.details,
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Lignes');
+    XLSX.writeFile(wb, 'lignes_controle.xlsx');
+    toast.success('Fichier Excel téléchargé');
+  };
+
+  const exportPDF = () => {
+    const doc = new jsPDF('landscape');
+    doc.setFontSize(16);
+    doc.text('Lignes de contrôle', 14, 15);
+    if (search) {
+      doc.setFontSize(10);
+      doc.text(`Filtre: "${search}" — ${filtered.length} résultat(s)`, 14, 22);
+    }
+    autoTable(doc, {
+      startY: search ? 28 : 20,
+      head: [['Date', 'Nom ligne', 'Heure', 'Note', 'Délai', 'Responsable', 'Agent', 'Détails']],
+      body: filtered.map((l) => [
+        new Date(l.controleDate?.dateControle).toLocaleDateString('fr-FR'),
+        l.nomLigne,
+        l.heure || '-',
+        l.note,
+        l.delais + ' min',
+        l.responsable,
+        `${l.agent?.firstName} ${l.agent?.lastName}`,
+        l.details,
+      ]),
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [37, 99, 235] },
+    });
+    doc.save('lignes_controle.pdf');
+    toast.success('Fichier PDF téléchargé');
+  };
+
   if (loading) return <div className="loading">Chargement...</div>;
 
   return (
     <div className="table-container">
+      <div className="search-bar">
+        <input
+          type="text"
+          placeholder="Rechercher par nom de ligne..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        {filtered.length > 0 && (
+          <div className="export-buttons">
+            <button className="btn btn-secondary btn-sm" onClick={exportExcel}>
+              <Download size={14} /> Excel
+            </button>
+            <button className="btn btn-secondary btn-sm" onClick={exportPDF}>
+              <Download size={14} /> PDF
+            </button>
+          </div>
+        )}
+      </div>
       <table>
         <thead>
           <tr>
@@ -305,7 +378,7 @@ const LignesTab: React.FC<{ lignes: LigneControle[]; loading: boolean }> = ({
           </tr>
         </thead>
         <tbody>
-          {lignes.map((l) => (
+          {filtered.map((l) => (
             <tr key={l.id}>
               <td>{new Date(l.controleDate?.dateControle).toLocaleDateString('fr-FR')}</td>
               <td>{l.nomLigne}</td>
@@ -321,7 +394,7 @@ const LignesTab: React.FC<{ lignes: LigneControle[]; loading: boolean }> = ({
           ))}
         </tbody>
       </table>
-      {lignes.length === 0 && (
+      {filtered.length === 0 && (
         <div className="empty-state">Aucune ligne trouvée</div>
       )}
     </div>
