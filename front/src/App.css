@@ -493,6 +493,22 @@ html, body, #root {
 }
 .nav-item svg { flex-shrink: 0; width: 20px; height: 20px; }
 .nav-item span { overflow: hidden; white-space: nowrap; }
+.nav-badge {
+  margin-left: auto;
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  flex-shrink: 0;
+}
+.sidebar.collapsed .nav-badge { display: none; }
 .sidebar.collapsed .nav-item { justify-content: center; padding: 10px; }
 .sidebar.collapsed .nav-item span { display: none; }
 .sidebar.collapsed .nav-item::before { display: none; }

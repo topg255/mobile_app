@@ -348,6 +348,129 @@
   font-size: 14px;
 }
 
+/* Message footer with edit/delete */
+.chat-msg-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.chat-msg-footer .chat-msg-time {
+  margin-top: 0;
+  text-align: left;
+}
+
+.chat-edited-badge {
+  font-size: 9px;
+  opacity: 0.6;
+  margin-right: 4px;
+}
+
+.chat-msg-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.chat-msg:hover .chat-msg-actions,
+.chat-msg.sent .chat-msg-actions {
+  opacity: 1;
+}
+
+.chat-msg-action {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.chat-msg.received .chat-msg-action {
+  color: #64748b;
+}
+
+.chat-msg-action:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.chat-msg.received .chat-msg-action:hover {
+  background: #f1f5f9;
+}
+
+.chat-msg-action-danger:hover {
+  background: rgba(239, 68, 68, 0.3) !important;
+  color: #ef4444 !important;
+}
+
+/* Edit area */
+.chat-edit-area {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chat-edit-area textarea {
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 6px 8px;
+  color: inherit;
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+}
+
+.chat-msg.received .chat-edit-area textarea {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.chat-edit-actions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.chat-edit-save,
+.chat-edit-cancel {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.chat-edit-save {
+  background: #22c55e;
+  color: #fff;
+}
+
+.chat-edit-cancel {
+  background: #ef4444;
+  color: #fff;
+}
+
+.chat-edit-save:hover {
+  background: #16a34a;
+}
+
+.chat-edit-cancel:hover {
+  background: #dc2626;
+}
+
 /* Loading / Empty */
 .chat-loading, .chat-empty {
   padding: 24px;

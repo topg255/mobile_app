@@ -4,6 +4,7 @@ import { qualityAPI } from '../../api';
 import { LigneControle, NoteQualite } from '../../types';
 import { toast } from 'react-hot-toast';
 import Chat from '../../components/Chat';
+import { chatAPI } from '../../api';
 import {
   LayoutDashboard,
   Plus,
@@ -40,10 +41,21 @@ const Dashboard: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [editingLigne, setEditingLigne] = useState<LigneControle | null>(null);
   const [lignesSubTab, setLignesSubTab] = useState<'mes-lignes' | 'agent-lignes'>('mes-lignes');
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     fetchLignes();
+    fetchUnreadCount();
   }, []);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const res = await chatAPI.getUnreadCount();
+      setUnreadCount(res.data.unreadCount);
+    } catch {
+      // silent
+    }
+  };
 
   const fetchLignes = async () => {
     try {
@@ -156,6 +168,7 @@ const Dashboard: React.FC = () => {
             onClick={() => handleTab('messages')}
           >
             <MessageSquare size={18} /> <span>Messages</span>
+            {unreadCount > 0 && <span className="nav-badge">{unreadCount}</span>}
           </button>
         </nav>
         <div className="sidebar-footer">
@@ -283,7 +296,7 @@ const Dashboard: React.FC = () => {
             <EditLigneTab ligne={editingLigne} onSuccess={() => { fetchLignes(); setActiveTab('mes-lignes'); }} onCancel={() => setActiveTab('mes-lignes')} />
           )}
           {activeTab === 'rapport' && <RapportTab />}
-          {activeTab === 'messages' && <Chat />}
+          {activeTab === 'messages' && <Chat onUnreadCountChange={setUnreadCount} />}
         </div>
       </main>
     </div>

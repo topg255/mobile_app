@@ -3,11 +3,15 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../hooks/useSocket';
 import { chatAPI } from '../api';
 import { Conversation, Message, User } from '../types';
-import { MessageSquare, Send, ArrowLeft, UserPlus, Search } from 'lucide-react';
+import { MessageSquare, Send, ArrowLeft, UserPlus, Search, Pencil, Trash2, Check, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import './Chat.css';
 
-const Chat: React.FC = () => {
+interface ChatProps {
+  onUnreadCountChange?: (count: number) => void;
+}
+
+const Chat: React.FC<ChatProps> = ({ onUnreadCountChange }) => {
   const { user, token } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
@@ -18,6 +22,8 @@ const Chat: React.FC = () => {
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [searchUser, setSearchUser] = useState('');
   const [mobileShowChat, setMobileShowChat] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -64,7 +70,29 @@ const Chat: React.FC = () => {
     );
   }, []);
 
-  const { sendMessage, markAsRead } = useSocket(token, handleNewMessage, handleMessagesRead);
+  const handleMessageEdited = useCallback((message: Message) => {
+    setMessages((prev) => prev.map((m) => (m.id === message.id ? message : m)));
+    setConversations((prev) =>
+      prev.map((c) => {
+        if (c.lastMessage?.id === message.id) {
+          return { ...c, lastMessage: message };
+        }
+        return c;
+      })
+    );
+  }, []);
+
+  const handleMessageDeleted = useCallback((data: { messageId: string }) => {
+    setMessages((prev) => prev.filter((m) => m.id !== data.messageId));
+  }, []);
+
+  const handleUnreadCount = useCallback((data: { unreadCount: number }) => {
+    onUnreadCountChange?.(data.unreadCount);
+  }, [onUnreadCountChange]);
+
+  const { sendMessage, editMessage, deleteMessage, markAsRead } = useSocket(
+    token, handleNewMessage, handleMessagesRead, handleMessageEdited, handleMessageDeleted, handleUnreadCount
+  );
 
   useEffect(() => {
     loadConversations();
@@ -89,6 +117,7 @@ const Chat: React.FC = () => {
     setActiveConversation(conv);
     setShowNewChat(false);
     setMobileShowChat(true);
+    setEditingId(null);
     try {
       const res = await chatAPI.getMessages(conv.user.id);
       setMessages(res.data);
@@ -96,6 +125,8 @@ const Chat: React.FC = () => {
       setConversations((prev) =>
         prev.map((c) => (c.user.id === conv.user.id ? { ...c, unreadCount: 0 } : c))
       );
+      const countRes = await chatAPI.getUnreadCount();
+      onUnreadCountChange?.(countRes.data.unreadCount);
     } catch {
       toast.error('Erreur lors du chargement des messages');
     }
@@ -112,6 +143,38 @@ const Chat: React.FC = () => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
+    }
+  };
+
+  const handleEdit = (msg: Message) => {
+    setEditingId(msg.id);
+    setEditContent(msg.content);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingId || !editContent.trim()) return;
+    editMessage(editingId, editContent.trim());
+    setEditingId(null);
+    setEditContent('');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditContent('');
+  };
+
+  const handleDelete = (msg: Message) => {
+    if (!confirm('Supprimer ce message ?')) return;
+    deleteMessage(msg.id);
+  };
+
+  const handleEditKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSaveEdit();
+    }
+    if (e.key === 'Escape') {
+      handleCancelEdit();
     }
   };
 
@@ -183,7 +246,14 @@ const Chat: React.FC = () => {
                 <div className="chat-conv-info">
                   <div className="chat-conv-name">{conv.user.firstName} {conv.user.lastName}</div>
                   <div className="chat-conv-preview">
-                    {conv.lastMessage?.content?.substring(0, 30)}{conv.lastMessage?.content?.length > 30 ? '...' : ''}
+                    {conv.lastMessage?.isDeleted ? (
+                      <em>Message supprimé</em>
+                    ) : (
+                      <>
+                        {conv.lastMessage?.isEdited && <em>Modifié: </em>}
+                        {conv.lastMessage?.content?.substring(0, 30)}{conv.lastMessage?.content?.length > 30 ? '...' : ''}
+                      </>
+                    )}
                   </div>
                 </div>
                 {conv.unreadCount > 0 && (
@@ -253,14 +323,56 @@ const Chat: React.FC = () => {
               </div>
             </div>
             <div className="chat-messages">
-              {messages.map((msg) => (
-                <div key={msg.id} className={`chat-msg ${msg.sender.id === user?.id ? 'sent' : 'received'}`}>
-                  <div className="chat-msg-bubble">
-                    <p>{msg.content}</p>
-                    <span className="chat-msg-time">{formatTime(msg.createdAt)}</span>
+              {messages.map((msg) => {
+                const isMine = msg.sender.id === user?.id;
+                const isEditing = editingId === msg.id;
+
+                return (
+                  <div key={msg.id} className={`chat-msg ${isMine ? 'sent' : 'received'}`}>
+                    <div className="chat-msg-bubble">
+                      {isEditing ? (
+                        <div className="chat-edit-area">
+                          <textarea
+                            value={editContent}
+                            onChange={(e) => setEditContent(e.target.value)}
+                            onKeyDown={handleEditKeyDown}
+                            rows={2}
+                            autoFocus
+                          />
+                          <div className="chat-edit-actions">
+                            <button className="chat-edit-save" onClick={handleSaveEdit} title="Sauvegarder">
+                              <Check size={14} />
+                            </button>
+                            <button className="chat-edit-cancel" onClick={handleCancelEdit} title="Annuler">
+                              <X size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <p>{msg.content}</p>
+                          <div className="chat-msg-footer">
+                            <span className="chat-msg-time">
+                              {msg.isEdited && <span className="chat-edited-badge">Modifié</span>}
+                              {formatTime(msg.createdAt)}
+                            </span>
+                            {isMine && (
+                              <div className="chat-msg-actions">
+                                <button className="chat-msg-action" onClick={() => handleEdit(msg)} title="Modifier">
+                                  <Pencil size={12} />
+                                </button>
+                                <button className="chat-msg-action chat-msg-action-danger" onClick={() => handleDelete(msg)} title="Supprimer">
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               <div ref={messagesEndRef} />
             </div>
             <div className="chat-input-area">
