@@ -205,6 +205,12 @@ export const chatAPI = {
 
   getAvailableUsers: (): Promise<{ data: User[] }> =>
     api.get('/chat/agents'),
+
+  editMessage: (messageId: string, content: string): Promise<{ data: Message }> =>
+    api.patch(`/chat/messages/${messageId}`, { content }),
+
+  deleteMessage: (messageId: string): Promise<{ data: { deletedMessageId: string; receiverId: string } }> =>
+    api.delete(`/chat/messages/${messageId}`),
 };
 
 export default api;

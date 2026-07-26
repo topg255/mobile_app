@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Message } from './entities/message.entity';
@@ -16,7 +16,7 @@ export class ChatService {
       .createQueryBuilder('message')
       .leftJoinAndSelect('message.sender', 'sender')
       .leftJoinAndSelect('message.receiver', 'receiver')
-      .where('sender.id = :userId OR receiver.id = :userId', { userId })
+      .where('(sender.id = :userId OR receiver.id = :userId) AND message.is_deleted = false', { userId })
       .orderBy('message.createdAt', 'DESC')
       .getMany();
 
@@ -32,6 +32,7 @@ export class ChatService {
             sender: { id: otherUserId },
             receiver: { id: userId },
             isRead: false,
+            isDeleted: false,
           },
         });
         conversationMap.set(otherUserId, {
@@ -48,8 +49,8 @@ export class ChatService {
   async getMessages(userId: string, otherUserId: string) {
     const messages = await this.messageRepo.find({
       where: [
-        { sender: { id: userId }, receiver: { id: otherUserId } },
-        { sender: { id: otherUserId }, receiver: { id: userId } },
+        { sender: { id: userId }, receiver: { id: otherUserId }, isDeleted: false },
+        { sender: { id: otherUserId }, receiver: { id: userId }, isDeleted: false },
       ],
       relations: { sender: true, receiver: true },
       order: { createdAt: 'ASC' },
@@ -59,16 +60,57 @@ export class ChatService {
 
   async markAsRead(userId: string, senderId: string) {
     await this.messageRepo.update(
-      { sender: { id: senderId }, receiver: { id: userId }, isRead: false },
+      { sender: { id: senderId }, receiver: { id: userId }, isRead: false, isDeleted: false },
       { isRead: true },
     );
   }
 
   async getUnreadCount(userId: string) {
     const count = await this.messageRepo.count({
-      where: { receiver: { id: userId }, isRead: false },
+      where: { receiver: { id: userId }, isRead: false, isDeleted: false },
     });
     return { unreadCount: count };
+  }
+
+  async editMessage(userId: string, messageId: string, content: string) {
+    const message = await this.messageRepo.findOne({
+      where: { id: messageId },
+      relations: { sender: true, receiver: true },
+    });
+
+    if (!message) {
+      throw new NotFoundException('Message non trouvé');
+    }
+
+    if (message.sender.id !== userId) {
+      throw new ForbiddenException('Vous ne pouvez modifier que vos propres messages');
+    }
+
+    message.content = content.trim();
+    message.isEdited = true;
+    await this.messageRepo.save(message);
+
+    return message;
+  }
+
+  async deleteMessage(userId: string, messageId: string) {
+    const message = await this.messageRepo.findOne({
+      where: { id: messageId },
+      relations: { sender: true, receiver: true },
+    });
+
+    if (!message) {
+      throw new NotFoundException('Message non trouvé');
+    }
+
+    if (message.sender.id !== userId) {
+      throw new ForbiddenException('Vous ne pouvez supprimer que vos propres messages');
+    }
+
+    message.isDeleted = true;
+    await this.messageRepo.save(message);
+
+    return { deletedMessageId: messageId, receiverId: message.receiver.id };
   }
 
   async getAllAgents(userId: string) {

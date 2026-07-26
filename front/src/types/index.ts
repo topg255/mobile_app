@@ -124,7 +124,10 @@ export interface Message {
   receiver: User;
   content: string;
   isRead: boolean;
+  isEdited: boolean;
+  isDeleted: boolean;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface Conversation {

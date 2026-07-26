@@ -19,7 +19,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
-  private userSockets = new Map<string, string>(); // userId -> socketId
+  private userSockets = new Map<string, string>();
 
   constructor(
     private jwtService: JwtService,
@@ -82,16 +82,76 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       relations: { sender: true, receiver: true },
     });
 
-    // Send to sender
     const senderSocketId = this.userSockets.get(senderId);
     if (senderSocketId) {
       this.server.to(senderSocketId).emit('newMessage', savedMessage);
     }
 
-    // Send to receiver
     const receiverSocketId = this.userSockets.get(data.receiverId);
     if (receiverSocketId) {
       this.server.to(receiverSocketId).emit('newMessage', savedMessage);
+    }
+  }
+
+  @SubscribeMessage('editMessage')
+  async handleEditMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { messageId: string; content: string },
+  ) {
+    const userId = client.data.userId;
+    if (!userId || !data.messageId || !data.content?.trim()) return;
+
+    const message = await this.messageRepo.findOne({
+      where: { id: data.messageId },
+      relations: { sender: true, receiver: true },
+    });
+    if (!message || message.sender.id !== userId) return;
+
+    message.content = data.content.trim();
+    message.isEdited = true;
+    await this.messageRepo.save(message);
+
+    const updatedMessage = await this.messageRepo.findOne({
+      where: { id: message.id },
+      relations: { sender: true, receiver: true },
+    });
+
+    const senderSocketId = this.userSockets.get(userId);
+    if (senderSocketId) {
+      this.server.to(senderSocketId).emit('messageEdited', updatedMessage);
+    }
+
+    const receiverSocketId = this.userSockets.get(message.receiver.id);
+    if (receiverSocketId) {
+      this.server.to(receiverSocketId).emit('messageEdited', updatedMessage);
+    }
+  }
+
+  @SubscribeMessage('deleteMessage')
+  async handleDeleteMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { messageId: string },
+  ) {
+    const userId = client.data.userId;
+    if (!userId || !data.messageId) return;
+
+    const message = await this.messageRepo.findOne({
+      where: { id: data.messageId },
+      relations: { sender: true, receiver: true },
+    });
+    if (!message || message.sender.id !== userId) return;
+
+    message.isDeleted = true;
+    await this.messageRepo.save(message);
+
+    const senderSocketId = this.userSockets.get(userId);
+    if (senderSocketId) {
+      this.server.to(senderSocketId).emit('messageDeleted', { messageId: data.messageId });
+    }
+
+    const receiverSocketId = this.userSockets.get(message.receiver.id);
+    if (receiverSocketId) {
+      this.server.to(receiverSocketId).emit('messageDeleted', { messageId: data.messageId });
     }
   }
 
@@ -104,14 +164,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (!receiverId || !data.senderId) return;
 
     await this.messageRepo.update(
-      { sender: { id: data.senderId }, receiver: { id: receiverId }, isRead: false },
+      { sender: { id: data.senderId }, receiver: { id: receiverId }, isRead: false, isDeleted: false },
       { isRead: true },
     );
 
-    // Notify sender that messages were read
     const senderSocketId = this.userSockets.get(data.senderId);
     if (senderSocketId) {
       this.server.to(senderSocketId).emit('messagesRead', { readerId: receiverId });
+    }
+
+    const unreadCount = await this.messageRepo.count({
+      where: { receiver: { id: receiverId }, isRead: false, isDeleted: false },
+    });
+    const receiverSocketId = this.userSockets.get(receiverId);
+    if (receiverSocketId) {
+      this.server.to(receiverSocketId).emit('unreadCount', { unreadCount });
     }
   }
 
@@ -119,5 +186,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleGetOnlineUsers(@ConnectedSocket() client: Socket) {
     const onlineUserIds = Array.from(this.userSockets.keys());
     client.emit('onlineUsers', onlineUserIds);
+  }
+
+  async sendUnreadCount(userId: string) {
+    const unreadCount = await this.messageRepo.count({
+      where: { receiver: { id: userId }, isRead: false, isDeleted: false },
+    });
+    const socketId = this.userSockets.get(userId);
+    if (socketId) {
+      this.server.to(socketId).emit('unreadCount', { unreadCount });
+    }
   }
 }

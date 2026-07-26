@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
+  Delete,
   Body,
   Param,
   UseGuards,
@@ -11,7 +13,6 @@ import {
   ApiTags,
   ApiOperation,
   ApiBearerAuth,
-  ApiResponse,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ChatService } from './chat.service';
@@ -52,5 +53,21 @@ export class ChatController {
   @ApiOperation({ summary: 'Liste des agents/disponibles pour messagerie' })
   async getAllAgents(@Request() req) {
     return this.chatService.getAllAgents(req.user.id);
+  }
+
+  @Patch('messages/:messageId')
+  @ApiOperation({ summary: 'Modifier un message' })
+  async editMessage(
+    @Request() req,
+    @Param('messageId') messageId: string,
+    @Body('content') content: string,
+  ) {
+    return this.chatService.editMessage(req.user.id, messageId, content);
+  }
+
+  @Delete('messages/:messageId')
+  @ApiOperation({ summary: 'Supprimer un message' })
+  async deleteMessage(@Request() req, @Param('messageId') messageId: string) {
+    return this.chatService.deleteMessage(req.user.id, messageId);
   }
 }

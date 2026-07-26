@@ -8,6 +8,9 @@ export function useSocket(
   token: string | null,
   onMessage?: (message: Message) => void,
   onMessagesRead?: (data: { readerId: string }) => void,
+  onMessageEdited?: (message: Message) => void,
+  onMessageDeleted?: (data: { messageId: string }) => void,
+  onUnreadCount?: (data: { unreadCount: number }) => void,
 ) {
   const socketRef = useRef<Socket | null>(null);
 
@@ -31,6 +34,18 @@ export function useSocket(
       onMessagesRead?.(data);
     });
 
+    socket.on('messageEdited', (message: Message) => {
+      onMessageEdited?.(message);
+    });
+
+    socket.on('messageDeleted', (data: { messageId: string }) => {
+      onMessageDeleted?.(data);
+    });
+
+    socket.on('unreadCount', (data: { unreadCount: number }) => {
+      onUnreadCount?.(data);
+    });
+
     socket.on('disconnect', () => {
       console.log('[WS] Disconnected');
     });
@@ -41,10 +56,18 @@ export function useSocket(
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [token, onMessage, onMessagesRead]);
+  }, [token, onMessage, onMessagesRead, onMessageEdited, onMessageDeleted, onUnreadCount]);
 
   const sendMessage = useCallback((receiverId: string, content: string) => {
     socketRef.current?.emit('sendMessage', { receiverId, content });
+  }, []);
+
+  const editMessage = useCallback((messageId: string, content: string) => {
+    socketRef.current?.emit('editMessage', { messageId, content });
+  }, []);
+
+  const deleteMessage = useCallback((messageId: string) => {
+    socketRef.current?.emit('deleteMessage', { messageId });
   }, []);
 
   const markAsRead = useCallback((senderId: string) => {
@@ -55,5 +78,5 @@ export function useSocket(
     socketRef.current?.emit('getOnlineUsers');
   }, []);
 
-  return { sendMessage, markAsRead, getOnlineUsers, socket: socketRef.current };
+  return { sendMessage, editMessage, deleteMessage, markAsRead, getOnlineUsers, socket: socketRef.current };
 }
