@@ -116,7 +116,7 @@ const Signup: React.FC = () => {
         </div>
 
         {/* Right panel — form */}
-        <div className="auth-right" style={{ width: '460px' }}>
+        <div className="auth-right">
           <h2>Create Account</h2>
 
           <div className="auth-role-pills">
