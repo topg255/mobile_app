@@ -38,6 +38,9 @@ export class User {
   @Column({ name: 'is_approved', type: 'boolean', default: false })
   isApproved: boolean;
 
+  @Column({ name: 'profile_image', type: 'varchar', length: 500, nullable: true })
+  profileImage: string | null;
+
   @Column({ name: 'reset_token', type: 'varchar', nullable: true, length: 255 })
   resetToken: string | null;
 

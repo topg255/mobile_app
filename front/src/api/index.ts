@@ -9,6 +9,8 @@ import {
   User,
   LoginLog,
   SuperAdminStats,
+  Conversation,
+  Message,
 } from '../types';
 
 const API_URL = 'http://localhost:3000/api';
@@ -45,8 +47,19 @@ export const authAPI = {
     matricule: string;
     email: string;
     password: string;
-  }): Promise<{ data: SignupResponse }> =>
-    api.post('/auth/signup/agent-qualite', data),
+    image?: File;
+  }): Promise<{ data: SignupResponse }> => {
+    const formData = new FormData();
+    formData.append('firstName', data.firstName);
+    formData.append('lastName', data.lastName);
+    formData.append('matricule', data.matricule);
+    formData.append('email', data.email);
+    formData.append('password', data.password);
+    if (data.image) formData.append('image', data.image);
+    return api.post('/auth/signup/agent-qualite', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 
   signupSuperviseur: (data: {
     firstName: string;
@@ -54,8 +67,19 @@ export const authAPI = {
     matricule: string;
     email: string;
     password: string;
-  }): Promise<{ data: SignupResponse }> =>
-    api.post('/auth/signup/superviseur-qualite', data),
+    image?: File;
+  }): Promise<{ data: SignupResponse }> => {
+    const formData = new FormData();
+    formData.append('firstName', data.firstName);
+    formData.append('lastName', data.lastName);
+    formData.append('matricule', data.matricule);
+    formData.append('email', data.email);
+    formData.append('password', data.password);
+    if (data.image) formData.append('image', data.image);
+    return api.post('/auth/signup/superviseur-qualite', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 
   login: (data: {
     matricule: string;
@@ -75,6 +99,14 @@ export const authAPI = {
     api.post('/auth/reset-password', data),
 
   getProfile: (): Promise<{ data: User }> => api.get('/auth/profile'),
+
+  uploadProfileImage: (file: File): Promise<{ data: { message: string; profileImage: string } }> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return api.post('/auth/profile/image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 export const qualityAPI = {
@@ -94,6 +126,24 @@ export const qualityAPI = {
     controleDateId: string;
   }): Promise<{ data: { message: string; ligne: LigneControle } }> =>
     api.post('/quality/lignes', data),
+
+  updateLigneControle: (id: string, data: {
+    nomLigne?: string;
+    heure?: string;
+    note?: string;
+    delais?: string;
+    responsable?: string;
+    details?: string;
+  }): Promise<{ data: { message: string; ligne: LigneControle } }> =>
+    api.patch(`/quality/lignes/${id}`, data),
+
+  uploadLigneImage: (id: string, file: File): Promise<{ data: { message: string; ligne: LigneControle } }> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return api.post(`/quality/lignes/${id}/image`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 
   getMesLignes: (): Promise<{ data: LigneControle[] }> =>
     api.get('/quality/lignes/mes-lignes'),
@@ -138,6 +188,23 @@ export const superAdminAPI = {
 
   getLoginLogsByUser: (userId: string): Promise<{ data: { user: any; logs: any[] } }> =>
     api.get(`/super-admin/logs/user/${userId}`),
+};
+
+export const chatAPI = {
+  getConversations: (): Promise<{ data: Conversation[] }> =>
+    api.get('/chat/conversations'),
+
+  getMessages: (userId: string): Promise<{ data: Message[] }> =>
+    api.get(`/chat/messages/${userId}`),
+
+  markAsRead: (senderId: string): Promise<{ data: { message: string } }> =>
+    api.post(`/chat/read/${senderId}`),
+
+  getUnreadCount: (): Promise<{ data: { unreadCount: number } }> =>
+    api.get('/chat/unread-count'),
+
+  getAvailableUsers: (): Promise<{ data: User[] }> =>
+    api.get('/chat/agents'),
 };
 
 export default api;

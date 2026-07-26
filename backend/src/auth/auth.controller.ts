@@ -7,13 +7,20 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  UseInterceptors,
+  UploadedFile,
+  Patch,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
   ApiBody,
+  ApiConsumes,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { SignupDto } from './dto/signup.dto';
@@ -23,45 +30,71 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { UserRole } from './entities/user.entity';
 
+const imageStorage = diskStorage({
+  destination: './uploads',
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, 'profile-' + uniqueSuffix + extname(file.originalname));
+  },
+});
+
+const imageFileFilter = (req, file, cb) => {
+  if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
+    cb(new Error('Seules les images sont acceptées'), false);
+  } else {
+    cb(null, true);
+  }
+};
+
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('signup/agent-qualite')
+  @UseInterceptors(FileInterceptor('image', { storage: imageStorage, fileFilter: imageFileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({
-    summary: 'Inscription d\'un Agent Qualité',
-    description:
-      'Crée un nouveau compte pour un **Agent Qualité**.\n\n' +
-      'Le rôle `agent_qualite` est attribué automatiquement.\n\n' +
-      '**Important :** Le compte sera en attente d\'approbation par le Super Admin.',
+  @ApiOperation({ summary: 'Inscription d\'un Agent Qualité' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        firstName: { type: 'string' },
+        lastName: { type: 'string' },
+        matricule: { type: 'string' },
+        email: { type: 'string' },
+        password: { type: 'string' },
+        image: { type: 'string', format: 'binary' },
+      },
+    },
   })
-  @ApiBody({ type: SignupDto })
-  @ApiResponse({
-    status: 201,
-    description: 'Inscription réussie. En attente d\'approbation.',
-  })
-  async signupAgent(@Body() signupDto: SignupDto) {
-    return this.authService.signup(signupDto, UserRole.AGENT_QUALITE);
+  @ApiResponse({ status: 201, description: 'Inscription réussie. En attente d\'approbation.' })
+  async signupAgent(@Body() signupDto: SignupDto, @UploadedFile() file?: Express.Multer.File) {
+    return this.authService.signup(signupDto, UserRole.AGENT_QUALITE, file);
   }
 
   @Post('signup/superviseur-qualite')
+  @UseInterceptors(FileInterceptor('image', { storage: imageStorage, fileFilter: imageFileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({
-    summary: 'Inscription d\'un Superviseur Qualité',
-    description:
-      'Crée un nouveau compte pour un **Superviseur Qualité**.\n\n' +
-      'Le rôle `superviseur_qualite` est attribué automatiquement.\n\n' +
-      '**Important :** Le compte sera en attente d\'approbation par le Super Admin.',
+  @ApiOperation({ summary: 'Inscription d\'un Superviseur Qualité' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        firstName: { type: 'string' },
+        lastName: { type: 'string' },
+        matricule: { type: 'string' },
+        email: { type: 'string' },
+        password: { type: 'string' },
+        image: { type: 'string', format: 'binary' },
+      },
+    },
   })
-  @ApiBody({ type: SignupDto })
-  @ApiResponse({
-    status: 201,
-    description: 'Inscription réussie. En attente d\'approbation.',
-  })
-  async signupSuperviseur(@Body() signupDto: SignupDto) {
-    return this.authService.signup(signupDto, UserRole.SUPERVISEUR_QUALITE);
+  @ApiResponse({ status: 201, description: 'Inscription réussie. En attente d\'approbation.' })
+  async signupSuperviseur(@Body() signupDto: SignupDto, @UploadedFile() file?: Express.Multer.File) {
+    return this.authService.signup(signupDto, UserRole.SUPERVISEUR_QUALITE, file);
   }
 
   @Post('login')
@@ -155,5 +188,16 @@ export class AuthController {
   })
   async getProfile(@Request() req) {
     return this.authService.getProfile(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('profile/image')
+  @UseInterceptors(FileInterceptor('image', { storage: imageStorage, fileFilter: imageFileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
+  @ApiBearerAuth('access-token')
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Uploader une photo de profil' })
+  @ApiResponse({ status: 201, description: 'Photo de profil uploadée avec succès' })
+  async uploadProfileImage(@Request() req, @UploadedFile() file: Express.Multer.File) {
+    return this.authService.uploadProfileImage(req.user.id, file);
   }
 }

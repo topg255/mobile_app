@@ -45,9 +45,6 @@ const Login: React.FC = () => {
       <div className="auth-split-card">
         {/* Left panel */}
         <div className="auth-left">
-          <div className="auth-5s-badge">
-            <img src="/5s.jpeg" alt="5S" />
-          </div>
           <h2>Qualité Control</h2>
           <p>
             Suivez et améliorez la qualité de vos lignes de production
@@ -98,6 +95,9 @@ const Login: React.FC = () => {
 
         {/* Right panel — form */}
         <div className="auth-right">
+          <div className="auth-5s-badge">
+            <img src="/5s.jpeg" alt="5S" />
+          </div>
           <h2>Member Login</h2>
 
           <form onSubmit={handleSubmit}>

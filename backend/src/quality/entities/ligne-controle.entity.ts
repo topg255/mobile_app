@@ -32,6 +32,9 @@ export class LigneControle {
   @Column({ type: 'varchar', length: 5, nullable: true })
   heure: string;
 
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  image: string;
+
   @Column({ type: 'varchar', length: 255 })
   responsable: string;
 

@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Patch,
   Body,
   Param,
   Query,
@@ -10,7 +11,12 @@ import {
   HttpCode,
   HttpStatus,
   ParseUUIDPipe,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import {
   ApiTags,
   ApiOperation,
@@ -18,6 +24,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiQuery,
+  ApiConsumes,
 } from '@nestjs/swagger';
 import { QualityService } from './quality.service';
 import { CreateControleDateDto } from './dto/create-controle-date.dto';
@@ -140,6 +147,73 @@ export class QualityController {
     @Request() req,
   ) {
     return this.qualityService.createLigneControle(dto, req.user);
+  }
+
+  @Patch('lignes/:id')
+  @Roles(UserRole.AGENT_QUALITE)
+  @ApiOperation({
+    summary: 'Modifier une ligne de contrôle',
+    description: 'Permet à l\'agent qualité de modifier une de ses lignes.',
+  })
+  @ApiBody({ schema: { properties: {
+    nomLigne: { type: 'string' },
+    heure: { type: 'string' },
+    note: { type: 'string', enum: ['vert', 'jaune', 'rouge'] },
+    delais: { type: 'string' },
+    responsable: { type: 'string' },
+    details: { type: 'string' },
+  }}})
+  @ApiResponse({ status: 200, description: 'Ligne modifiée avec succès' })
+  @ApiResponse({ status: 404, description: 'Ligne non trouvée' })
+  async updateLigneControle(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: Partial<CreateLigneControleDto>,
+    @Request() req,
+  ) {
+    return this.qualityService.updateLigneControle(id, dto, req.user);
+  }
+
+  @Post('lignes/:id/image')
+  @Roles(UserRole.AGENT_QUALITE)
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, uniqueSuffix + extname(file.originalname));
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
+          cb(new Error('Seules les images sont acceptées'), false);
+        } else {
+          cb(null, true);
+        }
+      },
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  @ApiOperation({
+    summary: 'Uploader une image pour une ligne de contrôle',
+    description: 'Upload optionnel d\'une image (jpg, png, gif, webp). Max 5 Mo.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        image: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Image uploadée avec succès' })
+  async uploadLigneImage(
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Request() req,
+  ) {
+    return this.qualityService.uploadLigneImage(id, file, req.user);
   }
 
   @Get('lignes/mes-lignes')

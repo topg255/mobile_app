@@ -32,9 +32,6 @@ const ForgotPassword: React.FC = () => {
         </div>
         <div className="auth-split-card">
           <div className="auth-left">
-            <div className="auth-5s-badge">
-              <img src="/5s.jpeg" alt="5S" />
-            </div>
             <h2>Qualité Control</h2>
             <p>Réinitialisez votre mot de passe en toute sécurité.</p>
             <div className="auth-illustration">
@@ -92,9 +89,6 @@ const ForgotPassword: React.FC = () => {
       </div>
       <div className="auth-split-card">
         <div className="auth-left">
-          <div className="auth-5s-badge">
-            <img src="/5s.jpeg" alt="5S" />
-          </div>
           <h2>Qualité Control</h2>
           <p>Entrez votre email pour recevoir un lien de réinitialisation de mot de passe.</p>
           <div className="auth-illustration">
@@ -115,8 +109,11 @@ const ForgotPassword: React.FC = () => {
             <div className="auth-dot" />
           </div>
         </div>
-          <div className="auth-right">
-            <h2>Forgot Password</h2>
+        <div className="auth-right">
+          <div className="auth-5s-badge">
+            <img src="/5s.jpeg" alt="5S" />
+          </div>
+          <h2>Forgot Password</h2>
           <form onSubmit={handleSubmit}>
             <div className="auth-input-group">
               <div className="auth-input-icon"><Mail size={20} /></div>

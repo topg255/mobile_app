@@ -12,6 +12,8 @@ import { User, UserRole } from '../auth/entities/user.entity';
 import { CreateControleDateDto } from './dto/create-controle-date.dto';
 import { CreateLigneControleDto } from './dto/create-ligne-controle.dto';
 import { RapportDto } from './dto/rapport.dto';
+import { unlink } from 'fs/promises';
+import { join } from 'path';
 
 @Injectable()
 export class QualityService {
@@ -92,6 +94,70 @@ export class QualityService {
 
     return {
       message: 'Ligne de contrôle ajoutée avec succès',
+      ligne,
+    };
+  }
+
+  async updateLigneControle(id: string, dto: Partial<CreateLigneControleDto>, user: User) {
+    const ligne = await this.ligneControleRepo.findOne({
+      where: { id },
+      relations: { agent: true },
+    });
+
+    if (!ligne) {
+      throw new NotFoundException('Ligne de contrôle non trouvée');
+    }
+
+    if (ligne.agent.id !== user.id) {
+      throw new ForbiddenException('Vous ne pouvez modifier que vos propres lignes');
+    }
+
+    if (dto.nomLigne !== undefined) ligne.nomLigne = dto.nomLigne;
+    if (dto.heure !== undefined) ligne.heure = dto.heure;
+    if (dto.note !== undefined) ligne.note = dto.note;
+    if (dto.delais !== undefined) ligne.delais = dto.delais;
+    if (dto.responsable !== undefined) ligne.responsable = dto.responsable;
+    if (dto.details !== undefined) ligne.details = dto.details;
+
+    await this.ligneControleRepo.save(ligne);
+
+    return {
+      message: 'Ligne modifiée avec succès',
+      ligne,
+    };
+  }
+
+  async uploadLigneImage(id: string, file: Express.Multer.File, user: User) {
+    const ligne = await this.ligneControleRepo.findOne({
+      where: { id },
+      relations: { agent: true },
+    });
+
+    if (!ligne) {
+      throw new NotFoundException('Ligne de contrôle non trouvée');
+    }
+
+    if (ligne.agent.id !== user.id) {
+      throw new ForbiddenException('Vous ne pouvez modifier que vos propres lignes');
+    }
+
+    if (!file) {
+      throw new BadRequestException('Aucun fichier uploadé');
+    }
+
+    if (ligne.image) {
+      const filename = ligne.image.split('/').pop();
+      if (filename) {
+        const oldPath = join(process.cwd(), 'uploads', filename);
+        try { await unlink(oldPath); } catch {}
+      }
+    }
+
+    ligne.image = `/uploads/${file.filename}`;
+    await this.ligneControleRepo.save(ligne);
+
+    return {
+      message: 'Image uploadée avec succès',
       ligne,
     };
   }

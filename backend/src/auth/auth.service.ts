@@ -19,6 +19,8 @@ import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { MailService } from '../mail/mail.service';
+import { join } from 'path';
+import { unlink } from 'fs/promises';
 
 @Injectable()
 export class AuthService {
@@ -32,7 +34,7 @@ export class AuthService {
     private readonly mailService: MailService,
   ) {}
 
-  async signup(signupDto: SignupDto, role: UserRole) {
+  async signup(signupDto: SignupDto, role: UserRole, file?: Express.Multer.File) {
     const { firstName, lastName, matricule, email, password } = signupDto;
 
     const existingUser = await this.userRepository.findOne({
@@ -57,6 +59,7 @@ export class AuthService {
       password: hashedPassword,
       role,
       isApproved: false,
+      profileImage: file ? `/uploads/${file.filename}` : null,
     });
 
     await this.userRepository.save(user);
@@ -71,6 +74,7 @@ export class AuthService {
         email: user.email,
         role: user.role,
         isApproved: user.isApproved,
+        profileImage: user.profileImage,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
@@ -127,6 +131,7 @@ export class AuthService {
         email: user.email,
         role: user.role,
         isApproved: user.isApproved,
+        profileImage: user.profileImage,
       },
     };
   }
@@ -230,5 +235,27 @@ export class AuthService {
     const { password, resetToken, resetTokenExpires, ...userWithoutSensitiveData } = user;
 
     return userWithoutSensitiveData;
+  }
+
+  async uploadProfileImage(userId: string, file: Express.Multer.File) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('Utilisateur non trouvé');
+    }
+    if (!file) {
+      throw new BadRequestException('Aucun fichier uploadé');
+    }
+    if (user.profileImage) {
+      const filename = user.profileImage.split('/').pop();
+      if (filename) {
+        try { await unlink(join(process.cwd(), 'uploads', filename)); } catch {}
+      }
+    }
+    user.profileImage = `/uploads/${file.filename}`;
+    await this.userRepository.save(user);
+    return {
+      message: 'Photo de profil mise à jour',
+      profileImage: user.profileImage,
+    };
   }
 }

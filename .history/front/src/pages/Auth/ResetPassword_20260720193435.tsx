@@ -41,9 +41,6 @@ const ResetPassword: React.FC = () => {
         </div>
         <div className="auth-split-card">
           <div className="auth-left">
-            <div className="auth-5s-badge">
-              <img src="/5s.jpeg" alt="5S" />
-            </div>
             <h2>Qualité Control</h2>
             <p>Votre mot de passe a été modifié avec succès.</p>
             <div className="auth-illustration">
@@ -62,6 +59,9 @@ const ResetPassword: React.FC = () => {
             </div>
           </div>
           <div className="auth-right">
+            <div className="auth-5s-badge">
+              <img src="/5s-circle.png" alt="5S" />
+            </div>
             <h2>Password Reset</h2>
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
               <div className="auth-success-circle">
@@ -88,9 +88,6 @@ const ResetPassword: React.FC = () => {
       </div>
       <div className="auth-split-card">
         <div className="auth-left">
-          <div className="auth-5s-badge">
-            <img src="/5s.jpeg" alt="5S" />
-          </div>
           <h2>Qualité Control</h2>
           <p>Choisissez un nouveau mot de passe sécurisé pour votre compte.</p>
           <div className="auth-illustration">
@@ -115,6 +112,9 @@ const ResetPassword: React.FC = () => {
           </div>
         </div>
         <div className="auth-right">
+          <div className="auth-5s-badge">
+            <img src="/5s-circle.png" alt="5S" />
+          </div>
           <h2>New Password</h2>
           <form onSubmit={handleSubmit}>
             <div className="auth-input-group auth-pwd-wrapper">

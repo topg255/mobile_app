@@ -16,6 +16,10 @@ import {
   Trash2,
   Eye,
   Activity,
+  LayoutDashboard,
+  UserPlus,
+  FileText,
+  History,
 } from 'lucide-react';
 
 const SuperAdminDashboard: React.FC = () => {
@@ -114,16 +118,15 @@ const SuperAdminDashboard: React.FC = () => {
   return (
     <div className="dashboard-layout">
       <aside className="sidebar">
-        <div className="sidebar-header">
-          <h2>Super Admin</h2>
-          <span className="role-badge super-admin">Administrateur</span>
+        <div className="sidebar-logo">
+          <img src="/leoni-logo.svg" alt="LEONI" />
         </div>
         <nav className="sidebar-nav">
           <button
             className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`}
             onClick={() => handleTabChange('overview')}
           >
-            <BarChart3 size={18} /> Vue d'ensemble
+            <LayoutDashboard size={18} /> Vue d'ensemble
           </button>
           <button
             className={`nav-item ${activeTab === 'pending' ? 'active' : ''}`}
@@ -144,7 +147,7 @@ const SuperAdminDashboard: React.FC = () => {
             className={`nav-item ${activeTab === 'logs' ? 'active' : ''}`}
             onClick={() => handleTabChange('logs')}
           >
-            <Clock size={18} /> Logs connexion
+            <History size={18} /> Logs connexion
           </button>
         </nav>
         <div className="sidebar-footer">
@@ -152,22 +155,13 @@ const SuperAdminDashboard: React.FC = () => {
             <span>{user?.firstName} {user?.lastName}</span>
             <small>{user?.email}</small>
           </div>
-          <button className="btn-icon" onClick={logout}>
+          <button className="btn-icon" onClick={logout} title="Déconnexion">
             <LogOut size={18} />
           </button>
         </div>
       </aside>
 
       <main className="main-content">
-        <header className="content-header">
-          <h1>
-            {activeTab === 'overview' && 'Vue d\'ensemble'}
-            {activeTab === 'pending' && 'Utilisateurs en attente'}
-            {activeTab === 'users' && 'Gestion des utilisateurs'}
-            {activeTab === 'logs' && 'Historique des connexions'}
-          </h1>
-        </header>
-
         <div className="content-body">
           {activeTab === 'overview' && stats && (
             <div className="stats-grid">

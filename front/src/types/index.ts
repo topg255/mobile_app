@@ -12,6 +12,7 @@ export interface User {
   email: string;
   role: UserRole;
   isApproved?: boolean;
+  profileImage?: string;
   createdAt: string;
   updatedAt?: string;
 }
@@ -49,6 +50,7 @@ export interface LigneControle {
   delais: string;
   responsable: string;
   details: string;
+  image?: string;
   controleDate: ControleDate;
   agent: User;
   createdAt: string;
@@ -114,4 +116,19 @@ export interface SuperAdminStats {
   pendingUsers: number;
   approvedUsers: number;
   totalLogs: number;
+}
+
+export interface Message {
+  id: string;
+  sender: User;
+  receiver: User;
+  content: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface Conversation {
+  user: User;
+  lastMessage: Message;
+  unreadCount: number;
 }

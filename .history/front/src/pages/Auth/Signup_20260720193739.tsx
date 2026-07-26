@@ -74,9 +74,6 @@ const Signup: React.FC = () => {
       <div className="auth-split-card" style={{ maxWidth: '1060px' }}>
         {/* Left panel */}
         <div className="auth-left">
-          <div className="auth-5s-badge">
-            <img src="/5s.jpeg" alt="5S" />
-          </div>
           <h2>Join Our Team</h2>
           <p>
             Créez votre compte et commencez à contribuer
@@ -117,6 +114,9 @@ const Signup: React.FC = () => {
 
         {/* Right panel — form */}
         <div className="auth-right" style={{ width: '460px' }}>
+          <div className="auth-5s-badge">
+            <img src="front/src/assets/5s.jpeg" alt="5S" />
+          </div>
           <h2>Create Account</h2>
 
           <div className="auth-role-pills">
