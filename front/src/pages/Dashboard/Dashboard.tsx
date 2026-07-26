@@ -352,9 +352,9 @@ const ControleDatesTab: React.FC = () => {
           <tbody>
             {dates.map((d) => (
               <tr key={d.id}>
-                <td>{new Date(d.dateControle).toLocaleDateString('fr-FR')}</td>
-                <td>{d.createdBy?.firstName} {d.createdBy?.lastName}</td>
-                <td>
+                <td data-label="Date">{new Date(d.dateControle).toLocaleDateString('fr-FR')}</td>
+                <td data-label="Créé par">{d.createdBy?.firstName} {d.createdBy?.lastName}</td>
+                <td data-label="Statut">
                   <span className={`badge ${d.isActive ? 'active' : 'inactive'}`}>
                     {d.isActive ? 'Active' : 'Inactive'}
                   </span>
@@ -492,22 +492,22 @@ const LignesSuperviseurTab: React.FC<{
             <tbody>
               {displayed.map((l) => (
                 <tr key={l.id}>
-                  <td>
+                  <td data-label="Image">
                     {l.image ? (
                       <img src={`http://localhost:3000${l.image}`} alt="" className="ligne-image" />
                     ) : (
                       <span className="no-image">-</span>
                     )}
                   </td>
-                  <td>{new Date(l.controleDate?.dateControle).toLocaleDateString('fr-FR')}</td>
-                  <td>{l.nomLigne}</td>
-                  <td>{l.heure || '-'}</td>
-                  <td><span className={`note-badge ${l.note}`}>{l.note}</span></td>
-                  <td>{l.delais} min</td>
-                  <td>{l.responsable}</td>
-                  {subTab === 'agent-lignes' && <td>{l.agent?.firstName} {l.agent?.lastName}</td>}
-                  <td className="details-cell">{l.details}</td>
-                  <td>
+                  <td data-label="Date">{new Date(l.controleDate?.dateControle).toLocaleDateString('fr-FR')}</td>
+                  <td data-label="Ligne">{l.nomLigne}</td>
+                  <td data-label="Heure">{l.heure || '-'}</td>
+                  <td data-label="Note"><span className={`note-badge ${l.note}`}>{l.note}</span></td>
+                  <td data-label="Délai">{l.delais} min</td>
+                  <td data-label="Responsable">{l.responsable}</td>
+                  {subTab === 'agent-lignes' && <td data-label="Agent">{l.agent?.firstName} {l.agent?.lastName}</td>}
+                  <td data-label="Détails" className="details-cell">{l.details}</td>
+                  <td data-label="Actions">
                     <button className="btn-icon-sm" onClick={() => setViewLigne(l)} title="Voir les détails">
                       <Eye size={16} />
                     </button>
@@ -569,24 +569,24 @@ const LignesTab: React.FC<{ lignes: LigneControle[]; loading: boolean; onEdit?: 
         <tbody>
           {filtered.map((l) => (
             <tr key={l.id}>
-              <td>
+              <td data-label="Image">
                 {l.image ? (
                   <img src={`http://localhost:3000${l.image}`} alt="" className="ligne-image" />
                 ) : (
                   <span className="no-image">-</span>
                 )}
               </td>
-              <td>{new Date(l.controleDate?.dateControle).toLocaleDateString('fr-FR')}</td>
-              <td>{l.nomLigne}</td>
-              <td>{l.heure || '-'}</td>
-              <td>
+              <td data-label="Date">{new Date(l.controleDate?.dateControle).toLocaleDateString('fr-FR')}</td>
+              <td data-label="Ligne">{l.nomLigne}</td>
+              <td data-label="Heure">{l.heure || '-'}</td>
+              <td data-label="Note">
                 <span className={`note-badge ${l.note}`}>{l.note}</span>
               </td>
-              <td>{l.delais} min</td>
-              <td>{l.responsable}</td>
-              <td>{l.agent?.firstName} {l.agent?.lastName}</td>
-              <td className="details-cell">{l.details}</td>
-              <td>
+              <td data-label="Délai">{l.delais} min</td>
+              <td data-label="Responsable">{l.responsable}</td>
+              <td data-label="Agent">{l.agent?.firstName} {l.agent?.lastName}</td>
+              <td data-label="Détails" className="details-cell">{l.details}</td>
+              <td data-label="Actions">
                 <div className="actions-cell">
                   <button className="btn-icon-sm" onClick={() => setViewLigne(l)} title="Voir les détails">
                     <Eye size={16} />

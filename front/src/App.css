@@ -981,8 +981,58 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
   .stat-info h3 { font-size: 18px; }
   .stat-info p { font-size: 12px; }
 
-  .table-container { border-radius: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .table-container table { min-width: 650px; border-collapse: collapse; }
+  .table-container { border-radius: 12px; background: transparent; box-shadow: none; border: none; }
+  .table-container table,
+  .table-container thead { display: none; }
+  .table-container tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .table-container tbody tr {
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    border: 1px solid #f1f5f9;
+    gap: 0;
+    position: relative;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .table-container tbody tr:active { transform: scale(0.985); }
+  .table-container tbody td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 13px;
+    gap: 12px;
+  }
+  .table-container tbody td:last-child { border-bottom: none; padding-top: 12px; }
+  .table-container tbody td::before {
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+    min-width: 80px;
+  }
+  .table-container tbody td:not(:has(.btn)):not(:has(.actions-cell)):not(:has(.badge)):not(:has(.role-tag)):not(:has(.note-badge)):not(:has(.action-badge)) {
+    text-align: right;
+    color: #1e293b;
+    font-weight: 500;
+  }
+  .table-container tbody td .btn,
+  .table-container tbody td .actions-cell {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
   .search-bar { padding: 12px 16px; flex-direction: column; align-items: stretch; }
   .search-bar input { min-width: 0; }
   .export-buttons { justify-content: flex-end; }

@@ -284,16 +284,16 @@ const PendingUsersTab: React.FC<{
         <tbody>
           {users.map((u) => (
             <tr key={u.id}>
-              <td>{u.firstName} {u.lastName}</td>
-              <td>{u.matricule}</td>
-              <td>{u.email}</td>
-              <td>
+              <td data-label="Nom">{u.firstName} {u.lastName}</td>
+              <td data-label="Matricule">{u.matricule}</td>
+              <td data-label="Email">{u.email}</td>
+              <td data-label="Rôle">
                 <span className={`role-tag ${u.role}`}>
                   {u.role === 'agent_qualite' ? 'Agent' : 'Superviseur'}
                 </span>
               </td>
-              <td>{new Date(u.createdAt).toLocaleDateString('fr-FR')}</td>
-              <td>
+              <td data-label="Inscription">{new Date(u.createdAt).toLocaleDateString('fr-FR')}</td>
+              <td data-label="Actions">
                 <button
                   className="btn btn-success btn-sm"
                   onClick={() => onApprove(u.id)}
@@ -342,20 +342,20 @@ const UsersTab: React.FC<{
         <tbody>
           {users.map((u) => (
             <tr key={u.id}>
-              <td>{u.firstName} {u.lastName}</td>
-              <td>{u.matricule}</td>
-              <td>{u.email}</td>
-              <td>
+              <td data-label="Nom">{u.firstName} {u.lastName}</td>
+              <td data-label="Matricule">{u.matricule}</td>
+              <td data-label="Email">{u.email}</td>
+              <td data-label="Rôle">
                 <span className={`role-tag ${u.role}`}>
                   {u.role === 'agent_qualite' ? 'Agent' : u.role === 'superviseur_qualite' ? 'Superviseur' : 'Admin'}
                 </span>
               </td>
-              <td>
+              <td data-label="Statut">
                 <span className={`badge ${u.isApproved ? 'active' : 'inactive'}`}>
                   {u.isApproved ? 'Approuvé' : 'En attente'}
                 </span>
               </td>
-              <td className="actions-cell">
+              <td data-label="Actions" className="actions-cell">
                 {u.role !== 'super_admin' && (
                   <>
                     {u.isApproved ? (
@@ -412,20 +412,20 @@ const LogsTab: React.FC<{
         <tbody>
           {logs.map((log) => (
             <tr key={log.id}>
-              <td>{new Date(log.loggedAt).toLocaleString('fr-FR')}</td>
-              <td>{log.user.firstName} {log.user.lastName}</td>
-              <td>{log.user.matricule}</td>
-              <td>
+              <td data-label="Date">{new Date(log.loggedAt).toLocaleString('fr-FR')}</td>
+              <td data-label="Utilisateur">{log.user.firstName} {log.user.lastName}</td>
+              <td data-label="Matricule">{log.user.matricule}</td>
+              <td data-label="Rôle">
                 <span className={`role-tag ${log.user.role}`}>
                   {log.user.role === 'agent_qualite' ? 'Agent' : log.user.role === 'superviseur_qualite' ? 'Superviseur' : 'Admin'}
                 </span>
               </td>
-              <td>
+              <td data-label="Action">
                 <span className={`action-badge ${log.action}`}>
                   {log.action === 'login' ? 'Connexion' : 'Déconnexion'}
                 </span>
               </td>
-              <td>{log.ipAddress || '-'}</td>
+              <td data-label="IP">{log.ipAddress || '-'}</td>
             </tr>
           ))}
         </tbody>
