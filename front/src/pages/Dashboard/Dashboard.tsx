@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { qualityAPI } from '../../api';
 import { LigneControle, NoteQualite } from '../../types';
@@ -25,6 +25,7 @@ import {
   X,
   Camera,
   MessageSquare,
+  Menu,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -36,6 +37,7 @@ const Dashboard: React.FC = () => {
   const [lignes, setLignes] = useState<LigneControle[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [editingLigne, setEditingLigne] = useState<LigneControle | null>(null);
   const [lignesSubTab, setLignesSubTab] = useState<'mes-lignes' | 'agent-lignes'>('mes-lignes');
 
@@ -70,9 +72,17 @@ const Dashboard: React.FC = () => {
 
   const stats = getStats();
 
+  const closeSidebar = useCallback(() => setMobileOpen(false), []);
+
+  const handleTab = (tab: string) => {
+    setActiveTab(tab);
+    setMobileOpen(false);
+  };
+
   return (
     <div className="dashboard-layout">
-      <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+      <div className={`sidebar-overlay ${mobileOpen ? 'active' : ''}`} onClick={closeSidebar} />
+      <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
         <div className="sidebar-logo">
           <img src="/leoni-logo.svg" alt="LEONI" />
           <button
@@ -85,7 +95,7 @@ const Dashboard: React.FC = () => {
         <nav className="sidebar-nav">
           <button
             className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`}
-            onClick={() => setActiveTab('overview')}
+            onClick={() => handleTab('overview')}
           >
             <LayoutDashboard size={18} /> <span>Vue d'ensemble</span>
           </button>
@@ -93,19 +103,19 @@ const Dashboard: React.FC = () => {
             <>
               <button
                 className={`nav-item ${activeTab === 'controle-dates' ? 'active' : ''}`}
-                onClick={() => setActiveTab('controle-dates')}
+                onClick={() => handleTab('controle-dates')}
               >
                 <Calendar size={18} /> <span>Dates de contrôle</span>
               </button>
               <button
                 className={`nav-item ${activeTab === 'lignes' ? 'active' : ''}`}
-                onClick={() => setActiveTab('lignes')}
+                onClick={() => handleTab('lignes')}
               >
                 <ClipboardList size={18} /> <span>Lignes</span>
               </button>
               <button
                 className={`nav-item ${activeTab === 'historique' ? 'active' : ''}`}
-                onClick={() => setActiveTab('historique')}
+                onClick={() => handleTab('historique')}
               >
                 <History size={18} /> <span>Historique agents</span>
               </button>
@@ -114,21 +124,21 @@ const Dashboard: React.FC = () => {
           {isAgent && (
             <button
               className={`nav-item ${activeTab === 'mes-lignes' ? 'active' : ''}`}
-              onClick={() => setActiveTab('mes-lignes')}
+              onClick={() => handleTab('mes-lignes')}
             >
               <FileSpreadsheet size={18} /> <span>Mes lignes</span>
             </button>
           )}
           <button
             className={`nav-item ${activeTab === 'add-ligne' ? 'active' : ''}`}
-            onClick={() => setActiveTab('add-ligne')}
+            onClick={() => handleTab('add-ligne')}
           >
             <Plus size={18} /> <span>Ajouter une ligne</span>
           </button>
           {isAgent && editingLigne && (
             <button
               className={`nav-item ${activeTab === 'edit-ligne' ? 'active' : ''}`}
-              onClick={() => setActiveTab('edit-ligne')}
+              onClick={() => handleTab('edit-ligne')}
             >
               <FileSpreadsheet size={18} /> <span>Modifier ligne</span>
             </button>
@@ -136,14 +146,14 @@ const Dashboard: React.FC = () => {
           {isSuperviseur && (
             <button
               className={`nav-item ${activeTab === 'rapport' ? 'active' : ''}`}
-              onClick={() => setActiveTab('rapport')}
+              onClick={() => handleTab('rapport')}
             >
               <BarChart3 size={18} /> <span>Rapport</span>
             </button>
           )}
           <button
             className={`nav-item ${activeTab === 'messages' ? 'active' : ''}`}
-            onClick={() => setActiveTab('messages')}
+            onClick={() => handleTab('messages')}
           >
             <MessageSquare size={18} /> <span>Messages</span>
           </button>
@@ -162,6 +172,9 @@ const Dashboard: React.FC = () => {
       <main className="main-content">
         <div className="top-bar">
           <div className="top-bar-left">
+            <button className="hamburger-btn" onClick={() => setMobileOpen(true)}>
+              <Menu size={20} />
+            </button>
             <h1>Tableau de bord</h1>
             <span className="role-badge">
               {isSuperviseur ? 'Superviseur Qualité' : 'Agent Qualité'}

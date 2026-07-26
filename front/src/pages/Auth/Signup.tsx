@@ -131,7 +131,7 @@ const Signup: React.FC = () => {
           </div>
 
           <form onSubmit={handleSubmit}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+            <div className="auth-signup-grid">
               {inputGroup(<User size={20} />,
                 <input type="text" name="firstName" value={formData.firstName} onChange={handleChange}
                        placeholder="Prénom" required />

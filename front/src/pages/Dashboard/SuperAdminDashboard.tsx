@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { superAdminAPI } from '../../api';
 import { User, LoginLog, SuperAdminStats } from '../../types';
@@ -20,6 +20,7 @@ import {
   UserPlus,
   FileText,
   History,
+  Menu,
 } from 'lucide-react';
 
 const SuperAdminDashboard: React.FC = () => {
@@ -30,6 +31,7 @@ const SuperAdminDashboard: React.FC = () => {
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
   const [logs, setLogs] = useState<LoginLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -110,14 +112,18 @@ const SuperAdminDashboard: React.FC = () => {
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
+    setMobileOpen(false);
     if (tab === 'users') fetchUsers();
     if (tab === 'pending') fetchPendingUsers();
     if (tab === 'logs') fetchLogs();
   };
 
+  const closeSidebar = useCallback(() => setMobileOpen(false), []);
+
   return (
     <div className="dashboard-layout">
-      <aside className="sidebar">
+      <div className={`sidebar-overlay ${mobileOpen ? 'active' : ''}`} onClick={closeSidebar} />
+      <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}>
         <div className="sidebar-logo">
           <img src="/leoni-logo.svg" alt="LEONI" />
         </div>
@@ -162,6 +168,14 @@ const SuperAdminDashboard: React.FC = () => {
       </aside>
 
       <main className="main-content">
+        <div className="top-bar">
+          <div className="top-bar-left">
+            <button className="hamburger-btn" onClick={() => setMobileOpen(true)}>
+              <Menu size={20} />
+            </button>
+            <h1>Super Admin</h1>
+          </div>
+        </div>
         <div className="content-body">
           {activeTab === 'overview' && stats && (
             <div className="stats-grid">

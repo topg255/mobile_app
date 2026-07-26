@@ -17,6 +17,7 @@ const Chat: React.FC = () => {
   const [showNewChat, setShowNewChat] = useState(false);
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [searchUser, setSearchUser] = useState('');
+  const [mobileShowChat, setMobileShowChat] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -87,6 +88,7 @@ const Chat: React.FC = () => {
   const openConversation = async (conv: Conversation) => {
     setActiveConversation(conv);
     setShowNewChat(false);
+    setMobileShowChat(true);
     try {
       const res = await chatAPI.getMessages(conv.user.id);
       setMessages(res.data);
@@ -132,6 +134,7 @@ const Chat: React.FC = () => {
       setActiveConversation({ user: u, lastMessage: null as any, unreadCount: 0 });
       setMessages([]);
       setShowNewChat(false);
+      setMobileShowChat(true);
       setConversations((prev) => [{ user: u, lastMessage: null as any, unreadCount: 0 }, ...prev]);
     }
   };
@@ -192,7 +195,7 @@ const Chat: React.FC = () => {
         </div>
       </div>
 
-      <div className="chat-main">
+      <div className={`chat-main ${mobileShowChat ? 'mobile-open' : ''}`}>
         {showNewChat ? (
           <div className="chat-new-panel">
             <div className="chat-new-header">
@@ -234,7 +237,7 @@ const Chat: React.FC = () => {
         ) : activeConversation ? (
           <>
             <div className="chat-header">
-              <button className="btn-icon-sm chat-back-btn" onClick={() => setActiveConversation(null)}>
+              <button className="btn-icon-sm chat-back-btn" onClick={() => { setActiveConversation(null); setMobileShowChat(false); }}>
                 <ArrowLeft size={18} />
               </button>
               <div className="chat-header-avatar">
