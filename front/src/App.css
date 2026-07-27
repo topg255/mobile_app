@@ -1098,6 +1098,50 @@ html, body, #root {
 .hist-ligne-date { color: #64748b; font-size: 12px; }
 .hist-ligne-durée { color: #64748b; text-align: right; }
 
+/* ==================== SUPER ADMIN ==================== */
+.sa-banner { background: linear-gradient(135deg, #0c1222 0%, #1a1f3a 40%, #2d1b69 100%); }
+.sa-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.sa-kpi-full { grid-column: span 2; }
+.badge-count {
+  margin-left: auto;
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  flex-shrink: 0;
+}
+.role-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.role-tag.agent_qualite { background: #f0fdf4; color: #16a34a; }
+.role-tag.superviseur_qualite { background: #fefce8; color: #ca8a04; }
+.role-tag.super_admin { background: #eff6ff; color: #2563eb; }
+.action-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.action-badge.login { background: #f0fdf4; color: #16a34a; }
+.action-badge.logout { background: #fef2f2; color: #dc2626; }
+
 /* Tables */
 .table-container { background: white; border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border: 1px solid #f1f5f9; }
 .search-bar { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
@@ -1828,6 +1872,9 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
   .ov-kpi-val { font-size: 22px; }
   .ov-dist-panel, .ov-activity-panel { grid-column: span 2; }
 
+  .sa-kpi-grid { grid-template-columns: 1fr 1fr; }
+  .sa-kpi-full { grid-column: span 2; }
+
   .cd-stats-row { flex-direction: column; gap: 10px; }
   .cd-grid { grid-template-columns: 1fr; }
   .cd-create-form { flex-direction: column; align-items: stretch; }
@@ -1952,6 +1999,8 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
   .ov-grid { grid-template-columns: 1fr; }
   .ov-kpi-full { grid-column: span 1; }
   .ov-dist-panel, .ov-activity-panel { grid-column: span 1; }
+  .sa-kpi-grid { grid-template-columns: 1fr; }
+  .sa-kpi-full { grid-column: span 1; }
   .wb-banner { padding: 20px 16px; }
   .wb-greeting h2 { font-size: 18px; }
   .wb-greeting h2 span { display: block; }

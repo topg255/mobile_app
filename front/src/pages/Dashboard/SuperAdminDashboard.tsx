@@ -21,6 +21,14 @@ import {
   FileText,
   History,
   Menu,
+  TrendingUp,
+  TrendingDown,
+  Zap,
+  Layers,
+  CheckCircle2,
+  AlertCircle,
+  ShieldCheck,
+  BarChart2,
 } from 'lucide-react';
 
 const SuperAdminDashboard: React.FC = () => {
@@ -178,53 +186,148 @@ const SuperAdminDashboard: React.FC = () => {
         </div>
         <div className="content-body">
           {activeTab === 'overview' && stats && (
-            <div className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-icon total">
-                  <Users size={24} />
+            <>
+              {/* Premium Welcome Banner */}
+              <div className="wb-banner sa-banner">
+                <div className="wb-bg-shapes">
+                  <div className="wb-shape wb-shape-1" />
+                  <div className="wb-shape wb-shape-2" />
+                  <div className="wb-shape wb-shape-3" />
                 </div>
-                <div className="stat-info">
-                  <h3>{stats.totalUsers}</h3>
-                  <p>Total utilisateurs</p>
+                <div className="wb-content">
+                  <div className="wb-greeting">
+                    <span className="wb-wave">👋</span>
+                    <h2>Bonjour, <span>{user?.firstName}</span></h2>
+                  </div>
+                  <p className="wb-subtitle">Voici un aperçu de votre système qualité — gestion des utilisateurs et supervision</p>
+                  <div className="wb-quick-stats">
+                    <div className="wb-qs-item">
+                      <div className="wb-qs-icon wb-qs-total"><Layers size={16} /></div>
+                      <div><span className="wb-qs-val">{stats.totalUsers}</span><span className="wb-qs-lbl">Utilisateurs</span></div>
+                    </div>
+                    <div className="wb-qs-divider" />
+                    <div className="wb-qs-item">
+                      <div className="wb-qs-icon wb-qs-vert"><CheckCircle2 size={16} /></div>
+                      <div><span className="wb-qs-val">{stats.approvedUsers}</span><span className="wb-qs-lbl">Approuvés</span></div>
+                    </div>
+                    <div className="wb-qs-divider" />
+                    <div className="wb-qs-item">
+                      <div className="wb-qs-icon wb-qs-jaune"><AlertCircle size={16} /></div>
+                      <div><span className="wb-qs-val">{stats.pendingUsers}</span><span className="wb-qs-lbl">En attente</span></div>
+                    </div>
+                    <div className="wb-qs-divider" />
+                    <div className="wb-qs-item">
+                      <div className="wb-qs-icon" style={{background:'rgba(139,92,246,0.2)',color:'#a78bfa'}}><ShieldCheck size={16} /></div>
+                      <div><span className="wb-qs-val">{stats.totalSuperviseurs}</span><span className="wb-qs-lbl">Superviseurs</span></div>
+                    </div>
+                  </div>
+                </div>
+                {/* Mini donut */}
+                <div className="wb-donut-wrap">
+                  <svg viewBox="0 0 100 100" className="wb-donut">
+                    {(() => {
+                      const r = 35;
+                      const c = 2 * Math.PI * r;
+                      const total = stats.totalUsers || 1;
+                      const data = [
+                        { pct: stats.totalAgents / total, color: '#4ade80' },
+                        { pct: stats.totalSuperviseurs / total, color: '#facc15' },
+                        { pct: stats.pendingUsers / total, color: '#f87171' },
+                      ];
+                      let offset = 0;
+                      return data.map((d, i) => {
+                        const len = d.pct * c;
+                        const gap = c - len;
+                        const el = (
+                          <circle key={i} cx="50" cy="50" r={r} fill="none" stroke={d.color} strokeWidth="10"
+                            strokeDasharray={`${len} ${gap}`} strokeDashoffset={-offset} strokeLinecap="round"
+                            className="wb-donut-seg" style={{ animationDelay: `${i * 200 + 400}ms` }} />
+                        );
+                        offset += len;
+                        return el;
+                      });
+                    })()}
+                  </svg>
+                  <div className="wb-donut-center">
+                    <span>{stats.totalUsers}</span>
+                    <small>Total</small>
+                  </div>
                 </div>
               </div>
-              <div className="stat-card">
-                <div className="stat-icon vert">
-                  <UserCheck size={24} />
+
+              {/* KPI Cards */}
+              <div className="sa-kpi-grid">
+                <div className="ov-kpi ov-kpi-blue" style={{ animationDelay: '0ms' }}>
+                  <div className="ov-kpi-head">
+                    <div className="ov-kpi-icon"><Users size={20} /></div>
+                    <span className="ov-kpi-trend ov-kpi-trend-up"><TrendingUp size={14} /> {stats.totalUsers}</span>
+                  </div>
+                  <div className="ov-kpi-body">
+                    <span className="ov-kpi-val">{stats.totalUsers}</span>
+                    <span className="ov-kpi-lbl">Total utilisateurs</span>
+                  </div>
+                  <div className="ov-kpi-bar">
+                    <div className="ov-kpi-bar-fill" style={{ width: '100%', background: '#2563eb' }} />
+                  </div>
                 </div>
-                <div className="stat-info">
-                  <h3>{stats.totalAgents}</h3>
-                  <p>Agents Qualité</p>
+
+                <div className="ov-kpi ov-kpi-green" style={{ animationDelay: '60ms' }}>
+                  <div className="ov-kpi-head">
+                    <div className="ov-kpi-icon"><UserCheck size={20} /></div>
+                    <span className="ov-kpi-trend ov-kpi-trend-up"><TrendingUp size={14} /> Agents</span>
+                  </div>
+                  <div className="ov-kpi-body">
+                    <span className="ov-kpi-val">{stats.totalAgents}</span>
+                    <span className="ov-kpi-lbl">Agents Qualité</span>
+                  </div>
+                  <div className="ov-kpi-bar">
+                    <div className="ov-kpi-bar-fill" style={{ width: `${stats.totalUsers > 0 ? (stats.totalAgents / stats.totalUsers) * 100 : 0}%`, background: '#22c55e' }} />
+                  </div>
+                </div>
+
+                <div className="ov-kpi ov-kpi-yellow" style={{ animationDelay: '120ms' }}>
+                  <div className="ov-kpi-head">
+                    <div className="ov-kpi-icon"><Shield size={20} /></div>
+                    <span className="ov-kpi-trend ov-kpi-trend-warn"><BarChart2 size={14} /> Superviseurs</span>
+                  </div>
+                  <div className="ov-kpi-body">
+                    <span className="ov-kpi-val">{stats.totalSuperviseurs}</span>
+                    <span className="ov-kpi-lbl">Superviseurs Qualité</span>
+                  </div>
+                  <div className="ov-kpi-bar">
+                    <div className="ov-kpi-bar-fill" style={{ width: `${stats.totalUsers > 0 ? (stats.totalSuperviseurs / stats.totalUsers) * 100 : 0}%`, background: '#eab308' }} />
+                  </div>
+                </div>
+
+                <div className="ov-kpi ov-kpi-red" style={{ animationDelay: '180ms' }}>
+                  <div className="ov-kpi-head">
+                    <div className="ov-kpi-icon"><UserX size={20} /></div>
+                    <span className="ov-kpi-trend ov-kpi-trend-down"><TrendingDown size={14} /> {stats.pendingUsers}</span>
+                  </div>
+                  <div className="ov-kpi-body">
+                    <span className="ov-kpi-val">{stats.pendingUsers}</span>
+                    <span className="ov-kpi-lbl">En attente</span>
+                  </div>
+                  <div className="ov-kpi-bar">
+                    <div className="ov-kpi-bar-fill" style={{ width: `${stats.totalUsers > 0 ? (stats.pendingUsers / stats.totalUsers) * 100 : 0}%`, background: '#ef4444' }} />
+                  </div>
+                </div>
+
+                <div className="ov-kpi ov-kpi-cyan sa-kpi-full" style={{ animationDelay: '240ms' }}>
+                  <div className="ov-kpi-head">
+                    <div className="ov-kpi-icon"><Activity size={20} /></div>
+                    <span className="ov-kpi-trend"><Zap size={14} /> Activité</span>
+                  </div>
+                  <div className="ov-kpi-body">
+                    <span className="ov-kpi-val">{stats.totalLogs}</span>
+                    <span className="ov-kpi-lbl">Total logs connexion</span>
+                  </div>
+                  <div className="ov-kpi-bar">
+                    <div className="ov-kpi-bar-fill" style={{ width: `${Math.min((stats.totalLogs / (stats.totalUsers * 10 || 1)) * 100, 100)}%`, background: '#06b6d4' }} />
+                  </div>
                 </div>
               </div>
-              <div className="stat-card">
-                <div className="stat-icon jaune">
-                  <Shield size={24} />
-                </div>
-                <div className="stat-info">
-                  <h3>{stats.totalSuperviseurs}</h3>
-                  <p>Superviseurs</p>
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon rouge">
-                  <UserX size={24} />
-                </div>
-                <div className="stat-info">
-                  <h3>{stats.pendingUsers}</h3>
-                  <p>En attente</p>
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon time">
-                  <Activity size={24} />
-                </div>
-                <div className="stat-info">
-                  <h3>{stats.totalLogs}</h3>
-                  <p>Total logs</p>
-                </div>
-              </div>
-            </div>
+            </>
           )}
 
           {activeTab === 'pending' && (
