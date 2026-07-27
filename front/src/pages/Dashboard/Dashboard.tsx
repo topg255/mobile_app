@@ -38,6 +38,12 @@ import {
   Timer,
   ArrowRight,
   Search,
+  TrendingDown,
+  Zap,
+  BarChart2,
+  ChevronRight,
+  CalendarClock,
+  Users,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -215,74 +221,224 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
         <div className="content-body">
-          <div className="welcome-banner">
-            <h2>Bonjour <span>{user?.firstName}</span> !</h2>
-            <p>Voici un aperçu de votre activité qualité</p>
-            <div className="welcome-stats">
-              <div className="welcome-stat">
-                <div className="welcome-stat-value">{stats.total}</div>
-                <div className="welcome-stat-label"><span className="stat-dot total"></span> Lignes</div>
+          {/* Premium Welcome Banner */}
+          <div className="wb-banner">
+            <div className="wb-bg-shapes">
+              <div className="wb-shape wb-shape-1" />
+              <div className="wb-shape wb-shape-2" />
+              <div className="wb-shape wb-shape-3" />
+            </div>
+            <div className="wb-content">
+              <div className="wb-greeting">
+                <span className="wb-wave">👋</span>
+                <h2>Bonjour, <span>{user?.firstName}</span></h2>
               </div>
-              <div className="welcome-stat">
-                <div className="welcome-stat-value">{stats.vert}</div>
-                <div className="welcome-stat-label"><span className="stat-dot vert"></span> Vert</div>
+              <p className="wb-subtitle">
+                {isSuperviseur
+                  ? "Voici un aperçu de l'activité qualité de vos équipes"
+                  : "Voici un aperçu de votre activité qualité aujourd'hui"}
+              </p>
+              <div className="wb-quick-stats">
+                <div className="wb-qs-item">
+                  <div className="wb-qs-icon wb-qs-total"><Layers size={16} /></div>
+                  <div><span className="wb-qs-val">{stats.total}</span><span className="wb-qs-lbl">Lignes</span></div>
+                </div>
+                <div className="wb-qs-divider" />
+                <div className="wb-qs-item">
+                  <div className="wb-qs-icon wb-qs-vert"><CheckCircle2 size={16} /></div>
+                  <div><span className="wb-qs-val">{stats.vert}</span><span className="wb-qs-lbl">Conformes</span></div>
+                </div>
+                <div className="wb-qs-divider" />
+                <div className="wb-qs-item">
+                  <div className="wb-qs-icon wb-qs-jaune"><AlertCircle size={16} /></div>
+                  <div><span className="wb-qs-val">{stats.jaune}</span><span className="wb-qs-lbl">À surveiller</span></div>
+                </div>
+                <div className="wb-qs-divider" />
+                <div className="wb-qs-item">
+                  <div className="wb-qs-icon wb-qs-rouge"><XCircle size={16} /></div>
+                  <div><span className="wb-qs-val">{stats.rouge}</span><span className="wb-qs-lbl">Critiques</span></div>
+                </div>
               </div>
-              <div className="welcome-stat">
-                <div className="welcome-stat-value">{stats.jaune}</div>
-                <div className="welcome-stat-label"><span className="stat-dot jaune"></span> Jaune</div>
-              </div>
-              <div className="welcome-stat">
-                <div className="welcome-stat-value">{stats.rouge}</div>
-                <div className="welcome-stat-label"><span className="stat-dot rouge"></span> Rouge</div>
+            </div>
+            {/* Mini donut */}
+            <div className="wb-donut-wrap">
+              <svg viewBox="0 0 100 100" className="wb-donut">
+                {(() => {
+                  const r = 35;
+                  const c = 2 * Math.PI * r;
+                  const data = [
+                    { pct: stats.total > 0 ? stats.vert / stats.total : 0, color: '#4ade80' },
+                    { pct: stats.total > 0 ? stats.jaune / stats.total : 0, color: '#facc15' },
+                    { pct: stats.total > 0 ? stats.rouge / stats.total : 0, color: '#f87171' },
+                  ];
+                  let offset = 0;
+                  return data.map((d, i) => {
+                    const len = d.pct * c;
+                    const gap = c - len;
+                    const el = (
+                      <circle key={i} cx="50" cy="50" r={r} fill="none" stroke={d.color} strokeWidth="10"
+                        strokeDasharray={`${len} ${gap}`} strokeDashoffset={-offset} strokeLinecap="round"
+                        className="wb-donut-seg" style={{ animationDelay: `${i * 200 + 400}ms` }} />
+                    );
+                    offset += len;
+                    return el;
+                  });
+                })()}
+              </svg>
+              <div className="wb-donut-center">
+                <span>{stats.total > 0 ? Math.round((stats.vert / stats.total) * 100) : 0}%</span>
+                <small>Conforme</small>
               </div>
             </div>
           </div>
 
         {activeTab === 'overview' && (
-            <div className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-icon total">
-                  <List size={24} />
+            <div className="ov-grid">
+              {/* KPI Cards */}
+              <div className="ov-kpi ov-kpi-blue">
+                <div className="ov-kpi-head">
+                  <div className="ov-kpi-icon"><Layers size={20} /></div>
+                  <span className="ov-kpi-trend ov-kpi-trend-up"><ArrowUpRight size={14} /> {stats.total}</span>
                 </div>
-                <div className="stat-info">
-                  <h3>{stats.total}</h3>
-                  <p>Total lignes</p>
+                <div className="ov-kpi-body">
+                  <span className="ov-kpi-val">{stats.total}</span>
+                  <span className="ov-kpi-lbl">Total lignes</span>
                 </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon vert">
-                  <CheckCircle size={24} />
-                </div>
-                <div className="stat-info">
-                  <h3>{stats.vert}</h3>
-                  <p>Vert</p>
+                <div className="ov-kpi-bar">
+                  <div className="ov-kpi-bar-fill" style={{ width: '100%', background: '#2563eb' }} />
                 </div>
               </div>
-              <div className="stat-card">
-                <div className="stat-icon jaune">
-                  <AlertTriangle size={24} />
+
+              <div className="ov-kpi ov-kpi-green">
+                <div className="ov-kpi-head">
+                  <div className="ov-kpi-icon"><CheckCircle size={20} /></div>
+                  <span className="ov-kpi-trend ov-kpi-trend-up"><TrendingUp size={14} /> {stats.total > 0 ? Math.round((stats.vert / stats.total) * 100) : 0}%</span>
                 </div>
-                <div className="stat-info">
-                  <h3>{stats.jaune}</h3>
-                  <p>Jaune</p>
+                <div className="ov-kpi-body">
+                  <span className="ov-kpi-val">{stats.vert}</span>
+                  <span className="ov-kpi-lbl">Conformes (Vert)</span>
                 </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon rouge">
-                  <XCircle size={24} />
-                </div>
-                <div className="stat-info">
-                  <h3>{stats.rouge}</h3>
-                  <p>Rouge</p>
+                <div className="ov-kpi-bar">
+                  <div className="ov-kpi-bar-fill" style={{ width: `${stats.total > 0 ? (stats.vert / stats.total) * 100 : 0}%`, background: '#22c55e' }} />
                 </div>
               </div>
-              <div className="stat-card full-width">
-                <div className="stat-icon time">
-                  <Clock size={24} />
+
+              <div className="ov-kpi ov-kpi-yellow">
+                <div className="ov-kpi-head">
+                  <div className="ov-kpi-icon"><AlertTriangle size={20} /></div>
+                  <span className="ov-kpi-trend ov-kpi-trend-warn"><BarChart2 size={14} /> {stats.total > 0 ? Math.round((stats.jaune / stats.total) * 100) : 0}%</span>
                 </div>
-                <div className="stat-info">
-                  <h3>{stats.totalMinutes} min</h3>
-                  <p>Minutes d'arrêt cumulées</p>
+                <div className="ov-kpi-body">
+                  <span className="ov-kpi-val">{stats.jaune}</span>
+                  <span className="ov-kpi-lbl">À surveiller (Jaune)</span>
+                </div>
+                <div className="ov-kpi-bar">
+                  <div className="ov-kpi-bar-fill" style={{ width: `${stats.total > 0 ? (stats.jaune / stats.total) * 100 : 0}%`, background: '#eab308' }} />
+                </div>
+              </div>
+
+              <div className="ov-kpi ov-kpi-red">
+                <div className="ov-kpi-head">
+                  <div className="ov-kpi-icon"><XCircle size={20} /></div>
+                  <span className="ov-kpi-trend ov-kpi-trend-down"><TrendingDown size={14} /> {stats.total > 0 ? Math.round((stats.rouge / stats.total) * 100) : 0}%</span>
+                </div>
+                <div className="ov-kpi-body">
+                  <span className="ov-kpi-val">{stats.rouge}</span>
+                  <span className="ov-kpi-lbl">Critiques (Rouge)</span>
+                </div>
+                <div className="ov-kpi-bar">
+                  <div className="ov-kpi-bar-fill" style={{ width: `${stats.total > 0 ? (stats.rouge / stats.total) * 100 : 0}%`, background: '#ef4444' }} />
+                </div>
+              </div>
+
+              {/* Minutes card - full width */}
+              <div className="ov-kpi ov-kpi-full ov-kpi-cyan">
+                <div className="ov-kpi-head">
+                  <div className="ov-kpi-icon"><Timer size={20} /></div>
+                  <span className="ov-kpi-trend"><Zap size={14} /> Arrêts</span>
+                </div>
+                <div className="ov-kpi-body">
+                  <span className="ov-kpi-val">{stats.totalMinutes}<small> min</small></span>
+                  <span className="ov-kpi-lbl">Minutes d'arrêt cumulées</span>
+                </div>
+                <div className="ov-kpi-bar">
+                  <div className="ov-kpi-bar-fill" style={{ width: `${Math.min((stats.totalMinutes / (stats.total * 30 || 1)) * 100, 100)}%`, background: '#06b6d4' }} />
+                </div>
+              </div>
+
+              {/* Quality Distribution Panel */}
+              <div className="ov-dist-panel">
+                <h4 className="ov-panel-title"><BarChart2 size={16} /> Répartition qualité</h4>
+                <div className="ov-dist-chart">
+                  <svg viewBox="0 0 120 120" className="ov-dist-donut">
+                    {(() => {
+                      const r = 40;
+                      const c = 2 * Math.PI * r;
+                      const data = [
+                        { pct: stats.total > 0 ? stats.vert / stats.total : 0, color: '#22c55e', label: 'Vert' },
+                        { pct: stats.total > 0 ? stats.jaune / stats.total : 0, color: '#eab308', label: 'Jaune' },
+                        { pct: stats.total > 0 ? stats.rouge / stats.total : 0, color: '#ef4444', label: 'Rouge' },
+                      ];
+                      let offset = 0;
+                      return data.map((d, i) => {
+                        const len = d.pct * c;
+                        const gap = c - len;
+                        const el = (
+                          <circle key={i} cx="60" cy="60" r={r} fill="none" stroke={d.color} strokeWidth="14"
+                            strokeDasharray={`${len} ${gap}`} strokeDashoffset={-offset} strokeLinecap="round"
+                            className="ov-dist-seg" style={{ animationDelay: `${i * 200 + 300}ms` }} />
+                        );
+                        offset += len;
+                        return el;
+                      });
+                    })()}
+                  </svg>
+                  <div className="ov-dist-center">
+                    <span className="ov-dist-total">{stats.total}</span>
+                    <small>Total</small>
+                  </div>
+                </div>
+                <div className="ov-dist-legend">
+                  {[
+                    { label: 'Conforme', count: stats.vert, color: '#22c55e', pct: stats.total > 0 ? Math.round((stats.vert / stats.total) * 100) : 0 },
+                    { label: 'À surveiller', count: stats.jaune, color: '#eab308', pct: stats.total > 0 ? Math.round((stats.jaune / stats.total) * 100) : 0 },
+                    { label: 'Non conforme', count: stats.rouge, color: '#ef4444', pct: stats.total > 0 ? Math.round((stats.rouge / stats.total) * 100) : 0 },
+                  ].map((item) => (
+                    <div key={item.label} className="ov-dist-row">
+                      <span className="ov-dist-dot" style={{ background: item.color }} />
+                      <span className="ov-dist-label">{item.label}</span>
+                      <span className="ov-dist-val">{item.count}</span>
+                      <span className="ov-dist-pct">{item.pct}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Recent Activity */}
+              <div className="ov-activity-panel">
+                <h4 className="ov-panel-title"><Activity size={16} /> Activité récente</h4>
+                <div className="ov-activity-list">
+                  {lignes.slice(0, 8).map((l, i) => (
+                    <div key={l.id} className="ov-activity-item" style={{ animationDelay: `${i * 50}ms` }}>
+                      <div className={`ov-act-dot ${l.note}`} />
+                      <div className="ov-act-info">
+                        <span className="ov-act-name">{l.nomLigne}</span>
+                        <span className="ov-act-meta">
+                          {l.agent?.firstName} {l.agent?.lastName} · {l.delais} min
+                        </span>
+                      </div>
+                      <div className="ov-act-right">
+                        <span className={`rapport-note-chip ${l.note}`} style={{ fontSize: '11px', padding: '2px 8px' }}>{l.note}</span>
+                        <span className="ov-act-date">{new Date(l.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {lignes.length === 0 && (
+                    <div className="ov-empty">
+                      <ClipboardList size={32} />
+                      <p>Aucune activité pour le moment</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -337,7 +493,7 @@ const ControleDatesTab: React.FC = () => {
     setLoading(true);
     try {
       await qualityAPI.createControleDate({ dateControle: newDate });
-      toast.success('Date créée');
+      toast.success('Date créée avec succès');
       setNewDate('');
       fetchDates();
     } catch (err: any) {
@@ -347,47 +503,95 @@ const ControleDatesTab: React.FC = () => {
     }
   };
 
+  const activeDates = dates.filter((d) => d.isActive).length;
+  const inactiveDates = dates.length - activeDates;
+
   return (
     <div className="tab-content">
-      <form onSubmit={handleCreate} className="inline-form">
-        <div className="form-group">
-          <label>Date de contrôle</label>
-          <input
-            type="date"
-            value={newDate}
-            onChange={(e) => setNewDate(e.target.value)}
-            min={new Date().toISOString().split('T')[0]}
-            required
-          />
+      {/* Stats Row */}
+      <div className="cd-stats-row">
+        <div className="cd-stat">
+          <div className="cd-stat-icon cd-stat-total"><Calendar size={18} /></div>
+          <div className="cd-stat-info">
+            <span className="cd-stat-val">{dates.length}</span>
+            <span className="cd-stat-lbl">Total dates</span>
+          </div>
         </div>
-        <button type="submit" className="btn btn-primary" disabled={loading}>
-          <Plus size={16} /> Ajouter
-        </button>
-      </form>
-      <div className="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Créé par</th>
-              <th>Statut</th>
-            </tr>
-          </thead>
-          <tbody>
-            {dates.map((d) => (
-              <tr key={d.id}>
-                <td data-label="Date">{new Date(d.dateControle).toLocaleDateString('fr-FR')}</td>
-                <td data-label="Créé par">{d.createdBy?.firstName} {d.createdBy?.lastName}</td>
-                <td data-label="Statut">
-                  <span className={`badge ${d.isActive ? 'active' : 'inactive'}`}>
-                    {d.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="cd-stat">
+          <div className="cd-stat-icon cd-stat-active"><CheckCircle size={18} /></div>
+          <div className="cd-stat-info">
+            <span className="cd-stat-val">{activeDates}</span>
+            <span className="cd-stat-lbl">Actives</span>
+          </div>
+        </div>
+        <div className="cd-stat">
+          <div className="cd-stat-icon cd-stat-inactive"><XCircle size={18} /></div>
+          <div className="cd-stat-info">
+            <span className="cd-stat-val">{inactiveDates}</span>
+            <span className="cd-stat-lbl">Inactives</span>
+          </div>
+        </div>
       </div>
+
+      {/* Create Date Form */}
+      <div className="cd-create-card">
+        <div className="cd-create-header">
+          <CalendarClock size={20} />
+          <h4>Nouvelle date de contrôle</h4>
+        </div>
+        <form onSubmit={handleCreate} className="cd-create-form">
+          <div className="cd-create-field">
+            <label>Date</label>
+            <input
+              type="date"
+              value={newDate}
+              onChange={(e) => setNewDate(e.target.value)}
+              min={new Date().toISOString().split('T')[0]}
+              required
+            />
+          </div>
+          <button type="submit" className="cd-create-btn" disabled={loading}>
+            {loading ? <span className="rapport-btn-loading" /> : <><Plus size={16} /> Créer</>}
+          </button>
+        </form>
+      </div>
+
+      {/* Dates Grid */}
+      <div className="cd-grid">
+        {dates.map((d, i) => {
+          const dateObj = new Date(d.dateControle);
+          const day = dateObj.toLocaleDateString('fr-FR', { day: 'numeric' });
+          const month = dateObj.toLocaleDateString('fr-FR', { month: 'short' });
+          const weekday = dateObj.toLocaleDateString('fr-FR', { weekday: 'long' });
+
+          return (
+            <div key={d.id} className={`cd-card ${d.isActive ? 'cd-active' : 'cd-inactive'}`} style={{ animationDelay: `${i * 60}ms` }}>
+              <div className="cd-card-cal">
+                <span className="cd-cal-day">{day}</span>
+                <span className="cd-cal-month">{month}</span>
+                <span className="cd-cal-weekday">{weekday}</span>
+              </div>
+              <div className="cd-card-info">
+                <div className="cd-card-status">
+                  <span className={`cd-status-pill ${d.isActive ? 'cd-status-on' : 'cd-status-off'}`}>
+                    {d.isActive ? <><CheckCircle size={12} /> Active</> : <><XCircle size={12} /> Inactive</>}
+                  </span>
+                </div>
+                <div className="cd-card-meta">
+                  <span>Créé par</span>
+                  <strong>{d.createdBy?.firstName} {d.createdBy?.lastName}</strong>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {dates.length === 0 && (
+        <div className="ov-empty">
+          <Calendar size={32} />
+          <p>Aucune date de contrôle créée</p>
+        </div>
+      )}
     </div>
   );
 };
@@ -637,6 +841,7 @@ const LignesTab: React.FC<{ lignes: LigneControle[]; loading: boolean; onEdit?: 
 const HistoriqueTab: React.FC = () => {
   const [historique, setHistorique] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -655,32 +860,91 @@ const HistoriqueTab: React.FC = () => {
   if (loading) return <div className="loading">Chargement...</div>;
 
   return (
-    <div className="historique-grid">
-      {historique.map((h) => (
-        <div key={h.agent.id} className="historique-card">
-          <div className="card-header">
-            <h3>{h.agent.firstName} {h.agent.lastName}</h3>
-            <span className="matricule">{h.agent.matricule}</span>
-          </div>
-          <div className="card-stats">
-            <span>{h.totalLignes} lignes</span>
-          </div>
-          <div className="card-lignes">
-            {h.lignes.slice(0, 5).map((l: LigneControle) => (
-              <div key={l.id} className="ligne-mini">
-                <span className={`note-dot ${l.note}`}></span>
-                <span>{new Date(l.controleDate?.dateControle).toLocaleDateString('fr-FR')}</span>
-                <span>{l.delais} min</span>
-              </div>
-            ))}
-            {h.lignes.length > 5 && (
-              <span className="more">+{h.lignes.length - 5} lignes</span>
-            )}
-          </div>
+    <div className="tab-content">
+      {/* Summary bar */}
+      <div className="hist-summary-bar">
+        <div className="hist-summary-item">
+          <Users size={16} />
+          <span><strong>{historique.length}</strong> agents</span>
         </div>
-      ))}
+        <div className="hist-summary-item">
+          <ClipboardList size={16} />
+          <span><strong>{historique.reduce((a, h) => a + h.totalLignes, 0)}</strong> lignes au total</span>
+        </div>
+      </div>
+
+      <div className="hist-grid">
+        {historique.map((h, i) => {
+          const vert = h.lignes.filter((l: LigneControle) => l.note === 'vert').length;
+          const jaune = h.lignes.filter((l: LigneControle) => l.note === 'jaune').length;
+          const rouge = h.lignes.filter((l: LigneControle) => l.note === 'rouge').length;
+          const total = h.totalLignes || 1;
+          const isExpanded = expanded === h.agent.id;
+
+          return (
+            <div key={h.agent.id} className={`hist-card ${isExpanded ? 'hist-expanded' : ''}`} style={{ animationDelay: `${i * 80}ms` }}>
+              {/* Header */}
+              <div className="hist-card-header" onClick={() => setExpanded(isExpanded ? null : h.agent.id)}>
+                <div className="hist-avatar">
+                  {h.agent.profileImage ? (
+                    <img src={`http://localhost:3000${h.agent.profileImage}`} alt="" />
+                  ) : (
+                    <span>{h.agent.firstName[0]}{h.agent.lastName[0]}</span>
+                  )}
+                </div>
+                <div className="hist-agent-info">
+                  <h3>{h.agent.firstName} {h.agent.lastName}</h3>
+                  <span className="hist-matricule">{h.agent.matricule}</span>
+                </div>
+                <div className="hist-card-right">
+                  <div className="hist-total-badge">
+                    <span className="hist-total-val">{h.totalLignes}</span>
+                    <span className="hist-total-lbl">lignes</span>
+                  </div>
+                  <ChevronRight size={18} className={`hist-chevron ${isExpanded ? 'rotated' : ''}`} />
+                </div>
+              </div>
+
+              {/* Quality progress bar */}
+              <div className="hist-progress-track">
+                <div className="hist-progress-seg hist-prog-vert" style={{ width: `${(vert / total) * 100}%` }} />
+                <div className="hist-progress-seg hist-prog-jaune" style={{ width: `${(jaune / total) * 100}%` }} />
+                <div className="hist-progress-seg hist-prog-rouge" style={{ width: `${(rouge / total) * 100}%` }} />
+              </div>
+              <div className="hist-progress-legend">
+                <span><span className="hist-dot vert" /> {vert} vert</span>
+                <span><span className="hist-dot jaune" /> {jaune} jaune</span>
+                <span><span className="hist-dot rouge" /> {rouge} rouge</span>
+              </div>
+
+              {/* Expandable lignes list */}
+              {isExpanded && (
+                <div className="hist-lignes-list">
+                  <div className="hist-lignes-header">
+                    <span>Ligne</span>
+                    <span>Date</span>
+                    <span>Note</span>
+                    <span>Durée</span>
+                  </div>
+                  {h.lignes.map((l: LigneControle) => (
+                    <div key={l.id} className="hist-ligne-row">
+                      <span className="hist-ligne-name">{l.nomLigne}</span>
+                      <span className="hist-ligne-date">{new Date(l.controleDate?.dateControle).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</span>
+                      <span className={`rapport-note-chip ${l.note}`} style={{ fontSize: '11px', padding: '2px 8px' }}>{l.note}</span>
+                      <span className="hist-ligne-durée">{l.delais} min</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
       {historique.length === 0 && (
-        <div className="empty-state">Aucun agent trouvé</div>
+        <div className="ov-empty">
+          <Users size={32} />
+          <p>Aucun agent trouvé</p>
+        </div>
       )}
     </div>
   );
