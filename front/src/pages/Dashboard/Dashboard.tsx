@@ -27,6 +27,17 @@ import {
   Camera,
   MessageSquare,
   Menu,
+  TrendingUp,
+  Target,
+  Activity,
+  ArrowUpRight,
+  ArrowDownRight,
+  Layers,
+  AlertCircle,
+  CheckCircle2,
+  Timer,
+  ArrowRight,
+  Search,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -1051,6 +1062,7 @@ const RapportTab: React.FC = () => {
   const [rapport, setRapport] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
+  const [animatedIn, setAnimatedIn] = useState(false);
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1059,6 +1071,8 @@ const RapportTab: React.FC = () => {
       const response = await qualityAPI.getRapport({ debutDate, endDate });
       setRapport(response.data);
       setSearch('');
+      setAnimatedIn(false);
+      setTimeout(() => setAnimatedIn(true), 100);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Erreur');
     } finally {
@@ -1075,9 +1089,9 @@ const RapportTab: React.FC = () => {
       : true
   ) || [];
 
-  const filteredStats = (() => {
+  const stats = (() => {
     const total = filteredDetails.length;
-    if (total === 0) return { total: 0, vert: 0, jaune: 0, rouge: 0, minutes: 0, pctVert: 0, pctJaune: 0, pctRouge: 0 };
+    if (total === 0) return { total: 0, vert: 0, jaune: 0, rouge: 0, minutes: 0, pctVert: 0, pctJaune: 0, pctRouge: 0, agents: 0, lignes: 0 };
     const vert = filteredDetails.filter((d: any) => d.note === 'vert').length;
     const jaune = filteredDetails.filter((d: any) => d.note === 'jaune').length;
     const rouge = filteredDetails.filter((d: any) => d.note === 'rouge').length;
@@ -1085,107 +1099,283 @@ const RapportTab: React.FC = () => {
       const min = parseInt(d.delais, 10);
       return acc + (isNaN(min) ? 0 : min);
     }, 0);
+    const agentSet = new Set(filteredDetails.map((d: any) => d.agent?.id));
+    const ligneSet = new Set(filteredDetails.map((d: any) => d.nomLigne));
     return {
       total,
       vert, jaune, rouge, minutes,
-      pctVert: Math.round((vert / total) * 100 * 100) / 100,
-      pctJaune: Math.round((jaune / total) * 100 * 100) / 100,
-      pctRouge: Math.round((rouge / total) * 100 * 100) / 100,
+      pctVert: total > 0 ? Math.round((vert / total) * 100) : 0,
+      pctJaune: total > 0 ? Math.round((jaune / total) * 100) : 0,
+      pctRouge: total > 0 ? Math.round((rouge / total) * 100) : 0,
+      agents: agentSet.size,
+      lignes: ligneSet.size,
     };
   })();
 
+  const donutData = [
+    { label: 'Conforme', value: stats.pctVert, color: '#22c55e', count: stats.vert },
+    { label: 'À surveiller', value: stats.pctJaune, color: '#f59e0b', count: stats.jaune },
+    { label: 'Non conforme', value: stats.pctRouge, color: '#ef4444', count: stats.rouge },
+  ];
+
+  const minutesByLine = (() => {
+    const map: Record<string, number> = {};
+    filteredDetails.forEach((d: any) => {
+      const min = parseInt(d.delais, 10);
+      if (!isNaN(min)) {
+        map[d.nomLigne] = (map[d.nomLigne] || 0) + min;
+      }
+    });
+    return Object.entries(map)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6);
+  })();
+  const maxMinutes = minutesByLine.length > 0 ? Math.max(...minutesByLine.map((m) => m[1])) : 1;
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
+  const kpis = [
+    { label: 'Total lignes', value: stats.total, icon: Layers, color: '#2563eb', bg: 'linear-gradient(135deg, #eff6ff, #dbeafe)' },
+    { label: "Minutes d'arrêt", value: `${stats.minutes} min`, icon: Timer, color: '#f59e0b', bg: 'linear-gradient(135deg, #fffbeb, #fef3c7)' },
+    { label: 'Agents concernés', value: stats.agents, icon: Activity, color: '#8b5cf6', bg: 'linear-gradient(135deg, #f5f3ff, #ede9fe)' },
+    { label: 'Lignes inspectées', value: stats.lignes, icon: Target, color: '#06b6d4', bg: 'linear-gradient(135deg, #ecfeff, #cffafe)' },
+  ];
+
   return (
     <div className="tab-content">
-      <form onSubmit={handleGenerate} className="inline-form">
-        <div className="form-group">
-          <label>Date début</label>
-          <input
-            type="date"
-            value={debutDate}
-            onChange={(e) => setDebutDate(e.target.value)}
-            required
-          />
+      <form onSubmit={handleGenerate} className="rapport-form">
+        <div className="rapport-form-inner">
+          <div className="rapport-form-icon">
+            <BarChart3 size={20} />
+          </div>
+          <div className="rapport-form-fields">
+            <div className="rapport-field">
+              <label>Date début</label>
+              <input
+                type="date"
+                value={debutDate}
+                onChange={(e) => setDebutDate(e.target.value)}
+                required
+              />
+            </div>
+            <div className="rapport-field-separator">
+              <ArrowRight size={16} />
+            </div>
+            <div className="rapport-field">
+              <label>Date fin</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+          <button type="submit" className="rapport-generate-btn" disabled={loading}>
+            {loading ? (
+              <span className="rapport-btn-loading" />
+            ) : (
+              <>
+                <BarChart3 size={16} />
+                Générer le rapport
+              </>
+            )}
+          </button>
         </div>
-        <div className="form-group">
-          <label>Date fin</label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            required
-          />
-        </div>
-        <button type="submit" className="btn btn-primary" disabled={loading}>
-          <BarChart3 size={16} /> Générer
-        </button>
       </form>
 
       {rapport && (
-        <>
-          <div className="search-bar" style={{ marginBottom: '20px' }}>
+        <div className={`rapport-results ${animatedIn ? 'animate-in' : ''}`}>
+          {/* Period badge */}
+          <div className="rapport-period-badge">
+            <Calendar size={14} />
+            <span>{formatDate(rapport.periode.debut)} — {formatDate(rapport.periode.fin)}</span>
+            {search && <span className="rapport-filter-badge">Filtre actif: "{search}"</span>}
+          </div>
+
+          {/* Search */}
+          <div className="rapport-search">
+            <div className="rapport-search-icon">
+              <Search size={16} />
+            </div>
             <input
               type="text"
-              placeholder="Filtrer par nom de ligne, responsable ou agent..."
+              placeholder="Rechercher par ligne, responsable ou agent..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+            {search && (
+              <button className="rapport-search-clear" onClick={() => setSearch('')}>
+                <X size={14} />
+              </button>
+            )}
           </div>
 
-          <div className="rapport-result">
-            <div className="rapport-summary">
-              <div className="summary-card">
-                <h4>Total lignes</h4>
-                <span className="big-number">{filteredStats.total}</span>
+          {/* KPI Cards */}
+          <div className="rapport-kpis">
+            {kpis.map((kpi, i) => {
+              const Icon = kpi.icon;
+              return (
+                <div
+                  key={kpi.label}
+                  className="rapport-kpi-card"
+                  style={{ animationDelay: `${i * 80}ms` }}
+                >
+                  <div className="rapport-kpi-icon" style={{ background: kpi.bg, color: kpi.color }}>
+                    <Icon size={22} />
+                  </div>
+                  <div className="rapport-kpi-content">
+                    <span className="rapport-kpi-value">{kpi.value}</span>
+                    <span className="rapport-kpi-label">{kpi.label}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Charts row */}
+          <div className="rapport-charts-grid">
+            {/* Donut Chart */}
+            <div className="rapport-chart-card">
+              <div className="rapport-chart-header">
+                <h4>Répartition Qualité</h4>
+                <span className="rapport-chart-subtitle">{stats.total} lignes analysées</span>
               </div>
-              <div className="summary-card">
-                <h4>Minutes d'arrêt</h4>
-                <span className="big-number">{filteredStats.minutes} min</span>
+              <div className="rapport-donut-wrapper">
+                <svg viewBox="0 0 120 120" className="rapport-donut">
+                  {(() => {
+                    const radius = 40;
+                    const circumference = 2 * Math.PI * radius;
+                    let offset = 0;
+                    return donutData.map((d, i) => {
+                      const dashLen = (d.value / 100) * circumference;
+                      const dashGap = circumference - dashLen;
+                      const el = (
+                        <circle
+                          key={i}
+                          cx="60"
+                          cy="60"
+                          r={radius}
+                          fill="none"
+                          stroke={d.color}
+                          strokeWidth="16"
+                          strokeDasharray={`${dashLen} ${dashGap}`}
+                          strokeDashoffset={-offset}
+                          strokeLinecap="round"
+                          className="rapport-donut-segment"
+                          style={{ animationDelay: `${i * 200 + 300}ms` }}
+                        />
+                      );
+                      offset += dashLen;
+                      return el;
+                    });
+                  })()}
+                </svg>
+                <div className="rapport-donut-center">
+                  <span className="rapport-donut-total">{stats.total}</span>
+                  <span className="rapport-donut-label">Total</span>
+                </div>
+              </div>
+              <div className="rapport-donut-legend">
+                {donutData.map((d, i) => (
+                  <div key={i} className="rapport-legend-item">
+                    <span className="rapport-legend-dot" style={{ background: d.color }} />
+                    <span className="rapport-legend-label">{d.label}</span>
+                    <span className="rapport-legend-value">{d.value}%</span>
+                    <span className="rapport-legend-count">({d.count})</span>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div className="rapport-charts">
-              <div className="chart-card">
-                <h4>Répartition Qualité (%)</h4>
-                <div className="pie-chart">
-                  <div
-                    className="pie-segment vert"
-                    style={{ flex: filteredStats.pctVert || 1 }}
-                  />
-                  <div
-                    className="pie-segment jaune"
-                    style={{ flex: filteredStats.pctJaune || 1 }}
-                  />
-                  <div
-                    className="pie-segment rouge"
-                    style={{ flex: filteredStats.pctRouge || 1 }}
-                  />
-                </div>
-                <div className="chart-legend">
-                  <span><span className="dot vert"></span> Vert {filteredStats.pctVert}%</span>
-                  <span><span className="dot jaune"></span> Jaune {filteredStats.pctJaune}%</span>
-                  <span><span className="dot rouge"></span> Rouge {filteredStats.pctRouge}%</span>
-                </div>
+            {/* Bar Chart */}
+            <div className="rapport-chart-card">
+              <div className="rapport-chart-header">
+                <h4>Minutes d'arrêt par ligne</h4>
+                <span className="rapport-chart-subtitle">Top {minutesByLine.length} lignes</span>
               </div>
-
-              <div className="chart-card">
-                <h4>Détails {search && `(${filteredDetails.length} résultat(s))`}</h4>
-                <div className="rapport-details">
-                  {filteredDetails.map((d: any) => (
-                    <div key={d.id} className="detail-row">
-                      <span className={`note-badge ${d.note}`}>{d.note}</span>
-                      <span>{d.delais} min</span>
-                      <span>{d.responsable}</span>
-                      <span>{d.agent.firstName} {d.agent.lastName}</span>
+              {minutesByLine.length > 0 ? (
+                <div className="rapport-bars">
+                  {minutesByLine.map(([name, min], i) => (
+                    <div key={name} className="rapport-bar-row" style={{ animationDelay: `${i * 60 + 200}ms` }}>
+                      <div className="rapport-bar-label" title={name}>
+                        <span className="rapport-bar-name">{name}</span>
+                        <span className="rapport-bar-minutes">{min} min</span>
+                      </div>
+                      <div className="rapport-bar-track">
+                        <div
+                          className="rapport-bar-fill"
+                          style={{
+                            width: `${(min / maxMinutes) * 100}%`,
+                            background: min > maxMinutes * 0.7 ? '#ef4444' : min > maxMinutes * 0.4 ? '#f59e0b' : '#22c55e',
+                            animationDelay: `${i * 60 + 400}ms`,
+                          }}
+                        />
+                      </div>
                     </div>
                   ))}
-                  {filteredDetails.length === 0 && (
-                    <div className="empty-state">Aucune ligne ne correspond à votre recherche</div>
-                  )}
                 </div>
-              </div>
+              ) : (
+                <div className="rapport-chart-empty">Aucune donnée de temps disponible</div>
+              )}
             </div>
           </div>
-        </>
+
+          {/* Detail Table */}
+          <div className="rapport-chart-card rapport-detail-card">
+            <div className="rapport-chart-header">
+              <h4>Détails des contrôles</h4>
+              <span className="rapport-chart-subtitle">{filteredDetails.length} résultat(s)</span>
+            </div>
+            {filteredDetails.length > 0 ? (
+              <div className="rapport-detail-table">
+                <div className="rapport-detail-header-row">
+                  <span className="rd-col rd-note">Note</span>
+                  <span className="rd-col rd-ligne">Ligne</span>
+                  <span className="rd-col rd-agent">Agent</span>
+                  <span className="rd-col rd-resp">Responsable</span>
+                  <span className="rd-col rd-delais">Durée</span>
+                  <span className="rd-col rd-date">Date</span>
+                </div>
+                {filteredDetails.map((d: any, i: number) => (
+                  <div
+                    key={d.id}
+                    className="rapport-detail-row"
+                    style={{ animationDelay: `${i * 30}ms` }}
+                  >
+                    <span className="rd-col rd-note">
+                      <span className={`rapport-note-chip ${d.note}`}>
+                        {d.note === 'vert' && <CheckCircle2 size={12} />}
+                        {d.note === 'jaune' && <AlertCircle size={12} />}
+                        {d.note === 'rouge' && <XCircle size={12} />}
+                        {d.note}
+                      </span>
+                    </span>
+                    <span className="rd-col rd-ligne">{d.nomLigne}</span>
+                    <span className="rd-col rd-agent">
+                      <div className="rapport-agent-cell">
+                        <div className="rapport-agent-avatar">{d.agent?.firstName?.[0]}{d.agent?.lastName?.[0]}</div>
+                        <span>{d.agent?.firstName} {d.agent?.lastName}</span>
+                      </div>
+                    </span>
+                    <span className="rd-col rd-resp">{d.responsable}</span>
+                    <span className="rd-col rd-delais">
+                      <span className="rapport-duration-badge">{d.delais} min</span>
+                    </span>
+                    <span className="rd-col rd-date">{formatDate(d.createdAt)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rapport-chart-empty">
+                <Search size={32} />
+                <p>Aucune ligne ne correspond à votre recherche</p>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
