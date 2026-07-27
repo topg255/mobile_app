@@ -1812,15 +1812,15 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 
   .content-body { padding: 16px; }
 
-  .wb-banner { padding: 24px 20px; flex-direction: column; gap: 20px; }
+  .wb-banner { padding: 24px 20px; flex-direction: column; gap: 0; align-items: stretch; }
   .wb-greeting h2 { font-size: 20px; }
-  .wb-subtitle { font-size: 13px; margin-bottom: 14px; }
-  .wb-quick-stats { gap: 10px; }
+  .wb-subtitle { font-size: 13px; margin-bottom: 16px; }
+  .wb-quick-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .wb-qs-item { background: rgba(255,255,255,0.06); border-radius: 10px; padding: 8px 10px; gap: 8px; }
   .wb-qs-val { font-size: 16px; }
   .wb-qs-icon { width: 28px; height: 28px; border-radius: 6px; }
   .wb-qs-divider { display: none; }
-  .wb-donut-wrap { align-self: center; }
-  .wb-donut { width: 90px; height: 90px; }
+  .wb-donut-wrap { display: none; }
 
   .ov-grid { grid-template-columns: 1fr 1fr; }
   .ov-kpi-full { grid-column: span 2; }
