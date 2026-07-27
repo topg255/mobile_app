@@ -688,17 +688,20 @@ html, body, #root {
 .wb-qs-val { font-size: 18px; font-weight: 700; display: block; line-height: 1.1; }
 .wb-qs-lbl { font-size: 11px; color: #94a3b8; }
 .wb-qs-divider { width: 1px; height: 32px; background: rgba(255,255,255,0.1); }
-.wb-donut-wrap { position: relative; flex-shrink: 0; }
-.wb-donut { width: 110px; height: 110px; transform: rotate(-90deg); }
+.wb-donut-wrap { position: relative; flex-shrink: 0; width: 110px; height: 110px; }
+.wb-donut { width: 110px; height: 110px; transform: rotate(-90deg); display: block; }
 .wb-donut-seg { animation: wb-donutDraw 1s ease both; }
 @keyframes wb-donutDraw { from { stroke-dasharray: 0 220; } }
 .wb-donut-center {
   position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
 }
-.wb-donut-center span { font-size: 22px; font-weight: 700; display: block; line-height: 1; }
+.wb-donut-center span { font-size: 22px; font-weight: 700; display: block; line-height: 1; color: #fff; }
 .wb-donut-center small { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
 
 /* ==================== OVERVIEW GRID ==================== */
@@ -781,18 +784,26 @@ html, body, #root {
   padding-bottom: 12px;
   border-bottom: 1px solid #f1f5f9;
 }
-.ov-dist-chart { display: flex; align-items: center; justify-content: center; padding: 8px 0; }
-.ov-dist-donut { width: 140px; height: 140px; transform: rotate(-90deg); }
+.ov-dist-chart { position: relative; display: flex; align-items: center; justify-content: center; padding: 12px 0; }
+.ov-dist-donut { width: 140px; height: 140px; transform: rotate(-90deg); display: block; }
 .ov-dist-seg { animation: rapport-donutDraw 0.8s ease both; }
-.ov-dist-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+.ov-dist-center {
+  position: absolute;
+  top: 12px; left: 0; right: 0; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
 .ov-dist-total { font-size: 28px; font-weight: 700; color: #0f172a; display: block; line-height: 1; }
-.ov-dist-center small { font-size: 10px; color: #94a3b8; text-transform: uppercase; }
-.ov-dist-legend { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; padding-top: 12px; border-top: 1px solid #f1f5f9; }
-.ov-dist-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-.ov-dist-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
-.ov-dist-label { flex: 1; color: #64748b; }
-.ov-dist-val { font-weight: 600; color: #0f172a; }
-.ov-dist-pct { color: #94a3b8; font-size: 12px; min-width: 32px; text-align: right; }
+.ov-dist-center small { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+.ov-dist-legend { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; padding-top: 16px; border-top: 1px solid #f1f5f9; }
+.ov-dist-row { display: flex; align-items: center; gap: 10px; font-size: 14px; padding: 4px 0; }
+.ov-dist-dot { width: 12px; height: 12px; border-radius: 4px; flex-shrink: 0; }
+.ov-dist-label { flex: 1; color: #475569; font-weight: 500; }
+.ov-dist-val { font-weight: 700; color: #0f172a; font-size: 15px; }
+.ov-dist-pct { color: #94a3b8; font-size: 13px; min-width: 36px; text-align: right; }
 
 /* Activity Panel */
 .ov-activity-list { display: flex; flex-direction: column; }
