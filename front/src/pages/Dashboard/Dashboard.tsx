@@ -298,83 +298,110 @@ const Dashboard: React.FC = () => {
             <div className="ov-grid">
               {/* KPI Cards */}
               <div className="ov-kpi ov-kpi-blue">
-                <div className="ov-kpi-head">
-                  <div className="ov-kpi-icon"><Layers size={20} /></div>
-                  <span className="ov-kpi-trend ov-kpi-trend-up"><ArrowUpRight size={14} /> {stats.total}</span>
+                <div className="ov-kpi-icon-wrap" style={{ background: '#eff6ff', color: '#2563eb' }}>
+                  <Layers size={20} />
                 </div>
                 <div className="ov-kpi-body">
+                  <span className="ov-kpi-lbl">Total Lignes</span>
                   <span className="ov-kpi-val">{stats.total}</span>
-                  <span className="ov-kpi-lbl">Total lignes</span>
+                  <span className="ov-kpi-sub">Toutes les lignes contrôle</span>
                 </div>
-                <div className="ov-kpi-bar">
-                  <div className="ov-kpi-bar-fill" style={{ width: '100%', background: '#2563eb' }} />
+                <div className="ov-kpi-bottom">
+                  <span className="ov-kpi-trend ov-kpi-trend-up">
+                    <TrendingUp size={13} /> {stats.total > 0 ? Math.round((stats.vert / stats.total) * 100) : 0}% conforme
+                  </span>
                 </div>
+                <svg className="ov-kpi-spark" viewBox="0 0 80 30" preserveAspectRatio="none">
+                  <polyline points="0,25 15,20 30,22 45,15 60,10 80,5" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" />
+                </svg>
               </div>
 
               <div className="ov-kpi ov-kpi-green">
-                <div className="ov-kpi-head">
-                  <div className="ov-kpi-icon"><CheckCircle size={20} /></div>
-                  <span className="ov-kpi-trend ov-kpi-trend-up"><TrendingUp size={14} /> {stats.total > 0 ? Math.round((stats.vert / stats.total) * 100) : 0}%</span>
+                <div className="ov-kpi-icon-wrap" style={{ background: '#f0fdf4', color: '#22c55e' }}>
+                  <CheckCircle size={20} />
                 </div>
                 <div className="ov-kpi-body">
+                  <span className="ov-kpi-lbl">Conformes</span>
                   <span className="ov-kpi-val">{stats.vert}</span>
-                  <span className="ov-kpi-lbl">Conformes (Vert)</span>
+                  <span className="ov-kpi-sub">Lignes en conformité</span>
                 </div>
-                <div className="ov-kpi-bar">
-                  <div className="ov-kpi-bar-fill" style={{ width: `${stats.total > 0 ? (stats.vert / stats.total) * 100 : 0}%`, background: '#22c55e' }} />
+                <div className="ov-kpi-bottom">
+                  <span className="ov-kpi-trend ov-kpi-trend-up">
+                    <TrendingUp size={13} /> +{stats.total > 0 ? Math.round((stats.vert / stats.total) * 100) : 0}%
+                  </span>
                 </div>
+                <svg className="ov-kpi-spark" viewBox="0 0 80 30" preserveAspectRatio="none">
+                  <polyline points="0,28 15,25 30,20 45,18 60,12 80,5" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" />
+                </svg>
               </div>
 
               <div className="ov-kpi ov-kpi-yellow">
-                <div className="ov-kpi-head">
-                  <div className="ov-kpi-icon"><AlertTriangle size={20} /></div>
-                  <span className="ov-kpi-trend ov-kpi-trend-warn"><BarChart2 size={14} /> {stats.total > 0 ? Math.round((stats.jaune / stats.total) * 100) : 0}%</span>
+                <div className="ov-kpi-icon-wrap" style={{ background: '#fefce8', color: '#eab308' }}>
+                  <AlertTriangle size={20} />
                 </div>
                 <div className="ov-kpi-body">
+                  <span className="ov-kpi-lbl">À Surveiller</span>
                   <span className="ov-kpi-val">{stats.jaune}</span>
-                  <span className="ov-kpi-lbl">À surveiller (Jaune)</span>
+                  <span className="ov-kpi-sub">Lignes en alerte</span>
                 </div>
-                <div className="ov-kpi-bar">
-                  <div className="ov-kpi-bar-fill" style={{ width: `${stats.total > 0 ? (stats.jaune / stats.total) * 100 : 0}%`, background: '#eab308' }} />
+                <div className="ov-kpi-bottom">
+                  <span className="ov-kpi-trend ov-kpi-trend-warn">
+                    <BarChart2 size={13} /> {stats.total > 0 ? Math.round((stats.jaune / stats.total) * 100) : 0}%
+                  </span>
                 </div>
+                <svg className="ov-kpi-spark" viewBox="0 0 80 30" preserveAspectRatio="none">
+                  <polyline points="0,20 15,22 30,18 45,24 60,20 80,15" fill="none" stroke="#eab308" strokeWidth="2" strokeLinecap="round" />
+                </svg>
               </div>
 
               <div className="ov-kpi ov-kpi-red">
-                <div className="ov-kpi-head">
-                  <div className="ov-kpi-icon"><XCircle size={20} /></div>
-                  <span className="ov-kpi-trend ov-kpi-trend-down"><TrendingDown size={14} /> {stats.total > 0 ? Math.round((stats.rouge / stats.total) * 100) : 0}%</span>
+                <div className="ov-kpi-icon-wrap" style={{ background: '#fef2f2', color: '#ef4444' }}>
+                  <XCircle size={20} />
                 </div>
                 <div className="ov-kpi-body">
+                  <span className="ov-kpi-lbl">Critiques</span>
                   <span className="ov-kpi-val">{stats.rouge}</span>
-                  <span className="ov-kpi-lbl">Critiques (Rouge)</span>
+                  <span className="ov-kpi-sub">Lignes non conformes</span>
                 </div>
-                <div className="ov-kpi-bar">
-                  <div className="ov-kpi-bar-fill" style={{ width: `${stats.total > 0 ? (stats.rouge / stats.total) * 100 : 0}%`, background: '#ef4444' }} />
+                <div className="ov-kpi-bottom">
+                  <span className="ov-kpi-trend ov-kpi-trend-down">
+                    <TrendingDown size={13} /> -{stats.total > 0 ? Math.round((stats.rouge / stats.total) * 100) : 0}%
+                  </span>
                 </div>
+                <svg className="ov-kpi-spark" viewBox="0 0 80 30" preserveAspectRatio="none">
+                  <polyline points="0,10 15,12 30,18 45,15 60,22 80,28" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
+                </svg>
               </div>
 
-              {/* Minutes card - full width */}
               <div className="ov-kpi ov-kpi-full ov-kpi-cyan">
-                <div className="ov-kpi-head">
-                  <div className="ov-kpi-icon"><Timer size={20} /></div>
-                  <span className="ov-kpi-trend"><Zap size={14} /> Arrêts</span>
+                <div className="ov-kpi-icon-wrap" style={{ background: '#ecfeff', color: '#06b6d4' }}>
+                  <Timer size={20} />
                 </div>
                 <div className="ov-kpi-body">
+                  <span className="ov-kpi-lbl">Minutes d'Arrêt</span>
                   <span className="ov-kpi-val">{stats.totalMinutes}<small> min</small></span>
-                  <span className="ov-kpi-lbl">Minutes d'arrêt cumulées</span>
+                  <span className="ov-kpi-sub">Cumul arrêts production</span>
                 </div>
-                <div className="ov-kpi-bar">
-                  <div className="ov-kpi-bar-fill" style={{ width: `${Math.min((stats.totalMinutes / (stats.total * 30 || 1)) * 100, 100)}%`, background: '#06b6d4' }} />
+                <div className="ov-kpi-bottom">
+                  <span className="ov-kpi-trend">
+                    <Zap size={13} /> Arrêts enregistrés
+                  </span>
                 </div>
+                <svg className="ov-kpi-spark" viewBox="0 0 80 30" preserveAspectRatio="none">
+                  <polyline points="0,25 20,20 40,22 60,15 80,10" fill="none" stroke="#06b6d4" strokeWidth="2" strokeLinecap="round" />
+                </svg>
               </div>
 
               {/* Quality Distribution Panel */}
               <div className="ov-dist-panel">
-                <h4 className="ov-panel-title"><BarChart2 size={16} /> Répartition qualité</h4>
+                <div className="ov-panel-head">
+                  <span className="ov-panel-label">DISTRIBUTION QUALITÉ</span>
+                  <h4 className="ov-panel-title">Aperçu par catégorie</h4>
+                </div>
                 <div className="ov-dist-chart">
-                  <svg viewBox="0 0 120 120" className="ov-dist-donut">
+                  <svg viewBox="0 0 140 140" className="ov-dist-donut">
                     {(() => {
-                      const r = 40;
+                      const r = 52;
                       const c = 2 * Math.PI * r;
                       const data = [
                         { pct: stats.total > 0 ? stats.vert / stats.total : 0, color: '#22c55e', label: 'Vert' },
@@ -386,7 +413,7 @@ const Dashboard: React.FC = () => {
                         const len = d.pct * c;
                         const gap = c - len;
                         const el = (
-                          <circle key={i} cx="60" cy="60" r={r} fill="none" stroke={d.color} strokeWidth="14"
+                          <circle key={i} cx="70" cy="70" r={r} fill="none" stroke={d.color} strokeWidth="16"
                             strokeDasharray={`${len} ${gap}`} strokeDashoffset={-offset} strokeLinecap="round"
                             className="ov-dist-seg" style={{ animationDelay: `${i * 200 + 300}ms` }} />
                         );
@@ -397,20 +424,27 @@ const Dashboard: React.FC = () => {
                   </svg>
                   <div className="ov-dist-center">
                     <span className="ov-dist-total">{stats.total}</span>
-                    <small>Total</small>
+                    <small>TOTAL</small>
                   </div>
                 </div>
                 <div className="ov-dist-legend">
                   {[
-                    { label: 'Conforme', count: stats.vert, color: '#22c55e', pct: stats.total > 0 ? Math.round((stats.vert / stats.total) * 100) : 0 },
-                    { label: 'À surveiller', count: stats.jaune, color: '#eab308', pct: stats.total > 0 ? Math.round((stats.jaune / stats.total) * 100) : 0 },
-                    { label: 'Non conforme', count: stats.rouge, color: '#ef4444', pct: stats.total > 0 ? Math.round((stats.rouge / stats.total) * 100) : 0 },
+                    { label: 'Conforme (Vert)', count: stats.vert, color: '#22c55e', pct: stats.total > 0 ? Math.round((stats.vert / stats.total) * 100) : 0 },
+                    { label: 'À surveiller (Jaune)', count: stats.jaune, color: '#eab308', pct: stats.total > 0 ? Math.round((stats.jaune / stats.total) * 100) : 0 },
+                    { label: 'Non conforme (Rouge)', count: stats.rouge, color: '#ef4444', pct: stats.total > 0 ? Math.round((stats.rouge / stats.total) * 100) : 0 },
                   ].map((item) => (
                     <div key={item.label} className="ov-dist-row">
-                      <span className="ov-dist-dot" style={{ background: item.color }} />
-                      <span className="ov-dist-label">{item.label}</span>
-                      <span className="ov-dist-val">{item.count}</span>
-                      <span className="ov-dist-pct">{item.pct}%</span>
+                      <div className="ov-dist-row-left">
+                        <span className="ov-dist-dot" style={{ background: item.color }} />
+                        <span className="ov-dist-label">{item.label}</span>
+                      </div>
+                      <div className="ov-dist-row-right">
+                        <span className="ov-dist-val">{item.count}</span>
+                        <span className="ov-dist-pct">· {item.pct}%</span>
+                      </div>
+                      <div className="ov-dist-bar-track">
+                        <div className="ov-dist-bar-fill" style={{ width: `${item.pct}%`, background: item.color }} />
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -418,11 +452,16 @@ const Dashboard: React.FC = () => {
 
               {/* Recent Activity */}
               <div className="ov-activity-panel">
-                <h4 className="ov-panel-title"><Activity size={16} /> Activité récente</h4>
+                <div className="ov-panel-head">
+                  <span className="ov-panel-label">ACTIVITÉ RÉCENTE</span>
+                  <h4 className="ov-panel-title">Dernières inspections</h4>
+                </div>
                 <div className="ov-activity-list">
                   {lignes.slice(0, 8).map((l, i) => (
                     <div key={l.id} className="ov-activity-item" style={{ animationDelay: `${i * 50}ms` }}>
-                      <div className={`ov-act-dot ${l.note}`} />
+                      <div className={`ov-act-avatar ${l.note}`}>
+                        {l.agent?.firstName?.[0]}{l.agent?.lastName?.[0]}
+                      </div>
                       <div className="ov-act-info">
                         <span className="ov-act-name">{l.nomLigne}</span>
                         <span className="ov-act-meta">
@@ -430,7 +469,7 @@ const Dashboard: React.FC = () => {
                         </span>
                       </div>
                       <div className="ov-act-right">
-                        <span className={`rapport-note-chip ${l.note}`} style={{ fontSize: '11px', padding: '2px 8px' }}>{l.note}</span>
+                        <span className={`rapport-note-chip ${l.note}`}>{l.note}</span>
                         <span className="ov-act-date">{new Date(l.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</span>
                       </div>
                     </div>
