@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { Notification } from '../types';
 
@@ -10,6 +10,11 @@ export function useNotificationSocket(
   onUnreadCount?: (data: { unreadCount: number }) => void,
 ) {
   const socketRef = useRef<Socket | null>(null);
+  const onNotificationRef = useRef(onNotification);
+  const onUnreadCountRef = useRef(onUnreadCount);
+
+  onNotificationRef.current = onNotification;
+  onUnreadCountRef.current = onUnreadCount;
 
   useEffect(() => {
     if (!token) return;
@@ -17,22 +22,30 @@ export function useNotificationSocket(
     const socket = io(`${SOCKET_URL}/notifications`, {
       auth: { token },
       transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 10,
     });
 
     socket.on('connect', () => {
-      console.log('[Notif-WS] Connected');
+      console.log('[Notif-WS] Connected, id:', socket.id);
     });
 
     socket.on('newNotification', (notification: Notification) => {
-      onNotification?.(notification);
+      console.log('[Notif-WS] Received notification:', notification);
+      onNotificationRef.current?.(notification);
     });
 
     socket.on('unreadCount', (data: { unreadCount: number }) => {
-      onUnreadCount?.(data);
+      onUnreadCountRef.current?.(data);
     });
 
-    socket.on('disconnect', () => {
-      console.log('[Notif-WS] Disconnected');
+    socket.on('disconnect', (reason) => {
+      console.log('[Notif-WS] Disconnected:', reason);
+    });
+
+    socket.on('connect_error', (err) => {
+      console.log('[Notif-WS] Connection error:', err.message);
     });
 
     socketRef.current = socket;
@@ -41,7 +54,7 @@ export function useNotificationSocket(
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [token, onNotification, onUnreadCount]);
+  }, [token]);
 
   return { socket: socketRef.current };
 }
