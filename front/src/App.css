@@ -977,6 +977,217 @@ html, body, #root {
 }
 .ov-empty p { font-size: 14px; }
 
+/* ==================== TIME TRACKING PANEL ==================== */
+.ov-time-panel {
+  grid-column: 1 / -1;
+  background: #fff;
+  border: 1px solid #eef2f7;
+  border-radius: 16px;
+  padding: 28px;
+  animation: rapport-fadeUp 0.5s ease both;
+}
+.ov-time-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.ov-time-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #ecfeff, #cffafe);
+  color: #0891b2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ov-time-head-text { display: flex; flex-direction: column; gap: 2px; }
+.ov-time-body {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.ov-time-main {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+}
+.ov-time-ring {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+}
+.ov-time-ring svg { width: 100%; height: 100%; }
+.ov-time-ring-fill {
+  animation: ovTimeRingDraw 1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+}
+@keyframes ovTimeRingDraw {
+  from { stroke-dashoffset: 327; }
+}
+.ov-time-ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+.ov-time-ring-val {
+  font-size: 28px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1;
+}
+.ov-time-ring-unit {
+  font-size: 13px;
+  font-weight: 600;
+  color: #94a3b8;
+  align-self: flex-end;
+  margin-bottom: 2px;
+}
+.ov-time-details {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+}
+.ov-time-detail {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 10px;
+}
+.ov-time-detail-label {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+.ov-time-detail-val {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.ov-time-bar-section {
+  padding-top: 20px;
+  border-top: 1px solid #eef2f7;
+}
+.ov-time-bar-header {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 14px;
+}
+.ov-time-bar-row {
+  display: flex;
+  gap: 24px;
+}
+.ov-time-bar-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+.ov-time-bar-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.ov-time-bar-track {
+  flex: 1;
+  height: 6px;
+  background: #f1f5f9;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.ov-time-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ==================== SIDEBAR FOOTER ==================== */
+.sidebar-footer {
+  padding: 14px 16px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: rgba(0,0,0,0.12);
+  margin-top: auto;
+}
+.sidebar-user-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+.sidebar-user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.sidebar-user-avatar-text {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+.sidebar-user-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.sidebar-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar-user-role {
+  font-size: 11px;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+.sidebar.collapsed .sidebar-user-info { display: none; }
+.sidebar.collapsed .sidebar-footer { justify-content: center; padding: 14px 8px; }
+
+.sidebar-logout-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255,255,255,0.08);
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.sidebar-logout-btn:hover {
+  background: rgba(239,68,68,0.15);
+  color: #ef4444;
+}
+
 /* ==================== CONTROLES DATES ==================== */
 .cd-stats-row {
   display: flex;
@@ -2012,6 +2223,12 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
   .ov-kpi-val { font-size: 22px; }
   .ov-dist-panel, .ov-activity-panel { grid-column: span 2; }
 
+  .ov-time-main { flex-direction: column; align-items: center; gap: 20px; }
+  .ov-time-ring { width: 100px; height: 100px; }
+  .ov-time-details { width: 100%; }
+  .ov-time-bar-row { flex-direction: column; gap: 10px; }
+  .ov-time-panel { padding: 20px; }
+
   .sa-kpi-grid { grid-template-columns: 1fr 1fr; }
   .sa-kpi-full { grid-column: span 2; }
 
@@ -2139,6 +2356,8 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
   .ov-grid { grid-template-columns: 1fr; }
   .ov-kpi-full { grid-column: span 1; }
   .ov-dist-panel, .ov-activity-panel { grid-column: span 1; }
+  .ov-time-panel { grid-column: span 1; padding: 16px; }
+  .ov-time-ring { width: 90px; height: 90px; }
   .sa-kpi-grid { grid-template-columns: 1fr; }
   .sa-kpi-full { grid-column: span 1; }
   .wb-banner { padding: 20px 16px; }

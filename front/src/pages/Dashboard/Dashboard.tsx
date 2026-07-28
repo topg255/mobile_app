@@ -190,12 +190,21 @@ const Dashboard: React.FC = () => {
           </button>
         </nav>
         <div className="sidebar-footer">
-          <div className="user-info">
-            <span>{user?.firstName} {user?.lastName}</span>
-            <small>{user?.matricule}</small>
+          <div className="sidebar-user-card">
+            {user?.profileImage ? (
+              <img src={`http://localhost:3000${user.profileImage}`} alt="" className="sidebar-user-avatar" />
+            ) : (
+              <div className="sidebar-user-avatar sidebar-user-avatar-text">
+                {user?.firstName?.[0]}{user?.lastName?.[0]}
+              </div>
+            )}
+            <div className="sidebar-user-info">
+              <span className="sidebar-user-name">{user?.firstName} {user?.lastName}</span>
+              <span className="sidebar-user-role">{isSuperviseur ? 'Superviseur' : 'Agent'} · {user?.matricule}</span>
+            </div>
           </div>
-          <button className="btn-icon" onClick={logout} title="Déconnexion">
-            <LogOut size={18} />
+          <button className="sidebar-logout-btn" onClick={logout} title="Déconnexion">
+            <LogOut size={16} />
           </button>
         </div>
       </aside>
@@ -373,23 +382,76 @@ const Dashboard: React.FC = () => {
                 </svg>
               </div>
 
-              <div className="ov-kpi ov-kpi-full ov-kpi-cyan">
-                <div className="ov-kpi-icon-wrap" style={{ background: '#ecfeff', color: '#06b6d4' }}>
-                  <Timer size={20} />
+              <div className="ov-time-panel">
+                <div className="ov-time-head">
+                  <div className="ov-time-icon-wrap">
+                    <Timer size={22} />
+                  </div>
+                  <div className="ov-time-head-text">
+                    <span className="ov-panel-label">TEMPS PERDU</span>
+                    <h4 className="ov-panel-title">Suivi des arrêts production</h4>
+                  </div>
                 </div>
-                <div className="ov-kpi-body">
-                  <span className="ov-kpi-lbl">Minutes d'Arrêt</span>
-                  <span className="ov-kpi-val">{stats.totalMinutes}<small> min</small></span>
-                  <span className="ov-kpi-sub">Cumul arrêts production</span>
+                <div className="ov-time-body">
+                  <div className="ov-time-main">
+                    <div className="ov-time-ring">
+                      <svg viewBox="0 0 120 120">
+                        <circle cx="60" cy="60" r="52" fill="none" stroke="#e0f2fe" strokeWidth="8" />
+                        <circle cx="60" cy="60" r="52" fill="none" stroke="#06b6d4" strokeWidth="8"
+                          strokeDasharray={`${2 * Math.PI * 52}`}
+                          strokeDashoffset={`${2 * Math.PI * 52 * (1 - Math.min(stats.totalMinutes / (stats.total * 30 || 60), 1))}`}
+                          strokeLinecap="round" transform="rotate(-90 60 60)"
+                          className="ov-time-ring-fill" />
+                      </svg>
+                      <div className="ov-time-ring-center">
+                        <span className="ov-time-ring-val">{stats.totalMinutes}</span>
+                        <span className="ov-time-ring-unit">min</span>
+                      </div>
+                    </div>
+                    <div className="ov-time-details">
+                      <div className="ov-time-detail">
+                        <span className="ov-time-detail-label">Total lignes</span>
+                        <span className="ov-time-detail-val">{stats.total}</span>
+                      </div>
+                      <div className="ov-time-detail">
+                        <span className="ov-time-detail-label">Moy. / ligne</span>
+                        <span className="ov-time-detail-val">{stats.total > 0 ? Math.round(stats.totalMinutes / stats.total) : 0} min</span>
+                      </div>
+                      <div className="ov-time-detail">
+                        <span className="ov-time-detail-label">Heures perdues</span>
+                        <span className="ov-time-detail-val">{Math.floor(stats.totalMinutes / 60)}h {stats.totalMinutes % 60}m</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="ov-time-bar-section">
+                    <div className="ov-time-bar-header">
+                      <span>Répartition temps par note</span>
+                    </div>
+                    <div className="ov-time-bar-row">
+                      <div className="ov-time-bar-item">
+                        <span className="ov-time-bar-dot" style={{ background: '#22c55e' }} />
+                        <span>Vert</span>
+                        <div className="ov-time-bar-track">
+                          <div className="ov-time-bar-fill" style={{ width: `${stats.total > 0 ? (stats.vert / stats.total) * 100 : 0}%`, background: '#22c55e' }} />
+                        </div>
+                      </div>
+                      <div className="ov-time-bar-item">
+                        <span className="ov-time-bar-dot" style={{ background: '#eab308' }} />
+                        <span>Jaune</span>
+                        <div className="ov-time-bar-track">
+                          <div className="ov-time-bar-fill" style={{ width: `${stats.total > 0 ? (stats.jaune / stats.total) * 100 : 0}%`, background: '#eab308' }} />
+                        </div>
+                      </div>
+                      <div className="ov-time-bar-item">
+                        <span className="ov-time-bar-dot" style={{ background: '#ef4444' }} />
+                        <span>Rouge</span>
+                        <div className="ov-time-bar-track">
+                          <div className="ov-time-bar-fill" style={{ width: `${stats.total > 0 ? (stats.rouge / stats.total) * 100 : 0}%`, background: '#ef4444' }} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="ov-kpi-bottom">
-                  <span className="ov-kpi-trend">
-                    <Zap size={13} /> Arrêts enregistrés
-                  </span>
-                </div>
-                <svg className="ov-kpi-spark" viewBox="0 0 80 30" preserveAspectRatio="none">
-                  <polyline points="0,25 20,20 40,22 60,15 80,10" fill="none" stroke="#06b6d4" strokeWidth="2" strokeLinecap="round" />
-                </svg>
               </div>
 
               {/* Quality Distribution Panel */}
