@@ -171,18 +171,45 @@ const Signup: React.FC = () => {
               </button>
             </div>
 
-            {/* Password Rules */}
+            {/* Password Strength */}
             {formData.password.length > 0 && (
-              <div className="pwd-rules">
-                {passwordRules.map((rule) => {
-                  const passed = rule.test(formData.password);
+              <div className="pwd-strength-section">
+                {(() => {
+                  const passed = passwordRules.filter((r) => r.test(formData.password)).length;
+                  const pct = (passed / passwordRules.length) * 100;
+                  const levels = [
+                    { max: 20, label: 'Très faible', color: '#ef4444' },
+                    { max: 40, label: 'Faible', color: '#f97316' },
+                    { max: 60, label: 'Moyen', color: '#eab308' },
+                    { max: 80, label: 'Bon', color: '#22c55e' },
+                    { max: 101, label: 'Excellent', color: '#16a34a' },
+                  ];
+                  const level = levels.find((l) => pct < l.max) || levels[levels.length - 1];
                   return (
-                    <div key={rule.id} className={`pwd-rule ${passed ? 'pwd-pass' : 'pwd-fail'}`}>
-                      {passed ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
-                      <span>{rule.label}</span>
-                    </div>
+                    <>
+                      <div className="pwd-strength-header">
+                        <span className="pwd-strength-label">Force du mot de passe</span>
+                        <span className="pwd-strength-badge" style={{ background: level.color + '18', color: level.color }}>
+                          {level.label}
+                        </span>
+                      </div>
+                      <div className="pwd-strength-bar">
+                        <div className="pwd-strength-fill" style={{ width: `${pct}%`, background: level.color }} />
+                      </div>
+                      <div className="pwd-rules-grid">
+                        {passwordRules.map((rule) => {
+                          const ok = rule.test(formData.password);
+                          return (
+                            <div key={rule.id} className={`pwd-chip ${ok ? 'pwd-chip-pass' : 'pwd-chip-fail'}`}>
+                              {ok ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
+                              <span>{rule.label}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
                   );
-                })}
+                })()}
               </div>
             )}
 

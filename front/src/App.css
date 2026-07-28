@@ -276,27 +276,74 @@ html, body, #root {
 }
 .auth-pwd-toggle:hover { color: #2563eb; }
 
-/* Password Rules */
-.pwd-rules {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 8px 0 16px;
-  padding: 12px 14px;
-  background: #f8fafc;
-  border-radius: 10px;
+/* Password Strength Section */
+.pwd-strength-section {
+  margin: 8px 0 18px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border-radius: 14px;
   border: 1px solid #e2e8f0;
+  animation: pwd-slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.pwd-rule {
+@keyframes pwd-slideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.pwd-strength-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 500;
-  transition: color 0.2s;
+  justify-content: space-between;
+  margin-bottom: 10px;
 }
-.pwd-rule.pwd-pass { color: #16a34a; }
-.pwd-rule.pwd-fail { color: #dc2626; }
+.pwd-strength-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.pwd-strength-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  transition: all 0.3s;
+}
+.pwd-strength-bar {
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.pwd-strength-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s;
+}
+.pwd-rules-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.pwd-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: all 0.25s;
+}
+.pwd-chip-pass {
+  background: rgba(34, 197, 94, 0.08);
+  color: #16a34a;
+}
+.pwd-chip-fail {
+  background: rgba(239, 68, 68, 0.05);
+  color: #b91c1c;
+}
 .pwd-match {
   position: absolute;
   right: 12px;
