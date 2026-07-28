@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { Message } from '../types';
+import { Message, Notification } from '../types';
 
 const SOCKET_URL = 'http://localhost:3000';
 
@@ -11,6 +11,7 @@ export function useSocket(
   onMessageEdited?: (message: Message) => void,
   onMessageDeleted?: (data: { messageId: string }) => void,
   onUnreadCount?: (data: { unreadCount: number }) => void,
+  onNotification?: (notification: Notification) => void,
 ) {
   const socketRef = useRef<Socket | null>(null);
 
@@ -46,6 +47,10 @@ export function useSocket(
       onUnreadCount?.(data);
     });
 
+    socket.on('newNotification', (notification: Notification) => {
+      onNotification?.(notification);
+    });
+
     socket.on('disconnect', () => {
       console.log('[WS] Disconnected');
     });
@@ -56,7 +61,7 @@ export function useSocket(
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [token, onMessage, onMessagesRead, onMessageEdited, onMessageDeleted, onUnreadCount]);
+  }, [token, onMessage, onMessagesRead, onMessageEdited, onMessageDeleted, onUnreadCount, onNotification]);
 
   const sendMessage = useCallback((receiverId: string, content: string) => {
     socketRef.current?.emit('sendMessage', { receiverId, content });

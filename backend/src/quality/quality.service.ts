@@ -14,6 +14,8 @@ import { CreateLigneControleDto } from './dto/create-ligne-controle.dto';
 import { RapportDto } from './dto/rapport.dto';
 import { unlink } from 'fs/promises';
 import { join } from 'path';
+import { NotificationService } from '../notification/notification.service';
+import { NotificationType } from '../notification/entities/notification.entity';
 
 @Injectable()
 export class QualityService {
@@ -24,6 +26,7 @@ export class QualityService {
     private readonly ligneControleRepo: Repository<LigneControle>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async createControleDate(dto: CreateControleDateDto, user: User) {
@@ -92,6 +95,19 @@ export class QualityService {
 
     await this.ligneControleRepo.save(ligne);
 
+    // Notify all superviseurs
+    const superviseurs = await this.userRepo.find({
+      where: { role: UserRole.SUPERVISEUR_QUALITE, isApproved: true },
+    });
+    for (const sup of superviseurs) {
+      await this.notificationService.create(
+        sup.id,
+        NotificationType.LIGNE_ADDED,
+        `${user.firstName} ${user.lastName} a ajouté la ligne "${ligne.nomLigne}"`,
+        ligne.id,
+      );
+    }
+
     return {
       message: 'Ligne de contrôle ajoutée avec succès',
       ligne,
@@ -120,6 +136,19 @@ export class QualityService {
     if (dto.details !== undefined) ligne.details = dto.details;
 
     await this.ligneControleRepo.save(ligne);
+
+    // Notify all superviseurs
+    const superviseurs = await this.userRepo.find({
+      where: { role: UserRole.SUPERVISEUR_QUALITE, isApproved: true },
+    });
+    for (const sup of superviseurs) {
+      await this.notificationService.create(
+        sup.id,
+        NotificationType.LIGNE_UPDATED,
+        `${user.firstName} ${user.lastName} a modifié la ligne "${ligne.nomLigne}"`,
+        ligne.id,
+      );
+    }
 
     return {
       message: 'Ligne modifiée avec succès',

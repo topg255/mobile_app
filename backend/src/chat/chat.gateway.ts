@@ -13,6 +13,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../auth/entities/user.entity';
 import { Message } from './entities/message.entity';
+import { NotificationService } from '../notification/notification.service';
+import { NotificationType } from '../notification/entities/notification.entity';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -25,6 +27,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private jwtService: JwtService,
     @InjectRepository(User) private userRepo: Repository<User>,
     @InjectRepository(Message) private messageRepo: Repository<Message>,
+    private notificationService: NotificationService,
   ) {}
 
   async handleConnection(client: Socket) {
@@ -90,6 +93,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const receiverSocketId = this.userSockets.get(data.receiverId);
     if (receiverSocketId) {
       this.server.to(receiverSocketId).emit('newMessage', savedMessage);
+    }
+
+    // Create notification for receiver
+    const notification = await this.notificationService.create(
+      data.receiverId,
+      NotificationType.MESSAGE,
+      `${sender.firstName} ${sender.lastName} vous a envoyé un message`,
+      savedMessage?.id,
+    );
+    if (receiverSocketId) {
+      this.server.to(receiverSocketId).emit('newNotification', notification);
+    }
+    const senderSocketId2 = this.userSockets.get(senderId);
+    if (senderSocketId2) {
+      const unread = await this.notificationService.getUnreadCount(senderId);
+      this.server.to(senderSocketId2).emit('unreadCount', unread);
+    }
+    if (receiverSocketId) {
+      const unread = await this.notificationService.getUnreadCount(data.receiverId);
+      this.server.to(receiverSocketId).emit('unreadCount', unread);
     }
   }
 

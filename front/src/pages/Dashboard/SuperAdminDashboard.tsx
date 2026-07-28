@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { superAdminAPI } from '../../api';
-import { User, LoginLog, SuperAdminStats } from '../../types';
+import { User, LoginLog, SuperAdminStats, Notification } from '../../types';
 import { toast } from 'react-hot-toast';
+import NotificationBell from '../../components/NotificationBell';
 import {
   Shield,
   Users,
@@ -40,6 +41,10 @@ const SuperAdminDashboard: React.FC = () => {
   const [logs, setLogs] = useState<LoginLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const handleNewNotification = useCallback((notification: Notification) => {
+    toast(notification.message, { icon: '🔔', duration: 4000 });
+  }, []);
 
   useEffect(() => {
     fetchStats();
@@ -182,6 +187,9 @@ const SuperAdminDashboard: React.FC = () => {
               <Menu size={20} />
             </button>
             <h1>Super Admin</h1>
+          </div>
+          <div className="top-bar-right">
+            <NotificationBell onNotification={handleNewNotification} />
           </div>
         </div>
         <div className="content-body">

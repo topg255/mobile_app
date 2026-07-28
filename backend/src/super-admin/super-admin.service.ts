@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole } from '../auth/entities/user.entity';
@@ -10,20 +6,17 @@ import { LoginLog } from '../auth/entities/login-log.entity';
 import { Message } from '../chat/entities/message.entity';
 import { ControleDate } from '../quality/entities/controle-date.entity';
 import { LigneControle } from '../quality/entities/ligne-controle.entity';
+import { Notification } from '../notification/entities/notification.entity';
 
 @Injectable()
 export class SuperAdminService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-    @InjectRepository(LoginLog)
-    private readonly loginLogRepository: Repository<LoginLog>,
-    @InjectRepository(Message)
-    private readonly messageRepository: Repository<Message>,
-    @InjectRepository(ControleDate)
-    private readonly controleDateRepository: Repository<ControleDate>,
-    @InjectRepository(LigneControle)
-    private readonly ligneControleRepository: Repository<LigneControle>,
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @InjectRepository(LoginLog) private readonly loginLogRepository: Repository<LoginLog>,
+    @InjectRepository(Message) private readonly messageRepository: Repository<Message>,
+    @InjectRepository(ControleDate) private readonly controleDateRepository: Repository<ControleDate>,
+    @InjectRepository(LigneControle) private readonly ligneControleRepository: Repository<LigneControle>,
+    @InjectRepository(Notification) private readonly notificationRepository: Repository<Notification>,
   ) {}
 
   async getAllUsers() {
@@ -118,6 +111,7 @@ export class SuperAdminService {
 
     await this.ligneControleRepository.delete({ agent: { id: userId } });
     await this.controleDateRepository.delete({ createdBy: { id: userId } });
+    await this.notificationRepository.delete({ user: { id: userId } });
     await this.messageRepository.delete({ sender: { id: userId } });
     await this.messageRepository.delete({ receiver: { id: userId } });
     await this.loginLogRepository.delete({ user: { id: userId } });

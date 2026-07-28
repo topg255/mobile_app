@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { QualityModule } from './quality/quality.module';
 import { SuperAdminModule } from './super-admin/super-admin.module';
 import { ChatModule } from './chat/chat.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { ChatModule } from './chat/chat.module';
     QualityModule,
     SuperAdminModule,
     ChatModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

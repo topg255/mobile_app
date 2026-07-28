@@ -11,6 +11,7 @@ import {
   SuperAdminStats,
   Conversation,
   Message,
+  Notification,
 } from '../types';
 
 const API_URL = 'http://localhost:3000/api';
@@ -211,6 +212,23 @@ export const chatAPI = {
 
   deleteMessage: (messageId: string): Promise<{ data: { deletedMessageId: string; receiverId: string } }> =>
     api.delete(`/chat/messages/${messageId}`),
+};
+
+export const notificationAPI = {
+  getAll: (): Promise<{ data: Notification[] }> =>
+    api.get('/notifications'),
+
+  getUnreadCount: (): Promise<{ data: { count: number } }> =>
+    api.get('/notifications/unread-count'),
+
+  markAsRead: (id: string): Promise<{ data: { message: string; notification: Notification } }> =>
+    api.patch(`/notifications/${id}/read`),
+
+  markAllAsRead: (): Promise<{ data: { message: string; count: number } }> =>
+    api.patch('/notifications/read-all'),
+
+  delete: (id: string): Promise<{ data: { message: string } }> =>
+    api.delete(`/notifications/${id}`),
 };
 
 export default api;

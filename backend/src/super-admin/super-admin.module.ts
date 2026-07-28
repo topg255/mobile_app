@@ -7,9 +7,10 @@ import { LoginLog } from '../auth/entities/login-log.entity';
 import { Message } from '../chat/entities/message.entity';
 import { ControleDate } from '../quality/entities/controle-date.entity';
 import { LigneControle } from '../quality/entities/ligne-controle.entity';
+import { Notification } from '../notification/entities/notification.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, LoginLog, Message, ControleDate, LigneControle])],
+  imports: [TypeOrmModule.forFeature([User, LoginLog, Message, ControleDate, LigneControle, Notification])],
   controllers: [SuperAdminController],
   providers: [SuperAdminService],
 })

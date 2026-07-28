@@ -135,3 +135,18 @@ export interface Conversation {
   lastMessage: Message;
   unreadCount: number;
 }
+
+export enum NotificationType {
+  MESSAGE = 'message',
+  LIGNE_ADDED = 'ligne_added',
+  LIGNE_UPDATED = 'ligne_updated',
+}
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  message: string;
+  isRead: boolean;
+  relatedId: string | null;
+  createdAt: string;
+}
