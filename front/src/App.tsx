@@ -9,6 +9,7 @@ import ForgotPassword from './pages/Auth/ForgotPassword';
 import ResetPassword from './pages/Auth/ResetPassword';
 import Dashboard from './pages/Dashboard/Dashboard';
 import SuperAdminDashboard from './pages/Dashboard/SuperAdminDashboard';
+import ProfilePage from './pages/Profile/ProfilePage';
 import './App.css';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -49,6 +50,7 @@ function App() {
           <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
           <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><DashboardRouter /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
       </Router>

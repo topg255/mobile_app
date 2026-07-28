@@ -4,6 +4,7 @@ import { superAdminAPI } from '../../api';
 import { User, LoginLog, SuperAdminStats } from '../../types';
 import { toast } from 'react-hot-toast';
 import NotificationBell from '../../components/NotificationBell';
+import UserProfileDrawer from '../../components/UserProfileDrawer';
 import {
   Shield,
   Users,
@@ -41,6 +42,7 @@ const SuperAdminDashboard: React.FC = () => {
   const [logs, setLogs] = useState<LoginLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -186,6 +188,15 @@ const SuperAdminDashboard: React.FC = () => {
           </div>
           <div className="top-bar-right">
             <NotificationBell token={token} />
+            <button className="user-avatar-btn" onClick={() => setDrawerOpen(true)}>
+              {user?.profileImage ? (
+                <img src={`http://localhost:3000${user.profileImage}`} alt="" className="user-avatar-img" />
+              ) : (
+                <div className="user-avatar">
+                  {user?.firstName?.[0]}{user?.lastName?.[0]}
+                </div>
+              )}
+            </button>
           </div>
         </div>
         <div className="content-body">
@@ -359,6 +370,7 @@ const SuperAdminDashboard: React.FC = () => {
           )}
         </div>
       </main>
+      <UserProfileDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </div>
   );
 };

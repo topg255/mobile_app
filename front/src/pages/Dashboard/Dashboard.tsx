@@ -5,6 +5,7 @@ import { LigneControle, NoteQualite } from '../../types';
 import { toast } from 'react-hot-toast';
 import Chat from '../../components/Chat';
 import NotificationBell from '../../components/NotificationBell';
+import UserProfileDrawer from '../../components/UserProfileDrawer';
 import { chatAPI } from '../../api';
 import {
   LayoutDashboard,
@@ -60,6 +61,7 @@ const Dashboard: React.FC = () => {
   const [editingLigne, setEditingLigne] = useState<LigneControle | null>(null);
   const [lignesSubTab, setLignesSubTab] = useState<'mes-lignes' | 'agent-lignes'>('mes-lignes');
   const [unreadCount, setUnreadCount] = useState(0);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     fetchLignes();
@@ -222,13 +224,15 @@ const Dashboard: React.FC = () => {
           </div>
           <div className="top-bar-right">
             <NotificationBell token={token} />
-            {user?.profileImage ? (
-              <img src={`http://localhost:3000${user.profileImage}`} alt="" className="user-avatar-img" />
-            ) : (
-              <div className="user-avatar">
-                {user?.firstName?.[0]}{user?.lastName?.[0]}
-              </div>
-            )}
+            <button className="user-avatar-btn" onClick={() => setDrawerOpen(true)}>
+              {user?.profileImage ? (
+                <img src={`http://localhost:3000${user.profileImage}`} alt="" className="user-avatar-img" />
+              ) : (
+                <div className="user-avatar">
+                  {user?.firstName?.[0]}{user?.lastName?.[0]}
+                </div>
+              )}
+            </button>
           </div>
         </div>
         <div className="content-body">
@@ -569,6 +573,7 @@ const Dashboard: React.FC = () => {
           {activeTab === 'messages' && <Chat onUnreadCountChange={setUnreadCount} />}
         </div>
       </main>
+      <UserProfileDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </div>
   );
 };
