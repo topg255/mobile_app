@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { superAdminAPI } from '../../api';
-import { User, LoginLog, SuperAdminStats, Notification } from '../../types';
+import { User, LoginLog, SuperAdminStats } from '../../types';
 import { toast } from 'react-hot-toast';
 import NotificationBell from '../../components/NotificationBell';
 import {
@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 
 const SuperAdminDashboard: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, token, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [stats, setStats] = useState<SuperAdminStats | null>(null);
   const [users, setUsers] = useState<User[]>([]);
@@ -41,10 +41,6 @@ const SuperAdminDashboard: React.FC = () => {
   const [logs, setLogs] = useState<LoginLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  const handleNewNotification = useCallback((notification: Notification) => {
-    toast(notification.message, { icon: '🔔', duration: 4000 });
-  }, []);
 
   useEffect(() => {
     fetchStats();
@@ -189,7 +185,7 @@ const SuperAdminDashboard: React.FC = () => {
             <h1>Super Admin</h1>
           </div>
           <div className="top-bar-right">
-            <NotificationBell onNotification={handleNewNotification} />
+            <NotificationBell token={token} />
           </div>
         </div>
         <div className="content-body">

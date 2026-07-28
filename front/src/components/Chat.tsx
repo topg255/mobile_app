@@ -2,17 +2,16 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../hooks/useSocket';
 import { chatAPI } from '../api';
-import { Conversation, Message, User, Notification } from '../types';
+import { Conversation, Message, User } from '../types';
 import { MessageSquare, Send, ArrowLeft, UserPlus, Search, Pencil, Trash2, Check, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import './Chat.css';
 
 interface ChatProps {
   onUnreadCountChange?: (count: number) => void;
-  onNotification?: (notification: Notification) => void;
 }
 
-const Chat: React.FC<ChatProps> = ({ onUnreadCountChange, onNotification }) => {
+const Chat: React.FC<ChatProps> = ({ onUnreadCountChange }) => {
   const { user, token } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
@@ -92,7 +91,7 @@ const Chat: React.FC<ChatProps> = ({ onUnreadCountChange, onNotification }) => {
   }, [onUnreadCountChange]);
 
   const { sendMessage, editMessage, deleteMessage, markAsRead } = useSocket(
-    token, handleNewMessage, handleMessagesRead, handleMessageEdited, handleMessageDeleted, handleUnreadCount, onNotification
+    token, handleNewMessage, handleMessagesRead, handleMessageEdited, handleMessageDeleted, handleUnreadCount
   );
 
   useEffect(() => {

@@ -3,12 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Notification, NotificationType } from './entities/notification.entity';
 import { User } from '../auth/entities/user.entity';
+import { NotificationGateway } from './notification.gateway';
 
 @Injectable()
 export class NotificationService {
   constructor(
     @InjectRepository(Notification)
     private readonly notificationRepo: Repository<Notification>,
+    private readonly gateway: NotificationGateway,
   ) {}
 
   async create(userId: string, type: NotificationType, message: string, relatedId?: string) {
@@ -18,7 +20,13 @@ export class NotificationService {
       message,
       relatedId: relatedId || null,
     });
-    return this.notificationRepo.save(notification);
+    const saved = await this.notificationRepo.save(notification);
+
+    const unreadCount = await this.getUnreadCount(userId);
+    this.gateway.sendToUser(userId, 'newNotification', saved);
+    this.gateway.sendToUser(userId, 'unreadCount', unreadCount);
+
+    return saved;
   }
 
   async createForUser(user: User, type: NotificationType, message: string, relatedId?: string) {
@@ -45,6 +53,8 @@ export class NotificationService {
       { id, user: { id: userId } },
       { isRead: true },
     );
+    const unreadCount = await this.getUnreadCount(userId);
+    this.gateway.sendToUser(userId, 'unreadCount', unreadCount);
     return { message: 'Notification lue' };
   }
 
@@ -53,11 +63,14 @@ export class NotificationService {
       { user: { id: userId }, isRead: false },
       { isRead: true },
     );
+    this.gateway.sendToUser(userId, 'unreadCount', { unreadCount: 0 });
     return { message: 'Toutes les notifications marquées comme lues' };
   }
 
   async delete(id: string, userId: string) {
     await this.notificationRepo.delete({ id, user: { id: userId } });
+    const unreadCount = await this.getUnreadCount(userId);
+    this.gateway.sendToUser(userId, 'unreadCount', unreadCount);
     return { message: 'Notification supprimée' };
   }
 }

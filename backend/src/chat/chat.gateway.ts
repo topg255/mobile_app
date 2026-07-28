@@ -96,24 +96,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     // Create notification for receiver
-    const notification = await this.notificationService.create(
+    await this.notificationService.create(
       data.receiverId,
       NotificationType.MESSAGE,
       `${sender.firstName} ${sender.lastName} vous a envoyé un message`,
       savedMessage?.id,
     );
-    if (receiverSocketId) {
-      this.server.to(receiverSocketId).emit('newNotification', notification);
-    }
-    const senderSocketId2 = this.userSockets.get(senderId);
-    if (senderSocketId2) {
-      const unread = await this.notificationService.getUnreadCount(senderId);
-      this.server.to(senderSocketId2).emit('unreadCount', unread);
-    }
-    if (receiverSocketId) {
-      const unread = await this.notificationService.getUnreadCount(data.receiverId);
-      this.server.to(receiverSocketId).emit('unreadCount', unread);
-    }
   }
 
   @SubscribeMessage('editMessage')

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { qualityAPI } from '../../api';
-import { LigneControle, NoteQualite, Notification } from '../../types';
+import { LigneControle, NoteQualite } from '../../types';
 import { toast } from 'react-hot-toast';
 import Chat from '../../components/Chat';
 import NotificationBell from '../../components/NotificationBell';
@@ -51,7 +51,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 const Dashboard: React.FC = () => {
-  const { user, logout, isSuperviseur, isAgent } = useAuth();
+  const { user, token, logout, isSuperviseur, isAgent } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [lignes, setLignes] = useState<LigneControle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,12 +74,6 @@ const Dashboard: React.FC = () => {
       // silent
     }
   };
-
-  const handleNewNotification = useCallback((notification: Notification) => {
-    toast(notification.message, { icon: '🔔', duration: 4000 });
-  }, []);
-
-  const [notifRefresh, setNotifRefresh] = useState(0);
 
   const fetchLignes = async () => {
     try {
@@ -218,11 +212,7 @@ const Dashboard: React.FC = () => {
             </span>
           </div>
           <div className="top-bar-right">
-            <NotificationBell
-              onNotification={handleNewNotification}
-              refreshTrigger={notifRefresh}
-              onNotificationCountChange={(c) => setNotifRefresh(c)}
-            />
+            <NotificationBell token={token} />
             {user?.profileImage ? (
               <img src={`http://localhost:3000${user.profileImage}`} alt="" className="user-avatar-img" />
             ) : (
@@ -475,7 +465,7 @@ const Dashboard: React.FC = () => {
             <EditLigneTab ligne={editingLigne} onSuccess={() => { fetchLignes(); setActiveTab('mes-lignes'); }} onCancel={() => setActiveTab('mes-lignes')} />
           )}
           {activeTab === 'rapport' && <RapportTab />}
-          {activeTab === 'messages' && <Chat onUnreadCountChange={setUnreadCount} onNotification={handleNewNotification} />}
+          {activeTab === 'messages' && <Chat onUnreadCountChange={setUnreadCount} />}
         </div>
       </main>
     </div>

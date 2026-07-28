@@ -218,7 +218,7 @@ export const notificationAPI = {
   getAll: (): Promise<{ data: Notification[] }> =>
     api.get('/notifications'),
 
-  getUnreadCount: (): Promise<{ data: { count: number } }> =>
+  getUnreadCount: (): Promise<{ data: { unreadCount: number } }> =>
     api.get('/notifications/unread-count'),
 
   markAsRead: (id: string): Promise<{ data: { message: string; notification: Notification } }> =>
