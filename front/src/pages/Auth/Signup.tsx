@@ -86,7 +86,7 @@ const Signup: React.FC = () => {
           <div className="auth-5s-badge">
             <img src="/5s.jpeg" alt="5S" />
           </div>
-          <h2>Join Our Team</h2>
+          <h2>Rejoignez notre équipe</h2>
           <p>
             Créez votre compte et commencez à contribuer
             à l'amélioration continue de la qualité.
@@ -126,7 +126,7 @@ const Signup: React.FC = () => {
 
         {/* Right panel — form */}
         <div className="auth-right">
-          <h2>Create Account</h2>
+          <h2>Créer un compte</h2>
 
           <div className="auth-role-pills">
             <button type="button" className={`auth-role-pill ${role === 'agent' ? 'active' : ''}`}

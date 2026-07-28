@@ -48,7 +48,7 @@ const Login: React.FC = () => {
           <div className="auth-5s-badge">
             <img src="/5s.jpeg" alt="5S" />
           </div>
-          <h2>Qualité Control</h2>
+          <h2>Contrôle Qualité</h2>
           <p>
             Suivez et améliorez la qualité de vos lignes de production
             avec notre système de contrôle intelligent.
@@ -98,7 +98,7 @@ const Login: React.FC = () => {
 
         {/* Right panel — form */}
         <div className="auth-right">
-          <h2>Member Login</h2>
+          <h2>Connexion</h2>
 
           <form onSubmit={handleSubmit}>
             <div className="auth-input-group">
@@ -110,7 +110,7 @@ const Login: React.FC = () => {
                 type="text"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="Email"
+                placeholder="Email ou matricule"
                 required
               />
             </div>
@@ -124,7 +124,7 @@ const Login: React.FC = () => {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
+                placeholder="Mot de passe"
                 required
               />
               <button type="button" className="auth-pwd-toggle" onClick={() => setShowPassword(!showPassword)}>
@@ -134,20 +134,20 @@ const Login: React.FC = () => {
 
             <div className="auth-checkbox-row">
               <label className="auth-checkbox-label">
-                <input type="checkbox" /> Remember Me
+                <input type="checkbox" /> Se souvenir de moi
               </label>
               <Link to="/forgot-password" className="auth-forgot-link">
-                Forgot Your Password
+                Mot de passe oublié ?
               </Link>
             </div>
 
             <button type="submit" className="auth-login-btn" disabled={loading}>
-              {loading ? 'Connexion...' : 'Login'}
+              {loading ? 'Connexion...' : 'Se connecter'}
             </button>
           </form>
 
           <div className="auth-footer-text">
-            Not a member? <Link to="/signup">Create Account</Link>
+            Pas encore de compte ? <Link to="/signup">Créer un compte</Link>
           </div>
         </div>
       </div>

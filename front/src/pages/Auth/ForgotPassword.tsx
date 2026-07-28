@@ -59,7 +59,7 @@ const ForgotPassword: React.FC = () => {
             <div className="auth-5s-badge">
               <img src="/5s.jpeg" alt="5S" />
             </div>
-            <h2>Email Sent</h2>
+            <h2>Email envoyé</h2>
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
               <div className="auth-success-circle">
                 <CheckCircle size={36} />
@@ -116,7 +116,7 @@ const ForgotPassword: React.FC = () => {
           </div>
         </div>
           <div className="auth-right">
-            <h2>Forgot Password</h2>
+            <h2>Mot de passe oublié</h2>
           <form onSubmit={handleSubmit}>
             <div className="auth-input-group">
               <div className="auth-input-icon"><Mail size={20} /></div>
