@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
+const REMEMBER_KEY = 'qualite_remember_identifier';
+
 const Login: React.FC = () => {
-  const [identifier, setIdentifier] = useState('');
+  const [identifier, setIdentifier] = useState(() => localStorage.getItem(REMEMBER_KEY) || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() => !!localStorage.getItem(REMEMBER_KEY));
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -17,6 +20,11 @@ const Login: React.FC = () => {
     setLoading(true);
     try {
       await login(identifier, password);
+      if (rememberMe) {
+        localStorage.setItem(REMEMBER_KEY, identifier);
+      } else {
+        localStorage.removeItem(REMEMBER_KEY);
+      }
       toast.success('Connexion réussie');
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
@@ -134,7 +142,7 @@ const Login: React.FC = () => {
 
             <div className="auth-checkbox-row">
               <label className="auth-checkbox-label">
-                <input type="checkbox" /> Se souvenir de moi
+                <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} /> Se souvenir de moi
               </label>
               <Link to="/forgot-password" className="auth-forgot-link">
                 Mot de passe oublié ?
