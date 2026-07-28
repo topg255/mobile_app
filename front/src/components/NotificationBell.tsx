@@ -4,11 +4,12 @@ import { notificationAPI } from '../api';
 
 interface NotificationBellProps {
   onNotificationClick?: (notification: Notification) => void;
+  onNotification?: (notification: Notification) => void;
   refreshTrigger?: number;
   onNotificationCountChange?: (count: number) => void;
 }
 
-export default function NotificationBell({ onNotificationClick, refreshTrigger, onNotificationCountChange }: NotificationBellProps) {
+export default function NotificationBell({ onNotificationClick, onNotification, refreshTrigger, onNotificationCountChange }: NotificationBellProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
