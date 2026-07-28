@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { authAPI } from '../api';
-import { User, UserRole } from '../types';
+import { useAuth } from '../../contexts/AuthContext';
+import { authAPI } from '../../api';
+import { User, UserRole } from '../../types';
 import { toast } from 'react-hot-toast';
 import {
   ArrowLeft,

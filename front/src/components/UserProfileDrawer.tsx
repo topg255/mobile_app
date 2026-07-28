@@ -2,7 +2,7 @@ import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { User, UserRole } from '../types';
-import { Home, ActivityLog, UserCircle, LogOut, X, Shield, Clock } from 'lucide-react';
+import { Home, Activity, UserCircle, LogOut, X, Shield, Clock } from 'lucide-react';
 
 interface UserProfileDrawerProps {
   isOpen: boolean;

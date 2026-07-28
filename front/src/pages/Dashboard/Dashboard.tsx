@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { qualityAPI } from '../../api';
 import { LigneControle, NoteQualite } from '../../types';
@@ -1073,6 +1073,9 @@ const AddLigneTab: React.FC<{ onSuccess: () => void; onEdit: (ligne: LigneContro
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [showImagePicker, setShowImagePicker] = useState(false);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     qualityAPI.getAllControleDates().then((r) => setDates(r.data));
@@ -1236,23 +1239,67 @@ const AddLigneTab: React.FC<{ onSuccess: () => void; onEdit: (ligne: LigneContro
             type="file"
             accept="image/*"
             onChange={handleImageChange}
-            id="image-upload"
+            ref={uploadInputRef}
             style={{ display: 'none' }}
           />
-          <label htmlFor="image-upload" className="image-upload-label">
-            {imagePreview ? (
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleImageChange}
+            ref={cameraInputRef}
+            style={{ display: 'none' }}
+          />
+          {imagePreview ? (
+            <div className="image-preview-wrap">
               <img src={imagePreview} alt="Aperçu" className="image-preview" />
-            ) : (
-              <span><Camera size={14} /> Cliquer pour ajouter une image</span>
-            )}
-          </label>
-          {imageFile && (
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setImageFile(null); setImagePreview(null); }}>
-              Supprimer l'image
+              <button type="button" className="image-remove-btn" onClick={() => { setImageFile(null); setImagePreview(null); }}>
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
+            <button type="button" className="image-add-btn" onClick={() => setShowImagePicker(true)}>
+              <Camera size={18} />
+              <span>Ajouter une image</span>
             </button>
           )}
         </div>
       </div>
+
+      {showImagePicker && (
+        <div className="modal-overlay" onClick={() => setShowImagePicker(false)}>
+          <div className="modal-content image-picker-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Ajouter une image</h3>
+              <button className="modal-close" onClick={() => setShowImagePicker(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className="image-picker-options">
+              <button className="image-picker-option" onClick={() => { setShowImagePicker(false); uploadInputRef.current?.click(); }}>
+                <div className="image-picker-icon" style={{ background: '#eff6ff', color: '#2563eb' }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                </div>
+                <div className="image-picker-text">
+                  <span className="image-picker-title">Choisir depuis la galerie</span>
+                  <span className="image-picker-desc">Sélectionner une photo existante</span>
+                </div>
+              </button>
+              <button className="image-picker-option" onClick={() => { setShowImagePicker(false); cameraInputRef.current?.click(); }}>
+                <div className="image-picker-icon" style={{ background: '#f0fdf4', color: '#16a34a' }}>
+                  <Camera size={24} />
+                </div>
+                <div className="image-picker-text">
+                  <span className="image-picker-title">Prendre une photo</span>
+                  <span className="image-picker-desc">Utiliser l'appareil photo</span>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <button type="submit" className="btn btn-primary" disabled={loading}>
         <Plus size={16} /> Ajouter la ligne
       </button>
@@ -1274,6 +1321,9 @@ const EditLigneTab: React.FC<{ ligne: LigneControle; onSuccess: () => void; onCa
     ligne.image ? `http://localhost:3000${ligne.image}` : null
   );
   const [loading, setLoading] = useState(false);
+  const [showImagePicker, setShowImagePicker] = useState(false);
+  const editUploadRef = useRef<HTMLInputElement>(null);
+  const editCameraRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -1341,21 +1391,58 @@ const EditLigneTab: React.FC<{ ligne: LigneControle; onSuccess: () => void; onCa
       <div className="form-group">
         <label>Image (optionnel)</label>
         <div className="image-upload-area">
-          <input type="file" accept="image/*" onChange={handleImageChange} id="edit-image-upload" style={{ display: 'none' }} />
-          <label htmlFor="edit-image-upload" className="image-upload-label">
-            {imagePreview ? (
+          <input type="file" accept="image/*" onChange={handleImageChange} ref={editUploadRef} style={{ display: 'none' }} />
+          <input type="file" accept="image/*" capture="environment" onChange={handleImageChange} ref={editCameraRef} style={{ display: 'none' }} />
+          {imagePreview ? (
+            <div className="image-preview-wrap">
               <img src={imagePreview} alt="Aperçu" className="image-preview" />
-            ) : (
-              <span><Camera size={14} /> Cliquer pour ajouter une image</span>
-            )}
-          </label>
-          {imageFile && (
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setImageFile(null); setImagePreview(ligne.image ? `http://localhost:3000${ligne.image}` : null); }}>
-              Supprimer l'image
+              <button type="button" className="image-remove-btn" onClick={() => { setImageFile(null); setImagePreview(null); }}>
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
+            <button type="button" className="image-add-btn" onClick={() => setShowImagePicker(true)}>
+              <Camera size={18} />
+              <span>Ajouter une image</span>
             </button>
           )}
         </div>
       </div>
+
+      {showImagePicker && (
+        <div className="modal-overlay" onClick={() => setShowImagePicker(false)}>
+          <div className="modal-content image-picker-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Ajouter une image</h3>
+              <button className="modal-close" onClick={() => setShowImagePicker(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className="image-picker-options">
+              <button className="image-picker-option" onClick={() => { setShowImagePicker(false); editUploadRef.current?.click(); }}>
+                <div className="image-picker-icon" style={{ background: '#eff6ff', color: '#2563eb' }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                </div>
+                <div className="image-picker-text">
+                  <span className="image-picker-title">Choisir depuis la galerie</span>
+                  <span className="image-picker-desc">Sélectionner une photo existante</span>
+                </div>
+              </button>
+              <button className="image-picker-option" onClick={() => { setShowImagePicker(false); editCameraRef.current?.click(); }}>
+                <div className="image-picker-icon" style={{ background: '#f0fdf4', color: '#16a34a' }}>
+                  <Camera size={24} />
+                </div>
+                <div className="image-picker-text">
+                  <span className="image-picker-title">Prendre une photo</span>
+                  <span className="image-picker-desc">Utiliser l'appareil photo</span>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div style={{ display: 'flex', gap: '12px' }}>
         <button type="submit" className="btn btn-primary" disabled={loading}>
           <Plus size={16} /> Enregistrer
