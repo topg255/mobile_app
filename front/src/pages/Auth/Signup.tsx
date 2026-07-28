@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authAPI } from '../../api';
 import { toast } from 'react-hot-toast';
-import { Mail, Lock, Eye, EyeOff, User, Hash, Briefcase, Camera, X } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, User, Hash, Briefcase, Camera, X, CheckCircle2, XCircle } from 'lucide-react';
 
 const Signup: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -20,16 +20,25 @@ const Signup: React.FC = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  const passwordRules = [
+    { id: 'length', label: 'Au moins 6 caractères', test: (p: string) => p.length >= 6 },
+    { id: 'upper', label: 'Une lettre majuscule', test: (p: string) => /[A-Z]/.test(p) },
+    { id: 'lower', label: 'Une lettre minuscule', test: (p: string) => /[a-z]/.test(p) },
+    { id: 'number', label: 'Un chiffre', test: (p: string) => /[0-9]/.test(p) },
+    { id: 'symbol', label: 'Un symbole (!@#$%^&*...)', test: (p: string) => /[^A-Za-z0-9]/.test(p) },
+  ];
+
+  const passwordValid = passwordRules.every((r) => r.test(formData.password));
+  const passwordsMatch = formData.password === formData.confirmPassword && formData.confirmPassword.length > 0;
+  const canSubmit = passwordValid && passwordsMatch && formData.firstName && formData.lastName && formData.matricule && formData.email;
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      toast.error('Les mots de passe ne correspondent pas');
-      return;
-    }
+    if (!canSubmit) return;
     setLoading(true);
     try {
       const { confirmPassword, ...submitData } = formData;
@@ -156,15 +165,40 @@ const Signup: React.FC = () => {
               <div className="auth-input-icon"><Lock size={20} /></div>
               <div className="auth-input-divider" />
               <input type={showPassword ? 'text' : 'password'} name="password" value={formData.password}
-                     onChange={handleChange} placeholder="Mot de passe" minLength={8} required />
+                     onChange={handleChange} placeholder="Mot de passe" required />
               <button type="button" className="auth-pwd-toggle" onClick={() => setShowPassword(!showPassword)}>
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
 
-            {inputGroup(<Lock size={20} />,
+            {/* Password Rules */}
+            {formData.password.length > 0 && (
+              <div className="pwd-rules">
+                {passwordRules.map((rule) => {
+                  const passed = rule.test(formData.password);
+                  return (
+                    <div key={rule.id} className={`pwd-rule ${passed ? 'pwd-pass' : 'pwd-fail'}`}>
+                      {passed ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+                      <span>{rule.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="auth-input-group">
+              <div className="auth-input-icon"><Lock size={20} /></div>
+              <div className="auth-input-divider" />
               <input type="password" name="confirmPassword" value={formData.confirmPassword}
-                     onChange={handleChange} placeholder="Confirmer le mot de passe" minLength={8} required />
+                     onChange={handleChange} placeholder="Confirmer le mot de passe" required />
+              {formData.confirmPassword.length > 0 && (
+                <span className={passwordsMatch ? 'pwd-match' : 'pwd-no-match'}>
+                  {passwordsMatch ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
+                </span>
+              )}
+            </div>
+            {formData.confirmPassword.length > 0 && !passwordsMatch && (
+              <span className="pwd-match-text">Les mots de passe ne correspondent pas</span>
             )}
 
             <div className="auth-profile-photo-section">
@@ -203,8 +237,8 @@ const Signup: React.FC = () => {
               </div>
             </div>
 
-            <button type="submit" className="auth-login-btn" disabled={loading}
-                    style={{ marginTop: '8px' }}>
+            <button type="submit" className="auth-login-btn" disabled={loading || !canSubmit}
+                    style={{ marginTop: '8px', opacity: canSubmit ? 1 : 0.5, cursor: canSubmit ? 'pointer' : 'not-allowed' }}>
               {loading ? 'Inscription...' : `S'inscrire en tant que ${role === 'agent' ? 'Agent' : 'Superviseur'}`}
             </button>
           </form>
