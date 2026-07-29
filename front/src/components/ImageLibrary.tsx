@@ -502,15 +502,15 @@ export default function ImageLibrary({ userRole }: Props) {
               </div>
             ))}
 
-            {/* AGENT SELECTED — show agent's ligne folders */}
-            {showAgentDossiers && selectedAgentId && agentFolderNames.map(name => {
-              const matchFolder = folders.find(f => f.name === name);
-              const ligneImages = images.filter(i => i.folder?.id === matchFolder?.id);
+            {/* AGENT SELECTED — show agent's library folders */}
+            {showAgentDossiers && selectedAgentId && folders.map(folder => {
+              const folderImageCount = images.filter(i => i.folder?.id === folder.id).length;
+              const agent = agents.find(a => a.agent.id === selectedAgentId);
               return (
                 <div
-                  key={name}
+                  key={folder.id}
                   className="fm-list-row is-folder"
-                  onClick={() => { if (matchFolder) setSelectedFolder(matchFolder.id); }}
+                  onClick={() => setSelectedFolder(folder.id)}
                 >
                   <div className="fm-list-col fm-list-col-check" />
                   <div className="fm-list-col fm-list-col-icon">
@@ -519,18 +519,24 @@ export default function ImageLibrary({ userRole }: Props) {
                     </div>
                   </div>
                   <div className="fm-list-col fm-list-col-name">
-                    <span className="fm-name">{name}</span>
-                    {matchFolder && <span className="fm-badge fm-badge-complete">Complet</span>}
+                    <span className="fm-name">{folder.name}</span>
+                    <span className="fm-badge fm-badge-complete">Complet</span>
                   </div>
                   <div className="fm-list-col fm-list-col-owner">
-                    <span className="fm-owner-text">{agents.find(a => a.agent.id === selectedAgentId)?.agent.firstName} {agents.find(a => a.agent.id === selectedAgentId)?.agent.lastName}</span>
+                    <span className="fm-owner-text">{agent?.agent.firstName} {agent?.agent.lastName}</span>
                   </div>
-                  <div className="fm-list-col fm-list-col-size">{ligneImages.length} fichier{ligneImages.length !== 1 ? 's' : ''}</div>
-                  <div className="fm-list-col fm-list-col-date">—</div>
+                  <div className="fm-list-col fm-list-col-size">{folderImageCount} fichier{folderImageCount !== 1 ? 's' : ''}</div>
+                  <div className="fm-list-col fm-list-col-date">{formatDate(folder.createdAt)}</div>
                   <div className="fm-list-col fm-list-col-actions" />
                 </div>
               );
             })}
+            {showAgentDossiers && selectedAgentId && folders.length === 0 && (
+              <div className="fm-empty">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" opacity="0.3"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+                <p>Aucun dossier pour cet agent</p>
+              </div>
+            )}
 
             {/* REGULAR FOLDERS */}
             {!showAgentDossiers && !showTrash && !selectedFolder && filteredFolders.map(folder => {
@@ -639,17 +645,16 @@ export default function ImageLibrary({ userRole }: Props) {
                 <span className="fm-grid-folder-count">{a.totalLignes} ligne{a.totalLignes > 1 ? 's' : ''}</span>
               </div>
             ))}
-            {/* AGENT SELECTED — ligne folders (grid) */}
-            {showAgentDossiers && selectedAgentId && agentFolderNames.map(name => {
-              const matchFolder = folders.find(f => f.name === name);
-              const ligneImages = images.filter(i => i.folder?.id === matchFolder?.id);
+            {/* AGENT SELECTED — library folders (grid) */}
+            {showAgentDossiers && selectedAgentId && folders.map(folder => {
+              const folderImageCount = images.filter(i => i.folder?.id === folder.id).length;
               return (
-                <div key={name} className="fm-grid-folder" onClick={() => { if (matchFolder) setSelectedFolder(matchFolder.id); }}>
+                <div key={folder.id} className="fm-grid-folder" onClick={() => setSelectedFolder(folder.id)}>
                   <div className="fm-grid-folder-icon">
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
                   </div>
-                  <span className="fm-grid-folder-name">{name}</span>
-                  <span className="fm-grid-folder-count">{ligneImages.length} fichier{ligneImages.length !== 1 ? 's' : ''}</span>
+                  <span className="fm-grid-folder-name">{folder.name}</span>
+                  <span className="fm-grid-folder-count">{folderImageCount} fichier{folderImageCount !== 1 ? 's' : ''}</span>
                 </div>
               );
             })}
