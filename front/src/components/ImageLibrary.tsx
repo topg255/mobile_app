@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { LibraryImage, ImageFolder, LibraryStats } from '../types';
-import { libraryAPI } from '../api';
+import { libraryAPI, qualityAPI } from '../api';
 
 type TabType = 'all' | 'folders' | 'trash';
 
@@ -28,6 +28,7 @@ export default function ImageLibrary({ userRole }: Props) {
   const [uploadDescription, setUploadDescription] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [filePreviewUrls, setFilePreviewUrls] = useState<string[]>([]);
+  const [ligneNames, setLigneNames] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const showToast = (msg: string) => {
@@ -67,6 +68,19 @@ export default function ImageLibrary({ userRole }: Props) {
     if (tab === 'trash') loadTrash();
     else loadImages();
   }, [tab, loadImages, loadTrash]);
+
+  useEffect(() => {
+    const fetchLignes = async () => {
+      try {
+        const res = userRole === 'superviseur_qualite'
+          ? await qualityAPI.getAllLignes()
+          : await qualityAPI.getMesLignes();
+        const names = [...new Set(res.data.map((l: any) => l.nomLigne))].sort();
+        setLigneNames(names);
+      } catch (e) { console.error(e); }
+    };
+    fetchLignes();
+  }, [userRole]);
 
   const handleFilesSelect = (files: FileList | null) => {
     if (!files) return;
@@ -507,10 +521,16 @@ export default function ImageLibrary({ userRole }: Props) {
                 <label>Nom du dossier ligne</label>
                 <input
                   type="text"
-                  placeholder="Ex: Audi, BMW, Mercedes..."
+                  list="ligne-names-list"
+                  placeholder="Sélectionnez ou saisissez un nom de ligne..."
                   value={uploadFolderName}
                   onChange={e => setUploadFolderName(e.target.value)}
                 />
+                <datalist id="ligne-names-list">
+                  {ligneNames.map(name => (
+                    <option key={name} value={name} />
+                  ))}
+                </datalist>
                 <span className="il-upload-hint">Les images seront classées dans ce dossier. S'il existe déjà, elles y seront ajoutées.</span>
               </div>
 
