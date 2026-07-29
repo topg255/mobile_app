@@ -46,6 +46,7 @@ import {
   ChevronRight,
   CalendarClock,
   Users,
+  ImageIcon,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -238,7 +239,13 @@ const Dashboard: React.FC = () => {
             </button>
             <div className="top-bar-brand">
               <div className="top-bar-brand-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                {user?.profileImage ? (
+                  <img src={`http://localhost:3000${user.profileImage}`} alt="" className="top-bar-brand-img" />
+                ) : (
+                  <div className="top-bar-brand-fallback">
+                    {user?.firstName?.[0]}{user?.lastName?.[0]}
+                  </div>
+                )}
               </div>
               <div className="top-bar-brand-text">
                 <span className="top-bar-brand-label">{isSuperviseur ? 'SUPERVISEUR QUALITÉ' : 'AGENT QUALITÉ'}</span>
@@ -273,7 +280,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
         <div className="content-body">
-          {/* Premium Welcome Banner */}
+          {/* Welcome Banner */}
           <div className="wb-banner">
             <div className="wb-bg-shapes">
               <div className="wb-shape wb-shape-1" />
@@ -282,7 +289,6 @@ const Dashboard: React.FC = () => {
             </div>
             <div className="wb-content">
               <div className="wb-greeting">
-                <span className="wb-wave">👋</span>
                 <h2>Bonjour, <span>{user?.firstName}</span></h2>
               </div>
               <p className="wb-subtitle">
@@ -312,34 +318,26 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
             </div>
-            {/* Mini donut */}
-            <div className="wb-donut-wrap">
-              <svg viewBox="0 0 100 100" className="wb-donut">
-                {(() => {
-                  const r = 35;
-                  const c = 2 * Math.PI * r;
-                  const data = [
-                    { pct: stats.total > 0 ? stats.vert / stats.total : 0, color: '#4ade80' },
-                    { pct: stats.total > 0 ? stats.jaune / stats.total : 0, color: '#facc15' },
-                    { pct: stats.total > 0 ? stats.rouge / stats.total : 0, color: '#f87171' },
-                  ];
-                  let offset = 0;
-                  return data.map((d, i) => {
-                    const len = d.pct * c;
-                    const gap = c - len;
-                    const el = (
-                      <circle key={i} cx="50" cy="50" r={r} fill="none" stroke={d.color} strokeWidth="10"
-                        strokeDasharray={`${len} ${gap}`} strokeDashoffset={-offset} strokeLinecap="round"
-                        className="wb-donut-seg" style={{ animationDelay: `${i * 200 + 400}ms` }} />
-                    );
-                    offset += len;
-                    return el;
-                  });
-                })()}
-              </svg>
-              <div className="wb-donut-center">
-                <span>{stats.total > 0 ? Math.round((stats.vert / stats.total) * 100) : 0}%</span>
-                <small>Conforme</small>
+            {/* Quick Actions */}
+            <div className="wb-quick-actions">
+              <span className="wb-qa-title">Actions rapides</span>
+              <div className="wb-qa-grid">
+                <button className="wb-qa-btn" onClick={() => handleTab('lignes')}>
+                  <div className="wb-qa-icon" style={{ background: '#eff6ff', color: '#2563eb' }}><ClipboardList size={18} /></div>
+                  <span>Ajouter Ligne</span>
+                </button>
+                <button className="wb-qa-btn" onClick={() => handleTab('rapport')}>
+                  <div className="wb-qa-icon" style={{ background: '#f0fdf4', color: '#16a34a' }}><BarChart3 size={18} /></div>
+                  <span>Voir Rapport</span>
+                </button>
+                <button className="wb-qa-btn" onClick={() => handleTab('messages')}>
+                  <div className="wb-qa-icon" style={{ background: '#eff6ff', color: '#6366f1' }}><MessageSquare size={18} /></div>
+                  <span>Messages</span>
+                </button>
+                <button className="wb-qa-btn" onClick={() => handleTab('images')}>
+                  <div className="wb-qa-icon" style={{ background: '#f0f9ff', color: '#0284c7' }}><ImageIcon size={18} /></div>
+                  <span>Bibliothèque</span>
+                </button>
               </div>
             </div>
           </div>
