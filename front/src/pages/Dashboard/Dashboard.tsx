@@ -323,7 +323,7 @@ const Dashboard: React.FC = () => {
             <div className="wb-quick-actions">
               <span className="wb-qa-title">Actions rapides</span>
               <div className="wb-qa-grid">
-                <button className="wb-qa-btn" onClick={() => handleTab('lignes')}>
+                <button className="wb-qa-btn" onClick={() => handleTab('add-ligne')}>
                   <div className="wb-qa-icon" style={{ background: '#eff6ff', color: '#2563eb' }}><ClipboardList size={18} /></div>
                   <span>Ajouter Ligne</span>
                 </button>
@@ -333,7 +333,7 @@ const Dashboard: React.FC = () => {
                     <span>Voir Rapport</span>
                   </button>
                 ) : (
-                  <button className="wb-qa-btn" onClick={() => handleTab('lignes')}>
+                  <button className="wb-qa-btn" onClick={() => handleTab('mes-lignes')}>
                     <div className="wb-qa-icon" style={{ background: '#f0fdf4', color: '#16a34a' }}><List size={18} /></div>
                     <span>Voir Lignes</span>
                   </button>
