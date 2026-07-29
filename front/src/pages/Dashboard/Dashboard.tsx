@@ -326,10 +326,17 @@ const Dashboard: React.FC = () => {
                   <div className="wb-qa-icon" style={{ background: '#eff6ff', color: '#2563eb' }}><ClipboardList size={18} /></div>
                   <span>Ajouter Ligne</span>
                 </button>
-                <button className="wb-qa-btn" onClick={() => handleTab('rapport')}>
-                  <div className="wb-qa-icon" style={{ background: '#f0fdf4', color: '#16a34a' }}><BarChart3 size={18} /></div>
-                  <span>Voir Rapport</span>
-                </button>
+                {isSuperviseur ? (
+                  <button className="wb-qa-btn" onClick={() => handleTab('rapport')}>
+                    <div className="wb-qa-icon" style={{ background: '#f0fdf4', color: '#16a34a' }}><BarChart3 size={18} /></div>
+                    <span>Voir Rapport</span>
+                  </button>
+                ) : (
+                  <button className="wb-qa-btn" onClick={() => handleTab('lignes')}>
+                    <div className="wb-qa-icon" style={{ background: '#f0fdf4', color: '#16a34a' }}><List size={18} /></div>
+                    <span>Voir Lignes</span>
+                  </button>
+                )}
                 <button className="wb-qa-btn" onClick={() => handleTab('messages')}>
                   <div className="wb-qa-icon" style={{ background: '#eff6ff', color: '#6366f1' }}><MessageSquare size={18} /></div>
                   <span>Messages</span>
