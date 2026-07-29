@@ -406,7 +406,7 @@ export default function ImageLibrary({ userRole }: Props) {
           <div className="fm-bulk-bar">
             <span>{selectedImages.size} sélectionné(s)</span>
             <div className="fm-bulk-actions">
-              {!showTrash && (
+            {!showTrash && !showAgentDossiers && (
                 <select className="fm-bulk-select" onChange={e => { handleBulkMove(e.target.value || null); e.target.value = ''; }} defaultValue="">
                   <option value="" disabled>Déplacer vers...</option>
                   <option value="">Sans dossier</option>
@@ -475,7 +475,7 @@ export default function ImageLibrary({ userRole }: Props) {
             </div>
 
             {/* FOLDERS */}
-            {/* AGENT FOLDERS */}
+            {/* AGENT FOLDERS — list of agents */}
             {showAgentDossiers && !selectedAgentId && agents.map(a => (
               <div
                 key={a.agent.id}
@@ -484,13 +484,9 @@ export default function ImageLibrary({ userRole }: Props) {
               >
                 <div className="fm-list-col fm-list-col-check" />
                 <div className="fm-list-col fm-list-col-icon">
-                  {a.agent.profileImage ? (
-                    <img src={`http://localhost:3000${a.agent.profileImage}`} alt="" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'cover' }} />
-                  ) : (
-                    <div className="fm-icon-folder" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', width: 28, height: 28, borderRadius: 7, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {a.agent.firstName?.[0]}{a.agent.lastName?.[0]}
-                    </div>
-                  )}
+                  <div className="fm-icon-folder">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#facc15" stroke="#eab308" strokeWidth="0.5"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+                  </div>
                 </div>
                 <div className="fm-list-col fm-list-col-name">
                   <span className="fm-name">{a.agent.firstName} {a.agent.lastName}</span>
@@ -504,6 +500,36 @@ export default function ImageLibrary({ userRole }: Props) {
                 <div className="fm-list-col fm-list-col-actions" />
               </div>
             ))}
+
+            {/* AGENT SELECTED — show agent's ligne folders */}
+            {showAgentDossiers && selectedAgentId && agentFolderNames.map(name => {
+              const matchFolder = folders.find(f => f.name === name);
+              const ligneImages = images.filter(i => i.folder?.id === matchFolder?.id);
+              return (
+                <div
+                  key={name}
+                  className="fm-list-row is-folder"
+                  onClick={() => { if (matchFolder) setSelectedFolder(matchFolder.id); }}
+                >
+                  <div className="fm-list-col fm-list-col-check" />
+                  <div className="fm-list-col fm-list-col-icon">
+                    <div className="fm-icon-folder">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="#facc15" stroke="#eab308" strokeWidth="0.5"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+                    </div>
+                  </div>
+                  <div className="fm-list-col fm-list-col-name">
+                    <span className="fm-name">{name}</span>
+                    {matchFolder && <span className="fm-badge fm-badge-complete">Complet</span>}
+                  </div>
+                  <div className="fm-list-col fm-list-col-owner">
+                    <span className="fm-owner-text">{agents.find(a => a.agent.id === selectedAgentId)?.agent.firstName} {agents.find(a => a.agent.id === selectedAgentId)?.agent.lastName}</span>
+                  </div>
+                  <div className="fm-list-col fm-list-col-size">{ligneImages.length} fichier{ligneImages.length !== 1 ? 's' : ''}</div>
+                  <div className="fm-list-col fm-list-col-date">—</div>
+                  <div className="fm-list-col fm-list-col-actions" />
+                </div>
+              );
+            })}
 
             {/* REGULAR FOLDERS */}
             {!showAgentDossiers && !showTrash && !selectedFolder && filteredFolders.map(folder => {
@@ -600,22 +626,32 @@ export default function ImageLibrary({ userRole }: Props) {
         )}
 
         {/* GRID VIEW */}
-        {!loading && viewMode === 'grid' && ((showAgentDossiers && !selectedAgentId) || (!showAgentDossiers && currentDisplayItems.length > 0)) && (
+        {!loading && viewMode === 'grid' && ((showAgentDossiers) || (!showAgentDossiers && currentDisplayItems.length > 0)) && (
           <div className="fm-grid">
-            {/* AGENT FOLDERS (grid) */}
+            {/* AGENT FOLDERS (grid) — list of agents */}
             {showAgentDossiers && !selectedAgentId && agents.map(a => (
               <div key={a.agent.id} className="fm-grid-folder" onClick={() => setSelectedAgentId(a.agent.id)}>
-                {a.agent.profileImage ? (
-                  <img src={`http://localhost:3000${a.agent.profileImage}`} alt="" style={{ width: 48, height: 48, borderRadius: 12, objectFit: 'cover', marginBottom: 6 }} />
-                ) : (
-                  <div style={{ width: 48, height: 48, borderRadius: 12, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 6 }}>
-                    {a.agent.firstName?.[0]}{a.agent.lastName?.[0]}
-                  </div>
-                )}
+                <div className="fm-grid-folder-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+                </div>
                 <span className="fm-grid-folder-name">{a.agent.firstName} {a.agent.lastName}</span>
                 <span className="fm-grid-folder-count">{a.totalLignes} ligne{a.totalLignes > 1 ? 's' : ''}</span>
               </div>
             ))}
+            {/* AGENT SELECTED — ligne folders (grid) */}
+            {showAgentDossiers && selectedAgentId && agentFolderNames.map(name => {
+              const matchFolder = folders.find(f => f.name === name);
+              const ligneImages = images.filter(i => i.folder?.id === matchFolder?.id);
+              return (
+                <div key={name} className="fm-grid-folder" onClick={() => { if (matchFolder) setSelectedFolder(matchFolder.id); }}>
+                  <div className="fm-grid-folder-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+                  </div>
+                  <span className="fm-grid-folder-name">{name}</span>
+                  <span className="fm-grid-folder-count">{ligneImages.length} fichier{ligneImages.length !== 1 ? 's' : ''}</span>
+                </div>
+              );
+            })}
             {/* REGULAR FOLDERS (grid) */}
             {!showAgentDossiers && !showTrash && !selectedFolder && filteredFolders.map(folder => (
               <div
