@@ -18,16 +18,17 @@ export default function ImageLibrary({ userRole }: Props) {
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [showNewFolder, setShowNewFolder] = useState(false);
-  const [newFolderName, setNewFolderName] = useState('');
   const [renameFolderId, setRenameFolderId] = useState<string | null>(null);
   const [renameFolderName, setRenameFolderName] = useState('');
   const [showImageDetail, setShowImageDetail] = useState<LibraryImage | null>(null);
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
-  const [description, setDescription] = useState('');
   const [toast, setToast] = useState<string | null>(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadFolderName, setUploadFolderName] = useState('');
+  const [uploadDescription, setUploadDescription] = useState('');
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [filePreviewUrls, setFilePreviewUrls] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const dropRef = useRef<HTMLDivElement>(null);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -67,29 +68,52 @@ export default function ImageLibrary({ userRole }: Props) {
     else loadImages();
   }, [tab, loadImages, loadTrash]);
 
-  const handleUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
+  const handleFilesSelect = (files: FileList | null) => {
+    if (!files) return;
+    const arr = Array.from(files);
+    setSelectedFiles(arr);
+    const urls = arr.map(f => URL.createObjectURL(f));
+    setFilePreviewUrls(urls);
+  };
+
+  const handleUploadSubmit = async () => {
+    if (selectedFiles.length === 0) return;
     setUploading(true);
-    for (let i = 0; i < files.length; i++) {
+
+    let folderId: string | null = null;
+    if (uploadFolderName.trim()) {
+      const existing = folders.find(f => f.name.toLowerCase() === uploadFolderName.trim().toLowerCase());
+      if (existing) {
+        folderId = existing.id;
+      } else {
+        const res = await libraryAPI.createFolder(uploadFolderName.trim());
+        folderId = res.data.id;
+      }
+    }
+
+    for (const file of selectedFiles) {
       try {
-        await libraryAPI.upload(files[i], description || undefined);
+        const res = await libraryAPI.upload(file, uploadDescription || undefined);
+        if (folderId) {
+          await libraryAPI.updateImage(res.data.id, { folderId });
+        }
       } catch (e) { console.error(e); }
     }
-    setDescription('');
+
+    setSelectedFiles([]);
+    setFilePreviewUrls([]);
+    setUploadFolderName('');
+    setUploadDescription('');
+    setShowUploadModal(false);
     setUploading(false);
-    showToast(`${files.length} image(s) uploadée(s)`);
+    showToast(`${selectedFiles.length} image(s) uploadée(s)`);
     loadImages();
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOverFolder(null);
-    const files = e.dataTransfer.files;
-    if (files.length > 0) handleUpload(files);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
+  const handleRemoveFile = (idx: number) => {
+    URL.revokeObjectURL(filePreviewUrls[idx]);
+    setSelectedFiles(prev => prev.filter((_, i) => i !== idx));
+    setFilePreviewUrls(prev => prev.filter((_, i) => i !== idx));
   };
 
   const handleDragStart = (e: React.DragEvent, imageId: string) => {
@@ -177,17 +201,6 @@ export default function ImageLibrary({ userRole }: Props) {
     } catch (e) { console.error(e); }
   };
 
-  const handleCreateFolder = async () => {
-    if (!newFolderName.trim()) return;
-    try {
-      await libraryAPI.createFolder(newFolderName.trim());
-      setNewFolderName('');
-      setShowNewFolder(false);
-      showToast('Dossier créé');
-      loadImages();
-    } catch (e) { console.error(e); }
-  };
-
   const handleRenameFolder = async (id: string) => {
     if (!renameFolderName.trim()) return;
     try {
@@ -249,60 +262,20 @@ export default function ImageLibrary({ userRole }: Props) {
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           </div>
           <div>
-            <h2>Bibliothèque d'images</h2>
+            <h2>Images et Dossiers Management</h2>
             <p className="il-subtitle">{stats.total} images · {stats.folderCount} dossiers</p>
           </div>
         </div>
         <div className="il-header-actions">
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept="image/*"
-            style={{ display: 'none' }}
-            onChange={(e) => handleUpload(e.target.files)}
-          />
           <button
             className="il-btn il-btn-primary"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
+            onClick={() => setShowUploadModal(true)}
           >
-            {uploading ? (
-              <><span className="il-spinner" /> Upload...</>
-            ) : (
-              <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Ajouter</>
-            )}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Ajouter
           </button>
         </div>
       </div>
-
-      {/* UPLOAD ZONE */}
-      {tab !== 'trash' && (
-        <div
-          ref={dropRef}
-          className={`il-dropzone ${dragOverFolder ? 'il-dropzone-active' : ''}`}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          <p>Glissez vos images ici ou cliquez pour sélectionner</p>
-          <span className="il-dropzone-hint">JPG, PNG, GIF, WebP · Max 10 Mo</span>
-        </div>
-      )}
-
-      {/* DESCRIPTION INPUT */}
-      {tab !== 'trash' && (
-        <div className="il-desc-input-row">
-          <input
-            type="text"
-            placeholder="Description pour les prochaines images..."
-            value={description}
-            onChange={e => setDescription(e.target.value)}
-            className="il-desc-input"
-          />
-        </div>
-      )}
 
       {/* TABS */}
       <div className="il-tabs">
@@ -345,29 +318,6 @@ export default function ImageLibrary({ userRole }: Props) {
       {/* FOLDERS TAB CONTENT */}
       {tab === 'folders' && (
         <div className="il-folders-section">
-          <div className="il-folders-header">
-            <h3>Mes dossiers</h3>
-            <button className="il-btn il-btn-outline" onClick={() => setShowNewFolder(true)}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Nouveau dossier
-            </button>
-          </div>
-
-          {showNewFolder && (
-            <div className="il-new-folder-form">
-              <input
-                type="text"
-                placeholder="Nom du dossier"
-                value={newFolderName}
-                onChange={e => setNewFolderName(e.target.value)}
-                autoFocus
-                onKeyDown={e => e.key === 'Enter' && handleCreateFolder()}
-              />
-              <button className="il-btn il-btn-primary" onClick={handleCreateFolder}>Créer</button>
-              <button className="il-btn il-btn-ghost" onClick={() => { setShowNewFolder(false); setNewFolderName(''); }}>Annuler</button>
-            </div>
-          )}
-
           {selectedFolder && (
             <div className="il-folder-nav-back" onClick={() => setSelectedFolder(null)}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -378,7 +328,7 @@ export default function ImageLibrary({ userRole }: Props) {
           {!selectedFolder ? (
             <div className="il-folder-grid">
               {folders.length === 0 && (
-                <div className="il-empty">Aucun dossier. Créez-en un pour organiser vos images.</div>
+                <div className="il-empty">Aucun dossier. Utilisez le bouton "Ajouter" pour créer un dossier et y stocker des images.</div>
               )}
               {folders.map(folder => (
                 <div
@@ -420,7 +370,7 @@ export default function ImageLibrary({ userRole }: Props) {
           ) : (
             <div className="il-image-grid">
               {images.filter(i => i.folder?.id === selectedFolder).length === 0 && (
-                <div className="il-empty">Ce dossier est vide. Glissez des images ici.</div>
+                <div className="il-empty">Ce dossier est vide.</div>
               )}
               {images.filter(i => i.folder?.id === selectedFolder).map(image => (
                 <div
@@ -484,7 +434,7 @@ export default function ImageLibrary({ userRole }: Props) {
                 ) : (
                   <>
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                    <p>Aucune image. Uploadez votre première image !</p>
+                    <p>Aucune image. Cliquez sur "Ajouter" pour commencer !</p>
                   </>
                 )}
               </div>
@@ -538,6 +488,89 @@ export default function ImageLibrary({ userRole }: Props) {
             ))}
           </div>
         </>
+      )}
+
+      {/* UPLOAD MODAL */}
+      {showUploadModal && (
+        <div className="il-modal-overlay" onClick={() => { setShowUploadModal(false); setSelectedFiles([]); setFilePreviewUrls([]); }}>
+          <div className="il-modal il-modal-upload" onClick={e => e.stopPropagation()}>
+            <button className="il-modal-close" onClick={() => { setShowUploadModal(false); setSelectedFiles([]); setFilePreviewUrls([]); }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <div className="il-modal-upload-header">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <h3>Ajouter des images</h3>
+            </div>
+
+            <div className="il-modal-upload-body">
+              <div className="il-upload-field">
+                <label>Nom du dossier ligne</label>
+                <input
+                  type="text"
+                  placeholder="Ex: Audi, BMW, Mercedes..."
+                  value={uploadFolderName}
+                  onChange={e => setUploadFolderName(e.target.value)}
+                />
+                <span className="il-upload-hint">Les images seront classées dans ce dossier. S'il existe déjà, elles y seront ajoutées.</span>
+              </div>
+
+              <div className="il-upload-field">
+                <label>Description</label>
+                <input
+                  type="text"
+                  placeholder="Description des images..."
+                  value={uploadDescription}
+                  onChange={e => setUploadDescription(e.target.value)}
+                />
+              </div>
+
+              <div className="il-upload-field">
+                <label>Images</label>
+                <div className="il-upload-dropzone" onClick={() => fileInputRef.current?.click()}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <p>Cliquez ou glissez vos images ici</p>
+                  <span>JPG, PNG, GIF, WebP · Max 10 Mo</span>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={(e) => handleFilesSelect(e.target.files)}
+                />
+              </div>
+
+              {filePreviewUrls.length > 0 && (
+                <div className="il-upload-previews">
+                  {filePreviewUrls.map((url, idx) => (
+                    <div key={idx} className="il-upload-preview-item">
+                      <img src={url} alt={`Preview ${idx}`} />
+                      <button className="il-upload-preview-remove" onClick={() => handleRemoveFile(idx)}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="il-modal-upload-footer">
+              <button className="il-btn il-btn-ghost" onClick={() => { setShowUploadModal(false); setSelectedFiles([]); setFilePreviewUrls([]); }}>Annuler</button>
+              <button
+                className="il-btn il-btn-primary"
+                onClick={handleUploadSubmit}
+                disabled={selectedFiles.length === 0 || uploading}
+              >
+                {uploading ? (
+                  <><span className="il-spinner" /> Upload...</>
+                ) : (
+                  <>Ajouter {selectedFiles.length > 0 && `(${selectedFiles.length})`}</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* IMAGE DETAIL MODAL */}
