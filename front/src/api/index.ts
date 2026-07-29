@@ -241,9 +241,10 @@ export const libraryAPI = {
     });
   },
 
-  getImages: (folderId?: string | null): Promise<{ data: import('../types').LibraryImage[] }> => {
+  getImages: (folderId?: string | null, agentId?: string): Promise<{ data: import('../types').LibraryImage[] }> => {
     const params: any = {};
     if (folderId !== undefined && folderId !== null) params.folderId = folderId;
+    if (agentId) params.agentId = agentId;
     return api.get('/library/images', { params });
   },
 
@@ -268,8 +269,11 @@ export const libraryAPI = {
   move: (imageIds: string[], folderId: string | null): Promise<{ data: { message: string } }> =>
     api.post('/library/move', { imageIds, folderId }),
 
-  getFolders: (): Promise<{ data: import('../types').ImageFolder[] }> =>
-    api.get('/library/folders'),
+  getFolders: (agentId?: string): Promise<{ data: import('../types').ImageFolder[] }> => {
+    const params: any = {};
+    if (agentId) params.agentId = agentId;
+    return api.get('/library/folders', { params });
+  },
 
   createFolder: (name: string): Promise<{ data: import('../types').ImageFolder }> =>
     api.post('/library/folders', { name }),

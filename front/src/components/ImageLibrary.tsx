@@ -44,17 +44,18 @@ export default function ImageLibrary({ userRole }: Props) {
   const loadImages = useCallback(async () => {
     setLoading(true);
     try {
+      const agentFilter = showAgentDossiers && selectedAgentId ? selectedAgentId : undefined;
       const [imgs, st, fols] = await Promise.all([
-        libraryAPI.getImages(selectedFolder),
+        libraryAPI.getImages(selectedFolder, agentFilter),
         libraryAPI.getStats(),
-        libraryAPI.getFolders(),
+        libraryAPI.getFolders(agentFilter),
       ]);
       setImages(imgs.data);
       setStats(st.data);
       setFolders(fols.data);
     } catch (e) { console.error(e); }
     setLoading(false);
-  }, [selectedFolder]);
+  }, [selectedFolder, showAgentDossiers, selectedAgentId]);
 
   const loadTrash = useCallback(async () => {
     setLoading(true);

@@ -44,8 +44,8 @@ export class LibraryController {
   }
 
   @Get('images')
-  getImages(@Request() req: any, @Query('folderId') folderId?: string) {
-    return this.libraryService.getImages(req.user as User, folderId);
+  getImages(@Request() req: any, @Query('folderId') folderId?: string, @Query('agentId') agentId?: string) {
+    return this.libraryService.getImages(req.user as User, folderId, agentId);
   }
 
   @Get('trash')
@@ -93,8 +93,8 @@ export class LibraryController {
   }
 
   @Get('folders')
-  getFolders(@Request() req: any) {
-    return this.libraryService.getFolders(req.user as User);
+  getFolders(@Request() req: any, @Query('agentId') agentId?: string) {
+    return this.libraryService.getFolders(req.user as User, agentId);
   }
 
   @Patch('folders/:id')

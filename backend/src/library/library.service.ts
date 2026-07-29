@@ -30,10 +30,12 @@ export class LibraryService {
     return this.imageRepo.save(image);
   }
 
-  async getImages(user: User, folderId?: string | null) {
+  async getImages(user: User, folderId?: string | null, agentId?: string) {
     const where: any = { isDeleted: false };
 
-    if (user.role === UserRole.AGENT_QUALITE) {
+    if (agentId) {
+      where.uploadedBy = { id: agentId };
+    } else if (user.role === UserRole.AGENT_QUALITE) {
       where.uploadedBy = { id: user.id };
     }
 
@@ -131,9 +133,21 @@ export class LibraryService {
     return this.folderRepo.save(folder);
   }
 
-  async getFolders(user: User) {
+  async getFolders(user: User, agentId?: string) {
+    if (agentId) {
+      return this.folderRepo.find({
+        where: { createdBy: { id: agentId } },
+        order: { name: 'ASC' },
+      });
+    }
+    if (user.role === UserRole.AGENT_QUALITE) {
+      return this.folderRepo.find({
+        where: { createdBy: { id: user.id } },
+        order: { name: 'ASC' },
+      });
+    }
+    // Superviseur sees all folders
     return this.folderRepo.find({
-      where: { createdBy: { id: user.id } },
       order: { name: 'ASC' },
     });
   }
