@@ -1,18 +1,16 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { qualityAPI } from '../../api';
 import { LigneControle, NoteQualite } from '../../types';
 import { toast } from 'react-hot-toast';
 import Chat from '../../components/Chat';
-import NotificationBell from '../../components/NotificationBell';
-import UserProfileDrawer from '../../components/UserProfileDrawer';
-import ImageLibrary from '../../components/ImageLibrary';
 import { chatAPI } from '../../api';
 import {
   LayoutDashboard,
   Plus,
   List,
   BarChart3,
+  LogOut,
   Calendar,
   Clock,
   CheckCircle,
@@ -46,15 +44,13 @@ import {
   ChevronRight,
   CalendarClock,
   Users,
-  ImageIcon,
-  Trash2,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 const Dashboard: React.FC = () => {
-  const { user, token, logout, isSuperviseur, isAgent } = useAuth();
+  const { user, logout, isSuperviseur, isAgent } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [lignes, setLignes] = useState<LigneControle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,10 +59,6 @@ const Dashboard: React.FC = () => {
   const [editingLigne, setEditingLigne] = useState<LigneControle | null>(null);
   const [lignesSubTab, setLignesSubTab] = useState<'mes-lignes' | 'agent-lignes'>('mes-lignes');
   const [unreadCount, setUnreadCount] = useState(0);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchLignes();
@@ -106,33 +98,6 @@ const Dashboard: React.FC = () => {
     }, 0);
     return { total, vert, jaune, rouge, totalMinutes };
   };
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setSearchOpen(true);
-      }
-      if (e.key === 'Escape') setSearchOpen(false);
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  useEffect(() => {
-    if (searchOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-  }, [searchOpen]);
-
-  const searchResults = searchQuery.trim()
-    ? lignes.filter(l =>
-        l.nomLigne.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        l.responsable.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        l.details.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        l.delais.toLowerCase().includes(searchQuery.toLowerCase())
-      ).slice(0, 10)
-    : [];
 
   const stats = getStats();
 
@@ -222,14 +187,16 @@ const Dashboard: React.FC = () => {
             <MessageSquare size={18} /> <span>Messages</span>
             {unreadCount > 0 && <span className="nav-badge">{unreadCount}</span>}
           </button>
-          <button
-            className={`nav-item ${activeTab === 'images' ? 'active' : ''}`}
-            onClick={() => handleTab('images')}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            <span>Images & Dossiers</span>
-          </button>
         </nav>
+        <div className="sidebar-footer">
+          <div className="user-info">
+            <span>{user?.firstName} {user?.lastName}</span>
+            <small>{user?.matricule}</small>
+          </div>
+          <button className="btn-icon" onClick={logout} title="Déconnexion">
+            <LogOut size={18} />
+          </button>
+        </div>
       </aside>
 
       <main className="main-content">
@@ -238,50 +205,23 @@ const Dashboard: React.FC = () => {
             <button className="hamburger-btn" onClick={() => setMobileOpen(true)}>
               <Menu size={20} />
             </button>
-            <div className="top-bar-brand">
-              <div className="top-bar-brand-icon">
-                {user?.profileImage ? (
-                  <img src={`http://localhost:3000${user.profileImage}`} alt="" className="top-bar-brand-img" />
-                ) : (
-                  <div className="top-bar-brand-fallback">
-                    {user?.firstName?.[0]}{user?.lastName?.[0]}
-                  </div>
-                )}
-              </div>
-              <div className="top-bar-brand-text">
-                <span className="top-bar-brand-label">{isSuperviseur ? 'SUPERVISEUR QUALITÉ' : 'AGENT QUALITÉ'}</span>
-                <span className="top-bar-brand-name">{user?.firstName} {user?.lastName}</span>
-              </div>
-            </div>
+            <h1>Tableau de bord</h1>
+            <span className="role-badge">
+              {isSuperviseur ? 'Superviseur Qualité' : 'Agent Qualité'}
+            </span>
           </div>
           <div className="top-bar-right">
-            <button className="top-bar-icon-btn" title="Messages" onClick={() => handleTab('messages')}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-            </button>
-            <button className="top-bar-icon-btn" title="Rechercher" onClick={() => setSearchOpen(true)}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            </button>
-            <div className="top-bar-shortcut">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"/><line x1="6" y1="8" x2="6.01" y2="8"/><line x1="10" y1="8" x2="10.01" y2="8"/><line x1="14" y1="8" x2="14.01" y2="8"/><line x1="18" y1="8" x2="18.01" y2="8"/><line x1="8" y1="12" x2="8.01" y2="12"/><line x1="12" y1="12" x2="12.01" y2="12"/><line x1="16" y1="12" x2="16.01" y2="12"/><line x1="7" y1="16" x2="17" y2="16"/></svg>
-              <span>⌘K</span>
-            </div>
-            <NotificationBell token={token} />
-            <button className="top-bar-avatar-btn" onClick={() => setDrawerOpen(true)}>
-              <div className="top-bar-avatar-wrap">
-                {user?.profileImage ? (
-                  <img src={`http://localhost:3000${user.profileImage}`} alt="" className="top-bar-avatar-img" />
-                ) : (
-                  <div className="top-bar-avatar-text">
-                    {user?.firstName?.[0]}{user?.lastName?.[0]}
-                  </div>
-                )}
-                <span className="top-bar-online-dot" />
+            {user?.profileImage ? (
+              <img src={`http://localhost:3000${user.profileImage}`} alt="" className="user-avatar-img" />
+            ) : (
+              <div className="user-avatar">
+                {user?.firstName?.[0]}{user?.lastName?.[0]}
               </div>
-            </button>
+            )}
           </div>
         </div>
         <div className="content-body">
-          {/* Welcome Banner */}
+          {/* Premium Welcome Banner */}
           <div className="wb-banner">
             <div className="wb-bg-shapes">
               <div className="wb-shape wb-shape-1" />
@@ -319,33 +259,34 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
             </div>
-            {/* Quick Actions */}
-            <div className="wb-quick-actions">
-              <span className="wb-qa-title">Actions rapides</span>
-              <div className="wb-qa-grid">
-                <button className="wb-qa-btn" onClick={() => handleTab('lignes')}>
-                  <div className="wb-qa-icon" style={{ background: '#eff6ff', color: '#2563eb' }}><ClipboardList size={18} /></div>
-                  <span>Ajouter Ligne</span>
-                </button>
-                {isSuperviseur ? (
-                  <button className="wb-qa-btn" onClick={() => handleTab('rapport')}>
-                    <div className="wb-qa-icon" style={{ background: '#f0fdf4', color: '#16a34a' }}><BarChart3 size={18} /></div>
-                    <span>Voir Rapport</span>
-                  </button>
-                ) : (
-                  <button className="wb-qa-btn" onClick={() => handleTab('lignes')}>
-                    <div className="wb-qa-icon" style={{ background: '#f0fdf4', color: '#16a34a' }}><List size={18} /></div>
-                    <span>Voir Lignes</span>
-                  </button>
-                )}
-                <button className="wb-qa-btn" onClick={() => handleTab('messages')}>
-                  <div className="wb-qa-icon" style={{ background: '#eff6ff', color: '#6366f1' }}><MessageSquare size={18} /></div>
-                  <span>Messages</span>
-                </button>
-                <button className="wb-qa-btn" onClick={() => handleTab('images')}>
-                  <div className="wb-qa-icon" style={{ background: '#f0f9ff', color: '#0284c7' }}><ImageIcon size={18} /></div>
-                  <span>Bibliothèque</span>
-                </button>
+            {/* Mini donut */}
+            <div className="wb-donut-wrap">
+              <svg viewBox="0 0 100 100" className="wb-donut">
+                {(() => {
+                  const r = 35;
+                  const c = 2 * Math.PI * r;
+                  const data = [
+                    { pct: stats.total > 0 ? stats.vert / stats.total : 0, color: '#4ade80' },
+                    { pct: stats.total > 0 ? stats.jaune / stats.total : 0, color: '#facc15' },
+                    { pct: stats.total > 0 ? stats.rouge / stats.total : 0, color: '#f87171' },
+                  ];
+                  let offset = 0;
+                  return data.map((d, i) => {
+                    const len = d.pct * c;
+                    const gap = c - len;
+                    const el = (
+                      <circle key={i} cx="50" cy="50" r={r} fill="none" stroke={d.color} strokeWidth="10"
+                        strokeDasharray={`${len} ${gap}`} strokeDashoffset={-offset} strokeLinecap="round"
+                        className="wb-donut-seg" style={{ animationDelay: `${i * 200 + 400}ms` }} />
+                    );
+                    offset += len;
+                    return el;
+                  });
+                })()}
+              </svg>
+              <div className="wb-donut-center">
+                <span>{stats.total > 0 ? Math.round((stats.vert / stats.total) * 100) : 0}%</span>
+                <small>Conforme</small>
               </div>
             </div>
           </div>
@@ -354,195 +295,95 @@ const Dashboard: React.FC = () => {
             <div className="ov-grid">
               {/* KPI Cards */}
               <div className="ov-kpi ov-kpi-blue">
-                <div className="ov-kpi-icon-wrap" style={{ background: '#eff6ff', color: '#2563eb' }}>
-                  <Layers size={20} />
+                <div className="ov-kpi-head">
+                  <div className="ov-kpi-icon"><Layers size={20} /></div>
+                  <span className="ov-kpi-trend ov-kpi-trend-up"><ArrowUpRight size={14} /> {stats.total}</span>
                 </div>
                 <div className="ov-kpi-body">
-                  <span className="ov-kpi-lbl">Total Lignes</span>
                   <span className="ov-kpi-val">{stats.total}</span>
-                  <span className="ov-kpi-sub">Toutes les lignes contrôle</span>
+                  <span className="ov-kpi-lbl">Total lignes</span>
                 </div>
-                <div className="ov-kpi-bottom">
-                  <span className="ov-kpi-trend ov-kpi-trend-up">
-                    <TrendingUp size={13} /> {stats.total > 0 ? Math.round((stats.vert / stats.total) * 100) : 0}% conforme
-                  </span>
+                <div className="ov-kpi-bar">
+                  <div className="ov-kpi-bar-fill" style={{ width: '100%', background: '#2563eb' }} />
                 </div>
-                <svg className="ov-kpi-spark" viewBox="0 0 80 30" preserveAspectRatio="none">
-                  <polyline points="0,25 15,20 30,22 45,15 60,10 80,5" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" />
-                </svg>
               </div>
 
               <div className="ov-kpi ov-kpi-green">
-                <div className="ov-kpi-icon-wrap" style={{ background: '#f0fdf4', color: '#22c55e' }}>
-                  <CheckCircle size={20} />
+                <div className="ov-kpi-head">
+                  <div className="ov-kpi-icon"><CheckCircle size={20} /></div>
+                  <span className="ov-kpi-trend ov-kpi-trend-up"><TrendingUp size={14} /> {stats.total > 0 ? Math.round((stats.vert / stats.total) * 100) : 0}%</span>
                 </div>
                 <div className="ov-kpi-body">
-                  <span className="ov-kpi-lbl">Conformes</span>
                   <span className="ov-kpi-val">{stats.vert}</span>
-                  <span className="ov-kpi-sub">Lignes en conformité</span>
+                  <span className="ov-kpi-lbl">Conformes (Vert)</span>
                 </div>
-                <div className="ov-kpi-bottom">
-                  <span className="ov-kpi-trend ov-kpi-trend-up">
-                    <TrendingUp size={13} /> +{stats.total > 0 ? Math.round((stats.vert / stats.total) * 100) : 0}%
-                  </span>
+                <div className="ov-kpi-bar">
+                  <div className="ov-kpi-bar-fill" style={{ width: `${stats.total > 0 ? (stats.vert / stats.total) * 100 : 0}%`, background: '#22c55e' }} />
                 </div>
-                <svg className="ov-kpi-spark" viewBox="0 0 80 30" preserveAspectRatio="none">
-                  <polyline points="0,28 15,25 30,20 45,18 60,12 80,5" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" />
-                </svg>
               </div>
 
               <div className="ov-kpi ov-kpi-yellow">
-                <div className="ov-kpi-icon-wrap" style={{ background: '#fefce8', color: '#eab308' }}>
-                  <AlertTriangle size={20} />
+                <div className="ov-kpi-head">
+                  <div className="ov-kpi-icon"><AlertTriangle size={20} /></div>
+                  <span className="ov-kpi-trend ov-kpi-trend-warn"><BarChart2 size={14} /> {stats.total > 0 ? Math.round((stats.jaune / stats.total) * 100) : 0}%</span>
                 </div>
                 <div className="ov-kpi-body">
-                  <span className="ov-kpi-lbl">À Surveiller</span>
                   <span className="ov-kpi-val">{stats.jaune}</span>
-                  <span className="ov-kpi-sub">Lignes en alerte</span>
+                  <span className="ov-kpi-lbl">À surveiller (Jaune)</span>
                 </div>
-                <div className="ov-kpi-bottom">
-                  <span className="ov-kpi-trend ov-kpi-trend-warn">
-                    <BarChart2 size={13} /> {stats.total > 0 ? Math.round((stats.jaune / stats.total) * 100) : 0}%
-                  </span>
+                <div className="ov-kpi-bar">
+                  <div className="ov-kpi-bar-fill" style={{ width: `${stats.total > 0 ? (stats.jaune / stats.total) * 100 : 0}%`, background: '#eab308' }} />
                 </div>
-                <svg className="ov-kpi-spark" viewBox="0 0 80 30" preserveAspectRatio="none">
-                  <polyline points="0,20 15,22 30,18 45,24 60,20 80,15" fill="none" stroke="#eab308" strokeWidth="2" strokeLinecap="round" />
-                </svg>
               </div>
 
               <div className="ov-kpi ov-kpi-red">
-                <div className="ov-kpi-icon-wrap" style={{ background: '#fef2f2', color: '#ef4444' }}>
-                  <XCircle size={20} />
+                <div className="ov-kpi-head">
+                  <div className="ov-kpi-icon"><XCircle size={20} /></div>
+                  <span className="ov-kpi-trend ov-kpi-trend-down"><TrendingDown size={14} /> {stats.total > 0 ? Math.round((stats.rouge / stats.total) * 100) : 0}%</span>
                 </div>
                 <div className="ov-kpi-body">
-                  <span className="ov-kpi-lbl">Critiques</span>
                   <span className="ov-kpi-val">{stats.rouge}</span>
-                  <span className="ov-kpi-sub">Lignes non conformes</span>
+                  <span className="ov-kpi-lbl">Critiques (Rouge)</span>
                 </div>
-                <div className="ov-kpi-bottom">
-                  <span className="ov-kpi-trend ov-kpi-trend-down">
-                    <TrendingDown size={13} /> -{stats.total > 0 ? Math.round((stats.rouge / stats.total) * 100) : 0}%
-                  </span>
+                <div className="ov-kpi-bar">
+                  <div className="ov-kpi-bar-fill" style={{ width: `${stats.total > 0 ? (stats.rouge / stats.total) * 100 : 0}%`, background: '#ef4444' }} />
                 </div>
-                <svg className="ov-kpi-spark" viewBox="0 0 80 30" preserveAspectRatio="none">
-                  <polyline points="0,10 15,12 30,18 45,15 60,22 80,28" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
-                </svg>
               </div>
 
-              <div className="ov-time-panel">
-                <div className="ov-time-head">
-                  <div className="ov-time-icon-wrap">
-                    <Timer size={22} />
-                  </div>
-                  <div className="ov-time-head-text">
-                    <span className="ov-panel-label">TEMPS PERDU</span>
-                    <h4 className="ov-panel-title">Suivi des arrêts production</h4>
-                  </div>
+              {/* Minutes card - full width */}
+              <div className="ov-kpi ov-kpi-full ov-kpi-cyan">
+                <div className="ov-kpi-head">
+                  <div className="ov-kpi-icon"><Timer size={20} /></div>
+                  <span className="ov-kpi-trend"><Zap size={14} /> Arrêts</span>
                 </div>
-                <div className="ov-time-body">
-                  <div className="ov-time-main">
-                    <div className="ov-time-ring">
-                      <svg viewBox="0 0 120 120">
-                        <circle cx="60" cy="60" r="52" fill="none" stroke="#e0f2fe" strokeWidth="8" />
-                        <circle cx="60" cy="60" r="52" fill="none" stroke="#06b6d4" strokeWidth="8"
-                          strokeDasharray={`${2 * Math.PI * 52}`}
-                          strokeDashoffset={`${2 * Math.PI * 52 * (1 - Math.min(stats.totalMinutes / (stats.total * 30 || 60), 1))}`}
-                          strokeLinecap="round" transform="rotate(-90 60 60)"
-                          className="ov-time-ring-fill" />
-                      </svg>
-                      <div className="ov-time-ring-center">
-                        <span className="ov-time-ring-val">{stats.totalMinutes}</span>
-                        <span className="ov-time-ring-unit">min</span>
-                      </div>
-                    </div>
-                    <div className="ov-time-details">
-                      <div className="ov-time-detail-row">
-                        <div className="ov-time-detail-left">
-                          <div className="ov-time-detail-icon" style={{ background: '#f0f9ff', color: '#0ea5e9' }}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                          </div>
-                          <span className="ov-time-detail-label">Total lignes</span>
-                        </div>
-                        <span className="ov-time-detail-val">{stats.total}</span>
-                      </div>
-                      <div className="ov-time-detail-row">
-                        <div className="ov-time-detail-left">
-                          <div className="ov-time-detail-icon" style={{ background: '#fef3c7', color: '#d97706' }}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                          </div>
-                          <span className="ov-time-detail-label">Moy. / ligne</span>
-                        </div>
-                        <span className="ov-time-detail-val">{stats.total > 0 ? Math.round(stats.totalMinutes / stats.total) : 0} min</span>
-                      </div>
-                      <div className="ov-time-detail-row">
-                        <div className="ov-time-detail-left">
-                          <div className="ov-time-detail-icon" style={{ background: '#fee2e2', color: '#dc2626' }}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                          </div>
-                          <span className="ov-time-detail-label">Heures perdues</span>
-                        </div>
-                        <span className="ov-time-detail-val">{Math.floor(stats.totalMinutes / 60)}h {stats.totalMinutes % 60}m</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="ov-time-bar-section">
-                    <div className="ov-time-bar-header">
-                      <span>Répartition temps par note</span>
-                    </div>
-                    <div className="ov-time-bar-row">
-                      <div className="ov-time-bar-item">
-                        <span className="ov-time-bar-dot" style={{ background: '#22c55e' }} />
-                        <span>Vert</span>
-                        <div className="ov-time-bar-track">
-                          <div className="ov-time-bar-fill" style={{ width: `${stats.total > 0 ? (stats.vert / stats.total) * 100 : 0}%`, background: '#22c55e' }} />
-                        </div>
-                      </div>
-                      <div className="ov-time-bar-item">
-                        <span className="ov-time-bar-dot" style={{ background: '#eab308' }} />
-                        <span>Jaune</span>
-                        <div className="ov-time-bar-track">
-                          <div className="ov-time-bar-fill" style={{ width: `${stats.total > 0 ? (stats.jaune / stats.total) * 100 : 0}%`, background: '#eab308' }} />
-                        </div>
-                      </div>
-                      <div className="ov-time-bar-item">
-                        <span className="ov-time-bar-dot" style={{ background: '#ef4444' }} />
-                        <span>Rouge</span>
-                        <div className="ov-time-bar-track">
-                          <div className="ov-time-bar-fill" style={{ width: `${stats.total > 0 ? (stats.rouge / stats.total) * 100 : 0}%`, background: '#ef4444' }} />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                <div className="ov-kpi-body">
+                  <span className="ov-kpi-val">{stats.totalMinutes}<small> min</small></span>
+                  <span className="ov-kpi-lbl">Minutes d'arrêt cumulées</span>
+                </div>
+                <div className="ov-kpi-bar">
+                  <div className="ov-kpi-bar-fill" style={{ width: `${Math.min((stats.totalMinutes / (stats.total * 30 || 1)) * 100, 100)}%`, background: '#06b6d4' }} />
                 </div>
               </div>
 
               {/* Quality Distribution Panel */}
               <div className="ov-dist-panel">
-                <div className="ov-panel-head">
-                  <div className="ov-panel-icon" style={{ background: '#f0fdf4', color: '#16a34a' }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
-                  </div>
-                  <div>
-                    <span className="ov-panel-label">DISTRIBUTION QUALITÉ</span>
-                    <h4 className="ov-panel-title">Aperçu par catégorie</h4>
-                  </div>
-                </div>
+                <h4 className="ov-panel-title"><BarChart2 size={16} /> Répartition qualité</h4>
                 <div className="ov-dist-chart">
-                  <svg viewBox="0 0 140 140" className="ov-dist-donut">
+                  <svg viewBox="0 0 120 120" className="ov-dist-donut">
                     {(() => {
-                      const r = 52;
+                      const r = 40;
                       const c = 2 * Math.PI * r;
                       const data = [
-                        { pct: stats.total > 0 ? stats.vert / stats.total : 0, color: '#34d399', label: 'Vert' },
-                        { pct: stats.total > 0 ? stats.jaune / stats.total : 0, color: '#fbbf24', label: 'Jaune' },
-                        { pct: stats.total > 0 ? stats.rouge / stats.total : 0, color: '#f87171', label: 'Rouge' },
+                        { pct: stats.total > 0 ? stats.vert / stats.total : 0, color: '#22c55e', label: 'Vert' },
+                        { pct: stats.total > 0 ? stats.jaune / stats.total : 0, color: '#eab308', label: 'Jaune' },
+                        { pct: stats.total > 0 ? stats.rouge / stats.total : 0, color: '#ef4444', label: 'Rouge' },
                       ];
                       let offset = 0;
                       return data.map((d, i) => {
                         const len = d.pct * c;
                         const gap = c - len;
                         const el = (
-                          <circle key={i} cx="70" cy="70" r={r} fill="none" stroke={d.color} strokeWidth="14"
+                          <circle key={i} cx="60" cy="60" r={r} fill="none" stroke={d.color} strokeWidth="14"
                             strokeDasharray={`${len} ${gap}`} strokeDashoffset={-offset} strokeLinecap="round"
                             className="ov-dist-seg" style={{ animationDelay: `${i * 200 + 300}ms` }} />
                         );
@@ -553,27 +394,20 @@ const Dashboard: React.FC = () => {
                   </svg>
                   <div className="ov-dist-center">
                     <span className="ov-dist-total">{stats.total}</span>
-                    <small>TOTAL</small>
+                    <small>Total</small>
                   </div>
                 </div>
                 <div className="ov-dist-legend">
                   {[
-                    { label: 'Conforme', sub: 'Vert', count: stats.vert, color: '#34d399', bg: '#f0fdf4', pct: stats.total > 0 ? Math.round((stats.vert / stats.total) * 100) : 0 },
-                    { label: 'À surveiller', sub: 'Jaune', count: stats.jaune, color: '#fbbf24', bg: '#fffbeb', pct: stats.total > 0 ? Math.round((stats.jaune / stats.total) * 100) : 0 },
-                    { label: 'Non conforme', sub: 'Rouge', count: stats.rouge, color: '#f87171', bg: '#fef2f2', pct: stats.total > 0 ? Math.round((stats.rouge / stats.total) * 100) : 0 },
+                    { label: 'Conforme', count: stats.vert, color: '#22c55e', pct: stats.total > 0 ? Math.round((stats.vert / stats.total) * 100) : 0 },
+                    { label: 'À surveiller', count: stats.jaune, color: '#eab308', pct: stats.total > 0 ? Math.round((stats.jaune / stats.total) * 100) : 0 },
+                    { label: 'Non conforme', count: stats.rouge, color: '#ef4444', pct: stats.total > 0 ? Math.round((stats.rouge / stats.total) * 100) : 0 },
                   ].map((item) => (
                     <div key={item.label} className="ov-dist-row">
-                      <div className="ov-dist-row-left">
-                        <span className="ov-dist-dot" style={{ background: item.color }} />
-                        <div className="ov-dist-text">
-                          <span className="ov-dist-label">{item.label}</span>
-                          <span className="ov-dist-sub">{item.sub}</span>
-                        </div>
-                      </div>
-                      <div className="ov-dist-row-right">
-                        <span className="ov-dist-val">{item.count}</span>
-                        <span className="ov-dist-pct">{item.pct}%</span>
-                      </div>
+                      <span className="ov-dist-dot" style={{ background: item.color }} />
+                      <span className="ov-dist-label">{item.label}</span>
+                      <span className="ov-dist-val">{item.count}</span>
+                      <span className="ov-dist-pct">{item.pct}%</span>
                     </div>
                   ))}
                 </div>
@@ -581,31 +415,19 @@ const Dashboard: React.FC = () => {
 
               {/* Recent Activity */}
               <div className="ov-activity-panel">
-                <div className="ov-panel-head">
-                  <div className="ov-panel-icon" style={{ background: '#eff6ff', color: '#2563eb' }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  </div>
-                  <div>
-                    <span className="ov-panel-label">ACTIVITÉ RÉCENTE</span>
-                    <h4 className="ov-panel-title">Dernières inspections</h4>
-                  </div>
-                </div>
+                <h4 className="ov-panel-title"><Activity size={16} /> Activité récente</h4>
                 <div className="ov-activity-list">
-                  {lignes.slice(0, 6).map((l, i) => (
+                  {lignes.slice(0, 8).map((l, i) => (
                     <div key={l.id} className="ov-activity-item" style={{ animationDelay: `${i * 50}ms` }}>
-                      <div className={`ov-act-avatar ${l.note}`}>
-                        {l.agent?.firstName?.[0]}{l.agent?.lastName?.[0]}
-                      </div>
+                      <div className={`ov-act-dot ${l.note}`} />
                       <div className="ov-act-info">
                         <span className="ov-act-name">{l.nomLigne}</span>
                         <span className="ov-act-meta">
-                          {l.agent?.firstName} {l.agent?.lastName}
-                          <span className="ov-act-sep">·</span>
-                          <span className="ov-act-time"><Clock size={11} /> {l.delais} min</span>
+                          {l.agent?.firstName} {l.agent?.lastName} · {l.delais} min
                         </span>
                       </div>
                       <div className="ov-act-right">
-                        <span className={`rapport-note-chip ${l.note}`}>{l.note}</span>
+                        <span className={`rapport-note-chip ${l.note}`} style={{ fontSize: '11px', padding: '2px 8px' }}>{l.note}</span>
                         <span className="ov-act-date">{new Date(l.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</span>
                       </div>
                     </div>
@@ -629,11 +451,10 @@ const Dashboard: React.FC = () => {
               subTab={lignesSubTab}
               onSubTabChange={setLignesSubTab}
               user={user}
-              onDelete={fetchLignes}
             />
           )}
           {activeTab === 'mes-lignes' && isAgent && (
-            <LignesTab lignes={lignes} loading={loading} onEdit={(ligne) => { setEditingLigne(ligne); setActiveTab('edit-ligne'); }} onDelete={fetchLignes} />
+            <LignesTab lignes={lignes} loading={loading} onEdit={(ligne) => { setEditingLigne(ligne); setActiveTab('edit-ligne'); }} />
           )}
           {activeTab === 'historique' && isSuperviseur && <HistoriqueTab />}
           {activeTab === 'add-ligne' && <AddLigneTab onSuccess={fetchLignes} onEdit={(ligne) => { setEditingLigne(ligne); setActiveTab('edit-ligne'); }} />}
@@ -642,52 +463,8 @@ const Dashboard: React.FC = () => {
           )}
           {activeTab === 'rapport' && <RapportTab />}
           {activeTab === 'messages' && <Chat onUnreadCountChange={setUnreadCount} />}
-          {activeTab === 'images' && <ImageLibrary userRole={user?.role || ''} />}
         </div>
       </main>
-      <UserProfileDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
-
-      {/* SEARCH MODAL */}
-      {searchOpen && (
-        <div className="search-overlay" onClick={() => { setSearchOpen(false); setSearchQuery(''); }}>
-          <div className="search-modal" onClick={e => e.stopPropagation()}>
-            <div className="search-input-wrap">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder="Rechercher une ligne, responsable, détails..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-              />
-              <kbd className="search-kbd">ESC</kbd>
-            </div>
-            {searchQuery.trim() && (
-              <div className="search-results">
-                {searchResults.length === 0 ? (
-                  <div className="search-empty">Aucun résultat pour "{searchQuery}"</div>
-                ) : (
-                  searchResults.map(l => (
-                    <div key={l.id} className="search-result-item" onClick={() => { setSearchOpen(false); setSearchQuery(''); handleTab('rapport'); }}>
-                      <div className={`search-result-dot note-${l.note}`} />
-                      <div className="search-result-info">
-                        <span className="search-result-name">{l.nomLigne}</span>
-                        <span className="search-result-meta">{l.responsable} · {l.delais} · {l.controleDate?.dateControle}</span>
-                      </div>
-                      <span className={`search-result-badge note-${l.note}`}>{l.note}</span>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-            {!searchQuery.trim() && (
-              <div className="search-hint">
-                <span>Recherchez par nom de ligne, responsable ou détails...</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
@@ -722,17 +499,6 @@ const ControleDatesTab: React.FC = () => {
       toast.error(err.response?.data?.message || 'Erreur');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDeleteDate = async (id: string) => {
-    if (!window.confirm('Supprimer cette date et toutes ses lignes ?')) return;
-    try {
-      await qualityAPI.deleteControleDate(id);
-      toast.success('Date supprimée');
-      fetchDates();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Erreur');
     }
   };
 
@@ -814,9 +580,6 @@ const ControleDatesTab: React.FC = () => {
                   <span>Créé par</span>
                   <strong>{d.createdBy?.firstName} {d.createdBy?.lastName}</strong>
                 </div>
-                <button className="cd-card-delete" onClick={() => handleDeleteDate(d.id)} title="Supprimer cette date">
-                  <Trash2 size={14} />
-                </button>
               </div>
             </div>
           );
@@ -838,11 +601,9 @@ const LignesSuperviseurTab: React.FC<{
   subTab: 'mes-lignes' | 'agent-lignes';
   onSubTabChange: (tab: 'mes-lignes' | 'agent-lignes') => void;
   user: any;
-  onDelete: () => void;
-}> = ({ lignes, loading, subTab, onSubTabChange, user, onDelete }) => {
+}> = ({ lignes, loading, subTab, onSubTabChange, user }) => {
   const [viewLigne, setViewLigne] = useState<LigneControle | null>(null);
   const [search, setSearch] = useState('');
-  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const mesLignes = lignes.filter((l) => l.agent?.id === user?.id);
   const agentLignes = lignes.filter((l) => l.agent?.id !== user?.id);
@@ -898,20 +659,6 @@ const LignesSuperviseurTab: React.FC<{
     });
     doc.save('lignes_controle.pdf');
     toast.success('Fichier PDF téléchargé');
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Supprimer cette ligne ?')) return;
-    setDeletingId(id);
-    try {
-      await qualityAPI.deleteLigneControle(id);
-      toast.success('Ligne supprimée');
-      onDelete();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Erreur lors de la suppression');
-    } finally {
-      setDeletingId(null);
-    }
   };
 
   return (
@@ -991,14 +738,6 @@ const LignesSuperviseurTab: React.FC<{
                     <button className="btn-icon-sm" onClick={() => setViewLigne(l)} title="Voir les détails">
                       <Eye size={16} />
                     </button>
-                    <button
-                      className="btn-icon-sm btn-icon-danger"
-                      onClick={() => handleDelete(l.id)}
-                      title="Supprimer"
-                      disabled={deletingId === l.id}
-                    >
-                      <Trash2 size={16} />
-                    </button>
                   </td>
                 </tr>
               ))}
@@ -1016,32 +755,16 @@ const LignesSuperviseurTab: React.FC<{
   );
 };
 
-const LignesTab: React.FC<{ lignes: LigneControle[]; loading: boolean; onEdit?: (ligne: LigneControle) => void; onDelete?: () => void }> = ({
+const LignesTab: React.FC<{ lignes: LigneControle[]; loading: boolean; onEdit?: (ligne: LigneControle) => void }> = ({
   lignes,
   loading,
   onEdit,
-  onDelete,
 }) => {
   const [search, setSearch] = useState('');
   const [viewLigne, setViewLigne] = useState<LigneControle | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const filtered = lignes.filter(
     (l) => l.nomLigne?.toLowerCase().includes(search.toLowerCase())
   );
-
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Supprimer cette ligne ?')) return;
-    setDeletingId(id);
-    try {
-      await qualityAPI.deleteLigneControle(id);
-      toast.success('Ligne supprimée');
-      onDelete?.();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Erreur');
-    } finally {
-      setDeletingId(null);
-    }
-  };
 
   if (loading) return <div className="loading">Chargement...</div>;
 
@@ -1100,14 +823,6 @@ const LignesTab: React.FC<{ lignes: LigneControle[]; loading: boolean; onEdit?: 
                       Modifier
                     </button>
                   )}
-                  <button
-                    className="btn-icon-sm btn-icon-danger"
-                    onClick={() => handleDelete(l.id)}
-                    title="Supprimer"
-                    disabled={deletingId === l.id}
-                  >
-                    <Trash2 size={16} />
-                  </button>
                 </div>
               </td>
             </tr>
@@ -1249,9 +964,6 @@ const AddLigneTab: React.FC<{ onSuccess: () => void; onEdit: (ligne: LigneContro
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [showImagePicker, setShowImagePicker] = useState(false);
-  const uploadInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     qualityAPI.getAllControleDates().then((r) => setDates(r.data));
@@ -1415,67 +1127,23 @@ const AddLigneTab: React.FC<{ onSuccess: () => void; onEdit: (ligne: LigneContro
             type="file"
             accept="image/*"
             onChange={handleImageChange}
-            ref={uploadInputRef}
+            id="image-upload"
             style={{ display: 'none' }}
           />
-          <input
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={handleImageChange}
-            ref={cameraInputRef}
-            style={{ display: 'none' }}
-          />
-          {imagePreview ? (
-            <div className="image-preview-wrap">
+          <label htmlFor="image-upload" className="image-upload-label">
+            {imagePreview ? (
               <img src={imagePreview} alt="Aperçu" className="image-preview" />
-              <button type="button" className="image-remove-btn" onClick={() => { setImageFile(null); setImagePreview(null); }}>
-                <X size={14} />
-              </button>
-            </div>
-          ) : (
-            <button type="button" className="image-add-btn" onClick={() => setShowImagePicker(true)}>
-              <Camera size={18} />
-              <span>Ajouter une image</span>
+            ) : (
+              <span><Camera size={14} /> Cliquer pour ajouter une image</span>
+            )}
+          </label>
+          {imageFile && (
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setImageFile(null); setImagePreview(null); }}>
+              Supprimer l'image
             </button>
           )}
         </div>
       </div>
-
-      {showImagePicker && (
-        <div className="modal-overlay" onClick={() => setShowImagePicker(false)}>
-          <div className="modal-content image-picker-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Ajouter une image</h3>
-              <button className="modal-close" onClick={() => setShowImagePicker(false)}>
-                <X size={18} />
-              </button>
-            </div>
-            <div className="image-picker-options">
-              <button className="image-picker-option" onClick={() => { setShowImagePicker(false); uploadInputRef.current?.click(); }}>
-                <div className="image-picker-icon" style={{ background: '#eff6ff', color: '#2563eb' }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-                  </svg>
-                </div>
-                <div className="image-picker-text">
-                  <span className="image-picker-title">Choisir depuis la galerie</span>
-                  <span className="image-picker-desc">Sélectionner une photo existante</span>
-                </div>
-              </button>
-              <button className="image-picker-option" onClick={() => { setShowImagePicker(false); cameraInputRef.current?.click(); }}>
-                <div className="image-picker-icon" style={{ background: '#f0fdf4', color: '#16a34a' }}>
-                  <Camera size={24} />
-                </div>
-                <div className="image-picker-text">
-                  <span className="image-picker-title">Prendre une photo</span>
-                  <span className="image-picker-desc">Utiliser l'appareil photo</span>
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       <button type="submit" className="btn btn-primary" disabled={loading}>
         <Plus size={16} /> Ajouter la ligne
       </button>
@@ -1497,9 +1165,6 @@ const EditLigneTab: React.FC<{ ligne: LigneControle; onSuccess: () => void; onCa
     ligne.image ? `http://localhost:3000${ligne.image}` : null
   );
   const [loading, setLoading] = useState(false);
-  const [showImagePicker, setShowImagePicker] = useState(false);
-  const editUploadRef = useRef<HTMLInputElement>(null);
-  const editCameraRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -1567,58 +1232,21 @@ const EditLigneTab: React.FC<{ ligne: LigneControle; onSuccess: () => void; onCa
       <div className="form-group">
         <label>Image (optionnel)</label>
         <div className="image-upload-area">
-          <input type="file" accept="image/*" onChange={handleImageChange} ref={editUploadRef} style={{ display: 'none' }} />
-          <input type="file" accept="image/*" capture="environment" onChange={handleImageChange} ref={editCameraRef} style={{ display: 'none' }} />
-          {imagePreview ? (
-            <div className="image-preview-wrap">
+          <input type="file" accept="image/*" onChange={handleImageChange} id="edit-image-upload" style={{ display: 'none' }} />
+          <label htmlFor="edit-image-upload" className="image-upload-label">
+            {imagePreview ? (
               <img src={imagePreview} alt="Aperçu" className="image-preview" />
-              <button type="button" className="image-remove-btn" onClick={() => { setImageFile(null); setImagePreview(null); }}>
-                <X size={14} />
-              </button>
-            </div>
-          ) : (
-            <button type="button" className="image-add-btn" onClick={() => setShowImagePicker(true)}>
-              <Camera size={18} />
-              <span>Ajouter une image</span>
+            ) : (
+              <span><Camera size={14} /> Cliquer pour ajouter une image</span>
+            )}
+          </label>
+          {imageFile && (
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setImageFile(null); setImagePreview(ligne.image ? `http://localhost:3000${ligne.image}` : null); }}>
+              Supprimer l'image
             </button>
           )}
         </div>
       </div>
-
-      {showImagePicker && (
-        <div className="modal-overlay" onClick={() => setShowImagePicker(false)}>
-          <div className="modal-content image-picker-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Ajouter une image</h3>
-              <button className="modal-close" onClick={() => setShowImagePicker(false)}>
-                <X size={18} />
-              </button>
-            </div>
-            <div className="image-picker-options">
-              <button className="image-picker-option" onClick={() => { setShowImagePicker(false); editUploadRef.current?.click(); }}>
-                <div className="image-picker-icon" style={{ background: '#eff6ff', color: '#2563eb' }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-                  </svg>
-                </div>
-                <div className="image-picker-text">
-                  <span className="image-picker-title">Choisir depuis la galerie</span>
-                  <span className="image-picker-desc">Sélectionner une photo existante</span>
-                </div>
-              </button>
-              <button className="image-picker-option" onClick={() => { setShowImagePicker(false); editCameraRef.current?.click(); }}>
-                <div className="image-picker-icon" style={{ background: '#f0fdf4', color: '#16a34a' }}>
-                  <Camera size={24} />
-                </div>
-                <div className="image-picker-text">
-                  <span className="image-picker-title">Prendre une photo</span>
-                  <span className="image-picker-desc">Utiliser l'appareil photo</span>
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       <div style={{ display: 'flex', gap: '12px' }}>
         <button type="submit" className="btn btn-primary" disabled={loading}>
           <Plus size={16} /> Enregistrer
@@ -1771,86 +1399,6 @@ const RapportTab: React.FC = () => {
     return new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
-  const exportRapportPDF = () => {
-    if (!rapport) return;
-    const doc = new jsPDF('landscape');
-
-    // Header
-    doc.setFillColor(15, 23, 42);
-    doc.rect(0, 0, 297, 28, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Rapport Qualité', 14, 12);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`${formatDate(rapport.periode.debut)} — ${formatDate(rapport.periode.fin)}`, 14, 20);
-
-    // KPIs
-    doc.setTextColor(71, 85, 105);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Total: ${stats.total}`, 14, 38);
-    doc.text(`Vert: ${stats.vert} (${stats.pctVert}%)`, 70, 38);
-    doc.text(`Jaune: ${stats.jaune} (${stats.pctJaune}%)`, 140, 38);
-    doc.text(`Rouge: ${stats.rouge} (${stats.pctRouge}%)`, 210, 38);
-    doc.text(`Minutes: ${stats.minutes} min`, 14, 46);
-
-    // Table header
-    const startY = 56;
-    doc.setFillColor(241, 245, 249);
-    doc.rect(14, startY, 269, 8, 'F');
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(100, 116, 139);
-    doc.text('Note', 16, startY + 5.5);
-    doc.text('Ligne', 40, startY + 5.5);
-    doc.text('Agent', 90, startY + 5.5);
-    doc.text('Responsable', 135, startY + 5.5);
-    doc.text('Durée', 185, startY + 5.5);
-    doc.text('Date', 210, startY + 5.5);
-    doc.text('Détails', 240, startY + 5.5);
-
-    // Table rows
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    let y = startY + 12;
-    const pageHeight = 200;
-
-    filteredDetails.forEach((d: any, i: number) => {
-      if (y > pageHeight) {
-        doc.addPage();
-        y = 20;
-      }
-
-      if (i % 2 === 0) {
-        doc.setFillColor(248, 250, 252);
-        doc.rect(14, y - 4, 269, 8, 'F');
-      }
-
-      doc.setTextColor(30, 41, 59);
-      doc.text(d.note?.toUpperCase() || '-', 16, y + 1);
-      doc.text(d.nomLigne || '-', 40, y + 1);
-      doc.text(`${d.agent?.firstName || ''} ${d.agent?.lastName || ''}`.trim() || '-', 90, y + 1);
-      doc.text(d.responsable || '-', 135, y + 1);
-
-      // Duration pill
-      doc.setFillColor(240, 249, 255);
-      doc.roundedRect(183, y - 3, 20, 6, 2, 2, 'F');
-      doc.setTextColor(37, 99, 235);
-      doc.text(`${d.delais} min`, 186, y + 1);
-
-      doc.setTextColor(100, 116, 139);
-      doc.text(formatDate(d.createdAt), 210, y + 1);
-      doc.text((d.details || '-').substring(0, 30), 240, y + 1);
-
-      y += 8;
-    });
-
-    doc.save('rapport_qualite.pdf');
-    toast.success('Fichier PDF téléchargé');
-  };
-
   const kpis = [
     { label: 'Total lignes', value: stats.total, icon: Layers, color: '#2563eb', bg: 'linear-gradient(135deg, #eff6ff, #dbeafe)' },
     { label: "Minutes d'arrêt", value: `${stats.minutes} min`, icon: Timer, color: '#f59e0b', bg: 'linear-gradient(135deg, #fffbeb, #fef3c7)' },
@@ -1903,16 +1451,11 @@ const RapportTab: React.FC = () => {
 
       {rapport && (
         <div className={`rapport-results ${animatedIn ? 'animate-in' : ''}`}>
-          {/* Period badge + Export */}
-          <div className="rapport-top-row">
-            <div className="rapport-period-badge">
-              <Calendar size={14} />
-              <span>{formatDate(rapport.periode.debut)} — {formatDate(rapport.periode.fin)}</span>
-              {search && <span className="rapport-filter-badge">Filtre actif: "{search}"</span>}
-            </div>
-            <button className="rapport-export-btn" onClick={exportRapportPDF}>
-              <Download size={14} /> Exporter PDF
-            </button>
+          {/* Period badge */}
+          <div className="rapport-period-badge">
+            <Calendar size={14} />
+            <span>{formatDate(rapport.periode.debut)} — {formatDate(rapport.periode.fin)}</span>
+            {search && <span className="rapport-filter-badge">Filtre actif: "{search}"</span>}
           </div>
 
           {/* Search */}

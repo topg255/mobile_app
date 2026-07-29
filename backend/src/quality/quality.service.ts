@@ -153,6 +153,43 @@ export class QualityService {
     };
   }
 
+  async deleteLigneControle(id: string, user: User) {
+    const ligne = await this.ligneControleRepo.findOne({
+      where: { id },
+      relations: { agent: true },
+    });
+    if (!ligne) throw new NotFoundException('Ligne de contrôle non trouvée');
+    if (user.role === UserRole.AGENT_QUALITE && ligne.agent.id !== user.id) {
+      throw new ForbiddenException('Vous ne pouvez supprimer que vos propres lignes');
+    }
+    if (ligne.image) {
+      const filename = ligne.image.split('/').pop();
+      if (filename) {
+        const oldPath = join(process.cwd(), 'uploads', filename);
+        try { await unlink(oldPath); } catch {}
+      }
+    }
+    await this.ligneControleRepo.remove(ligne);
+    return { message: 'Ligne supprimée avec succès' };
+  }
+
+  async deleteControleDate(id: string) {
+    const date = await this.controleDateRepo.findOne({ where: { id } });
+    if (!date) throw new NotFoundException('Date de contrôle non trouvée');
+    const lignes = await this.ligneControleRepo.find({ where: { controleDate: { id } } });
+    for (const l of lignes) {
+      if (l.image) {
+        const filename = l.image.split('/').pop();
+        if (filename) {
+          try { await unlink(join(process.cwd(), 'uploads', filename)); } catch {}
+        }
+      }
+    }
+    if (lignes.length > 0) await this.ligneControleRepo.remove(lignes);
+    await this.controleDateRepo.remove(date);
+    return { message: 'Date de contrôle supprimée avec succès' };
+  }
+
   async uploadLigneImage(id: string, file: Express.Multer.File, user: User) {
     const ligne = await this.ligneControleRepo.findOne({
       where: { id },

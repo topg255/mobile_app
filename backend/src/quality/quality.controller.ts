@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Delete,
   Patch,
   Body,
   Param,
@@ -171,6 +172,31 @@ export class QualityController {
     @Request() req,
   ) {
     return this.qualityService.updateLigneControle(id, dto, req.user);
+  }
+
+  @Delete('lignes/:id')
+  @Roles(UserRole.SUPERVISEUR_QUALITE, UserRole.AGENT_QUALITE)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Supprimer une ligne de contrôle' })
+  @ApiResponse({ status: 200, description: 'Ligne supprimée' })
+  @ApiResponse({ status: 404, description: 'Ligne non trouvée' })
+  async deleteLigneControle(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Request() req,
+  ) {
+    return this.qualityService.deleteLigneControle(id, req.user);
+  }
+
+  @Delete('controle-dates/:id')
+  @Roles(UserRole.SUPERVISEUR_QUALITE)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Supprimer une date de contrôle' })
+  @ApiResponse({ status: 200, description: 'Date supprimée' })
+  @ApiResponse({ status: 404, description: 'Date non trouvée' })
+  async deleteControleDate(
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.qualityService.deleteControleDate(id);
   }
 
   @Post('lignes/:id/image')

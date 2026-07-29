@@ -1460,6 +1460,24 @@ html, body, #root {
 .cd-status-off { background: #fef2f2; color: #dc2626; }
 .cd-card-meta { font-size: 12px; color: #94a3b8; }
 .cd-card-meta strong { color: #475569; font-weight: 500; }
+.cd-card-delete {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 5px;
+  cursor: pointer;
+  color: #ef4444;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+.cd-card-delete:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+  color: #dc2626;
+}
 
 /* ==================== HISTORIQUE ==================== */
 .hist-summary-bar {
@@ -2286,6 +2304,24 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
   color: #2563eb;
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+}
+.btn-icon-sm.btn-icon-danger {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #ef4444;
+  margin-left: 4px;
+}
+.btn-icon-sm.btn-icon-danger:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+  color: #dc2626;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15);
+}
+.btn-icon-sm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 /* Modal */

@@ -163,6 +163,12 @@ export const qualityAPI = {
     endDate: string;
     agentId?: string;
   }): Promise<{ data: Rapport }> => api.post('/quality/rapport', data),
+
+  deleteLigneControle: (id: string): Promise<{ data: { message: string } }> =>
+    api.delete(`/quality/lignes/${id}`),
+
+  deleteControleDate: (id: string): Promise<{ data: { message: string } }> =>
+    api.delete(`/quality/controle-dates/${id}`),
 };
 
 export const superAdminAPI = {
