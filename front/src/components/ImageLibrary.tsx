@@ -2,14 +2,13 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { LibraryImage, ImageFolder, LibraryStats } from '../types';
 import { libraryAPI, qualityAPI } from '../api';
 
-type TabType = 'all' | 'folders' | 'trash';
-
 interface Props {
   userRole: string;
 }
 
+type ViewMode = 'list' | 'grid';
+
 export default function ImageLibrary({ userRole }: Props) {
-  const [tab, setTab] = useState<TabType>('all');
   const [images, setImages] = useState<LibraryImage[]>([]);
   const [trashImages, setTrashImages] = useState<LibraryImage[]>([]);
   const [folders, setFolders] = useState<ImageFolder[]>([]);
@@ -18,8 +17,8 @@ export default function ImageLibrary({ userRole }: Props) {
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [renameFolderId, setRenameFolderId] = useState<string | null>(null);
-  const [renameFolderName, setRenameFolderName] = useState('');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [searchQuery, setSearchQuery] = useState('');
   const [showImageDetail, setShowImageDetail] = useState<LibraryImage | null>(null);
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -29,6 +28,9 @@ export default function ImageLibrary({ userRole }: Props) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [filePreviewUrls, setFilePreviewUrls] = useState<string[]>([]);
   const [ligneNames, setLigneNames] = useState<string[]>([]);
+  const [showTrash, setShowTrash] = useState(false);
+  const [renameFolderId, setRenameFolderId] = useState<string | null>(null);
+  const [renameFolderName, setRenameFolderName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const showToast = (msg: string) => {
@@ -65,9 +67,9 @@ export default function ImageLibrary({ userRole }: Props) {
   }, []);
 
   useEffect(() => {
-    if (tab === 'trash') loadTrash();
+    if (showTrash) loadTrash();
     else loadImages();
-  }, [tab, loadImages, loadTrash]);
+  }, [showTrash, loadImages, loadTrash]);
 
   useEffect(() => {
     const fetchLignes = async () => {
@@ -86,14 +88,12 @@ export default function ImageLibrary({ userRole }: Props) {
     if (!files) return;
     const arr = Array.from(files);
     setSelectedFiles(arr);
-    const urls = arr.map(f => URL.createObjectURL(f));
-    setFilePreviewUrls(urls);
+    setFilePreviewUrls(arr.map(f => URL.createObjectURL(f)));
   };
 
   const handleUploadSubmit = async () => {
     if (selectedFiles.length === 0) return;
     setUploading(true);
-
     let folderId: string | null = null;
     if (uploadFolderName.trim()) {
       const existing = folders.find(f => f.name.toLowerCase() === uploadFolderName.trim().toLowerCase());
@@ -104,16 +104,12 @@ export default function ImageLibrary({ userRole }: Props) {
         folderId = res.data.id;
       }
     }
-
     for (const file of selectedFiles) {
       try {
         const res = await libraryAPI.upload(file, uploadDescription || undefined);
-        if (folderId) {
-          await libraryAPI.updateImage(res.data.id, { folderId });
-        }
+        if (folderId) await libraryAPI.updateImage(res.data.id, { folderId });
       } catch (e) { console.error(e); }
     }
-
     setSelectedFiles([]);
     setFilePreviewUrls([]);
     setUploadFolderName('');
@@ -163,29 +159,27 @@ export default function ImageLibrary({ userRole }: Props) {
   };
 
   const handleSelectAll = () => {
-    if (selectedImages.size === images.length) {
+    const allIds = [...folders.map(f => f.id), ...filteredImages.map(i => i.id)];
+    if (selectedImages.size === allIds.length) {
       setSelectedImages(new Set());
     } else {
-      setSelectedImages(new Set(images.map(i => i.id)));
+      setSelectedImages(new Set(allIds));
     }
-  };
-
-  const handleBulkMove = async (folderId: string | null) => {
-    if (selectedImages.size === 0) return;
-    try {
-      await libraryAPI.move(Array.from(selectedImages), folderId);
-      showToast(`${selectedImages.size} image(s) déplacée(s)`);
-      setSelectedImages(new Set());
-      loadImages();
-    } catch (e) { console.error(e); }
   };
 
   const handleBulkDelete = async () => {
     if (selectedImages.size === 0) return;
-    for (const id of selectedImages) {
-      await libraryAPI.delete(id);
-    }
+    for (const id of selectedImages) await libraryAPI.delete(id);
     showToast(`${selectedImages.size} image(s) supprimée(s)`);
+    setSelectedImages(new Set());
+    loadImages();
+  };
+
+  const handleBulkMove = async (folderId: string | null) => {
+    if (selectedImages.size === 0) return;
+    const imageIds = Array.from(selectedImages).filter(id => !folders.find(f => f.id === id));
+    if (imageIds.length > 0) await libraryAPI.move(imageIds, folderId);
+    showToast(`${imageIds.length} image(s) déplacée(s)`);
     setSelectedImages(new Set());
     loadImages();
   };
@@ -215,6 +209,15 @@ export default function ImageLibrary({ userRole }: Props) {
     } catch (e) { console.error(e); }
   };
 
+  const handleCreateFolder = async (name: string) => {
+    if (!name.trim()) return;
+    try {
+      await libraryAPI.createFolder(name.trim());
+      showToast('Dossier créé');
+      loadImages();
+    } catch (e) { console.error(e); }
+  };
+
   const handleRenameFolder = async (id: string) => {
     if (!renameFolderName.trim()) return;
     try {
@@ -239,354 +242,396 @@ export default function ImageLibrary({ userRole }: Props) {
     try {
       await libraryAPI.updateImage(id, { description: desc });
       showToast('Description mise à jour');
-      if (showImageDetail?.id === id) {
-        setShowImageDetail({ ...showImageDetail, description: desc });
-      }
+      if (showImageDetail?.id === id) setShowImageDetail({ ...showImageDetail, description: desc });
       loadImages();
     } catch (e) { console.error(e); }
   };
 
   const formatSize = (bytes: number) => {
+    if (!bytes) return '—';
     if (bytes < 1024) return `${bytes} o`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
   };
 
   const formatDate = (d: string) => {
-    return new Date(d).toLocaleDateString('fr-FR', {
-      day: '2-digit', month: 'short', year: 'numeric',
-      hour: '2-digit', minute: '2-digit',
-    });
+    return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
+  const formatTime = (d: string) => {
+    return new Date(d).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   };
 
   const getInitials = (fn?: string, ln?: string) => {
     return `${(fn || '')[0] || ''}${(ln || '')[0] || ''}`.toUpperCase();
   };
 
-  const currentImages = tab === 'trash' ? trashImages : images;
+  const allItems = showTrash ? trashImages : [...folders.map(f => ({ ...f, _type: 'folder' as const })), ...images.filter(i => !showTrash)];
+
+  const filteredImages = showTrash
+    ? trashImages.filter(i => i.originalName?.toLowerCase().includes(searchQuery.toLowerCase()) || i.description?.toLowerCase().includes(searchQuery.toLowerCase()))
+    : images.filter(i => {
+        if (selectedFolder) return i.folder?.id === selectedFolder;
+        return !i.folder;
+      }).filter(i => i.originalName?.toLowerCase().includes(searchQuery.toLowerCase()) || i.description?.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  const filteredFolders = folders.filter(f => {
+    if (selectedFolder) return false;
+    return f.name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
+  const currentDisplayItems = showTrash
+    ? filteredImages
+    : (selectedFolder ? filteredImages : [...filteredFolders, ...filteredImages]);
 
   return (
-    <div className="image-library">
-      {toast && <div className="il-toast">{toast}</div>}
+    <div className="fm">
+      {toast && <div className="fm-toast">{toast}</div>}
 
-      {/* HEADER */}
-      <div className="il-header">
-        <div className="il-header-left">
-          <div className="il-header-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          </div>
-          <div>
-            <h2>Images et Dossiers Management</h2>
-            <p className="il-subtitle">{stats.total} images · {stats.folderCount} dossiers</p>
-          </div>
-        </div>
-        <div className="il-header-actions">
-          <button
-            className="il-btn il-btn-primary"
-            onClick={() => setShowUploadModal(true)}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Ajouter
+      {/* LEFT SIDEBAR */}
+      <aside className="fm-sidebar">
+        <div className="fm-sidebar-top">
+          <button className={`fm-sidebar-item ${!showTrash && !selectedFolder ? 'active' : ''}`} onClick={() => { setShowTrash(false); setSelectedFolder(null); setSelectedImages(new Set()); setSearchQuery(''); }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+            <span>Tous les fichiers</span>
+            <span className="fm-sidebar-count">{stats.total}</span>
+          </button>
+          <button className={`fm-sidebar-item ${showTrash ? 'active' : ''}`} onClick={() => { setShowTrash(true); setSelectedFolder(null); setSelectedImages(new Set()); setSearchQuery(''); }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+            <span>Corbeille</span>
+            {stats.trashCount > 0 && <span className="fm-sidebar-count">{stats.trashCount}</span>}
           </button>
         </div>
-      </div>
 
-      {/* TABS */}
-      <div className="il-tabs">
-        <button className={`il-tab ${tab === 'all' ? 'il-tab-active' : ''}`} onClick={() => { setTab('all'); setSelectedFolder(null); setSelectedImages(new Set()); }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-          Toutes ({stats.total})
-        </button>
-        <button className={`il-tab ${tab === 'folders' ? 'il-tab-active' : ''}`} onClick={() => { setTab('folders'); setSelectedFolder(null); setSelectedImages(new Set()); }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
-          Dossiers ({stats.folderCount})
-        </button>
-        <button className={`il-tab ${tab === 'trash' ? 'il-tab-active' : ''}`} onClick={() => { setTab('trash'); setSelectedImages(new Set()); }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-          Corbeille ({stats.trashCount})
-        </button>
-      </div>
-
-      {/* TOOLBAR */}
-      {tab !== 'trash' && selectedImages.size > 0 && (
-        <div className="il-toolbar">
-          <span>{selectedImages.size} sélectionnée(s)</span>
-          <div className="il-toolbar-actions">
-            <select
-              className="il-toolbar-select"
-              onChange={(e) => { handleBulkMove(e.target.value || null); e.target.value = ''; }}
-              defaultValue=""
-            >
-              <option value="" disabled>Déplacer vers...</option>
-              <option value="">Sans dossier</option>
-              {folders.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-            </select>
-            <button className="il-btn il-btn-danger" onClick={handleBulkDelete}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-              Supprimer
-            </button>
+        <div className="fm-sidebar-storage">
+          <div className="fm-storage-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          </div>
+          <div className="fm-storage-info">
+            <span className="fm-storage-label">Stockage</span>
+            <span className="fm-storage-value">{stats.total} images · {stats.folderCount} dossiers</span>
           </div>
         </div>
-      )}
+      </aside>
 
-      {/* FOLDERS TAB CONTENT */}
-      {tab === 'folders' && (
-        <div className="il-folders-section">
-          {selectedFolder && (
-            <div className="il-folder-nav-back" onClick={() => setSelectedFolder(null)}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
-              Retour à tous les dossiers
-            </div>
-          )}
-
-          {!selectedFolder ? (
-            <div className="il-folder-grid">
-              {folders.length === 0 && (
-                <div className="il-empty">Aucun dossier. Utilisez le bouton "Ajouter" pour créer un dossier et y stocker des images.</div>
+      {/* MAIN CONTENT */}
+      <div className="fm-main">
+        {/* TOOLBAR */}
+        <div className="fm-toolbar">
+          <div className="fm-toolbar-left">
+            <div className="fm-search">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input
+                type="text"
+                placeholder="Rechercher des fichiers..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button className="fm-search-clear" onClick={() => setSearchQuery('')}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
               )}
-              {folders.map(folder => (
-                <div
-                  key={folder.id}
-                  className={`il-folder-card ${dragOverFolder === folder.id ? 'il-folder-dragover' : ''}`}
-                  onClick={() => setSelectedFolder(folder.id)}
-                  onDragOver={(e) => handleFolderDragOver(e, folder.id)}
-                  onDrop={(e) => handleFolderDrop(e, folder.id)}
-                  onDragLeave={() => setDragOverFolder(null)}
-                >
-                  <div className="il-folder-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+            </div>
+          </div>
+          <div className="fm-toolbar-right">
+            <div className="fm-view-toggle">
+              <button className={`fm-view-btn ${viewMode === 'grid' ? 'active' : ''}`} onClick={() => setViewMode('grid')} title="Vue grille">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+              </button>
+              <button className={`fm-view-btn ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode('list')} title="Vue liste">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+              </button>
+            </div>
+            {!showTrash && (
+              <>
+                <button className="fm-btn fm-btn-outline" onClick={() => handleCreateFolder(prompt('Nom du dossier:') || '')}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+                  Nouveau dossier
+                </button>
+                <button className="fm-btn fm-btn-primary" onClick={() => setShowUploadModal(true)}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  Upload
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* BREADCRUMB */}
+        {selectedFolder && !showTrash && (
+          <div className="fm-breadcrumb">
+            <span className="fm-breadcrumb-item" onClick={() => setSelectedFolder(null)}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+              Fichiers
+            </span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <span className="fm-breadcrumb-current">{folders.find(f => f.id === selectedFolder)?.name}</span>
+          </div>
+        )}
+
+        {showTrash && (
+          <div className="fm-breadcrumb">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+            <span className="fm-breadcrumb-current">Corbeille</span>
+          </div>
+        )}
+
+        {/* BULK ACTIONS */}
+        {selectedImages.size > 0 && (
+          <div className="fm-bulk-bar">
+            <span>{selectedImages.size} sélectionné(s)</span>
+            <div className="fm-bulk-actions">
+              {!showTrash && (
+                <select className="fm-bulk-select" onChange={e => { handleBulkMove(e.target.value || null); e.target.value = ''; }} defaultValue="">
+                  <option value="" disabled>Déplacer vers...</option>
+                  <option value="">Sans dossier</option>
+                  {folders.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                </select>
+              )}
+              <button className="fm-btn fm-btn-danger-sm" onClick={handleBulkDelete}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                Supprimer
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* LOADING */}
+        {loading && (
+          <div className="fm-loading">
+            <div className="fm-spinner" />
+          </div>
+        )}
+
+        {/* EMPTY STATE */}
+        {!loading && currentDisplayItems.length === 0 && (
+          <div className="fm-empty">
+            {showTrash ? (
+              <>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" opacity="0.3"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                <p>La corbeille est vide</p>
+              </>
+            ) : (
+              <>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" opacity="0.3"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <p>{searchQuery ? 'Aucun résultat pour votre recherche' : 'Aucun fichier. Cliquez sur "Upload" pour commencer !'}</p>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* LIST VIEW */}
+        {!loading && viewMode === 'list' && currentDisplayItems.length > 0 && (
+          <div className="fm-list">
+            <div className="fm-list-header">
+              <div className="fm-list-col fm-list-col-check">
+                <div className={`fm-checkbox ${selectedImages.size === currentDisplayItems.length && currentDisplayItems.length > 0 ? 'checked' : ''}`} onClick={handleSelectAll}>
+                  {selectedImages.size === currentDisplayItems.length && currentDisplayItems.length > 0 && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
+                </div>
+              </div>
+              <div className="fm-list-col fm-list-col-name">Nom</div>
+              <div className="fm-list-col fm-list-col-owner">Propriétaire</div>
+              <div className="fm-list-col fm-list-col-size">Taille</div>
+              <div className="fm-list-col fm-list-col-date">Modifié</div>
+              <div className="fm-list-col fm-list-col-actions"></div>
+            </div>
+
+            {/* FOLDERS */}
+            {!showTrash && !selectedFolder && filteredFolders.map(folder => (
+              <div
+                key={folder.id}
+                className={`fm-list-row is-folder ${dragOverFolder === folder.id ? 'dragover' : ''}`}
+                onDoubleClick={() => setSelectedFolder(folder.id)}
+                onDragOver={(e) => handleFolderDragOver(e, folder.id)}
+                onDrop={(e) => handleFolderDrop(e, folder.id)}
+                onDragLeave={() => setDragOverFolder(null)}
+              >
+                <div className="fm-list-col fm-list-col-check">
+                  <div className={`fm-checkbox ${selectedImages.has(folder.id) ? 'checked' : ''}`} onClick={() => handleSelectImage(folder.id)}>
+                    {selectedImages.has(folder.id) && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
                   </div>
+                </div>
+                <div className="fm-list-col fm-list-col-name">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
                   {renameFolderId === folder.id ? (
-                    <div className="il-rename-form" onClick={e => e.stopPropagation()}>
-                      <input
-                        type="text"
-                        value={renameFolderName}
-                        onChange={e => setRenameFolderName(e.target.value)}
-                        autoFocus
-                        onKeyDown={e => e.key === 'Enter' && handleRenameFolder(folder.id)}
-                      />
-                      <button onClick={() => handleRenameFolder(folder.id)}>OK</button>
+                    <div className="fm-rename" onClick={e => e.stopPropagation()}>
+                      <input type="text" value={renameFolderName} onChange={e => setRenameFolderName(e.target.value)} autoFocus onKeyDown={e => e.key === 'Enter' && handleRenameFolder(folder.id)} onBlur={() => handleRenameFolder(folder.id)} />
                     </div>
                   ) : (
-                    <span className="il-folder-name">{folder.name}</span>
+                    <span className="fm-name" onDoubleClick={e => e.stopPropagation()}>{folder.name}</span>
                   )}
-                  <div className="il-folder-actions" onClick={e => e.stopPropagation()}>
-                    <button title="Renommer" onClick={() => { setRenameFolderId(folder.id); setRenameFolderName(folder.name); }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    </button>
-                    <button title="Supprimer" onClick={() => handleDeleteFolder(folder.id, folder.name)}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                    </button>
+                  <span className="fm-badge fm-badge-folder">{images.filter(i => i.folder?.id === folder.id).length} fichiers</span>
+                </div>
+                <div className="fm-list-col fm-list-col-owner">
+                  <div className="fm-owner">
+                    <div className="fm-owner-avatar">{getInitials(folder.createdBy?.firstName, folder.createdBy?.lastName)}</div>
+                    <span>{folder.createdBy?.firstName} {folder.createdBy?.lastName}</span>
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="il-image-grid">
-              {images.filter(i => i.folder?.id === selectedFolder).length === 0 && (
-                <div className="il-empty">Ce dossier est vide.</div>
-              )}
-              {images.filter(i => i.folder?.id === selectedFolder).map(image => (
-                <div
-                  key={image.id}
-                  className={`il-image-card ${selectedImages.has(image.id) ? 'il-selected' : ''}`}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, image.id)}
-                >
-                  <div className="il-image-thumb" onClick={() => setShowImageDetail(image)}>
-                    <img src={`http://localhost:3000${image.url}`} alt={image.originalName || ''} />
-                    <div className="il-image-overlay">
-                      <button className="il-img-action-btn" title="Agrandir">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
-                      </button>
-                    </div>
-                  </div>
-                  <div className="il-image-info">
-                    <div className="il-image-select" onClick={() => handleSelectImage(image.id)}>
-                      <div className={`il-checkbox ${selectedImages.has(image.id) ? 'il-checked' : ''}`}>
-                        {selectedImages.has(image.id) && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
-                      </div>
-                    </div>
-                    <div className="il-image-meta">
-                      <span className="il-image-name">{image.originalName || image.filename}</span>
-                      <span className="il-image-date">{formatDate(image.createdAt)}</span>
-                    </div>
-                    <button className="il-image-delete" onClick={() => handleDelete(image.id)} title="Supprimer">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                    </button>
-                  </div>
+                <div className="fm-list-col fm-list-col-size">—</div>
+                <div className="fm-list-col fm-list-col-date">{formatDate(folder.createdAt)}</div>
+                <div className="fm-list-col fm-list-col-actions">
+                  <button className="fm-action-btn" title="Renommer" onClick={(e) => { e.stopPropagation(); setRenameFolderId(folder.id); setRenameFolderName(folder.name); }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                  <button className="fm-action-btn fm-action-danger" title="Supprimer" onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id, folder.name); }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                  </button>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ALL / TRASH TAB */}
-      {tab !== 'folders' && (
-        <>
-          {tab === 'all' && (
-            <div className="il-select-bar">
-              <div className="il-select-all" onClick={handleSelectAll}>
-                <div className={`il-checkbox ${selectedImages.size === images.length && images.length > 0 ? 'il-checked' : ''}`}>
-                  {selectedImages.size === images.length && images.length > 0 && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
-                </div>
-                <span>Tout sélectionner</span>
               </div>
-            </div>
-          )}
+            ))}
 
-          <div className="il-image-grid">
-            {loading && <div className="il-loading"><div className="il-spinner-lg" /></div>}
-            {!loading && currentImages.length === 0 && (
-              <div className="il-empty-full">
-                {tab === 'trash' ? (
-                  <>
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                    <p>La corbeille est vide</p>
-                  </>
-                ) : (
-                  <>
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                    <p>Aucune image. Cliquez sur "Ajouter" pour commencer !</p>
-                  </>
-                )}
-              </div>
-            )}
-            {currentImages.map(image => (
+            {/* IMAGES */}
+            {filteredImages.map(image => (
               <div
                 key={image.id}
-                className={`il-image-card ${selectedImages.has(image.id) ? 'il-selected' : ''}`}
-                draggable={tab === 'all'}
-                onDragStart={(e) => tab === 'all' && handleDragStart(e, image.id)}
+                className={`fm-list-row ${selectedImages.has(image.id) ? 'selected' : ''}`}
+                draggable
+                onDragStart={(e) => handleDragStart(e, image.id)}
               >
-                <div className="il-image-thumb" onClick={() => setShowImageDetail(image)}>
-                  <img src={`http://localhost:3000${image.url}`} alt={image.originalName || ''} loading="lazy" />
-                  <div className="il-image-overlay">
-                    <button className="il-img-action-btn" title="Agrandir">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
-                    </button>
+                <div className="fm-list-col fm-list-col-check">
+                  <div className={`fm-checkbox ${selectedImages.has(image.id) ? 'checked' : ''}`} onClick={() => handleSelectImage(image.id)}>
+                    {selectedImages.has(image.id) && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
                   </div>
                 </div>
-                <div className="il-image-info">
-                  {tab === 'all' && (
-                    <div className="il-image-select" onClick={() => handleSelectImage(image.id)}>
-                      <div className={`il-checkbox ${selectedImages.has(image.id) ? 'il-checked' : ''}`}>
-                        {selectedImages.has(image.id) && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
-                      </div>
-                    </div>
-                  )}
-                  <div className="il-image-meta">
-                    <span className="il-image-name">{image.originalName || image.filename}</span>
-                    <span className="il-image-date">{formatDate(image.createdAt)}</span>
-                    <span className="il-image-size">{formatSize(image.fileSize)}</span>
-                    {image.description && <span className="il-image-desc">{image.description}</span>}
-                    {image.folder && <span className="il-image-folder-badge">{image.folder.name}</span>}
-                    <div className="il-image-uploader">
-                      <div className="il-avatar-sm">{getInitials(image.uploadedBy?.firstName, image.uploadedBy?.lastName)}</div>
-                      <span>{image.uploadedBy?.firstName} {image.uploadedBy?.lastName}</span>
-                    </div>
+                <div className="fm-list-col fm-list-col-name" onClick={() => setShowImageDetail(image)}>
+                  <div className="fm-thumb-sm">
+                    <img src={`http://localhost:3000${image.url}`} alt="" />
                   </div>
-                  {tab === 'trash' ? (
-                    <div className="il-trash-actions">
-                      <button className="il-btn il-btn-sm il-btn-outline" onClick={() => handleRestore(image.id)}>Restaurer</button>
-                      <button className="il-btn il-btn-sm il-btn-danger" onClick={() => handlePermanentDelete(image.id)}>Supprimer</button>
-                    </div>
-                  ) : (
-                    <button className="il-image-delete" onClick={() => handleDelete(image.id)} title="Supprimer">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                  <div className="fm-name-info">
+                    <span className="fm-name">{image.originalName || image.filename}</span>
+                    {image.description && <span className="fm-name-desc">{image.description}</span>}
+                  </div>
+                  {image.folder && <span className="fm-badge fm-badge-folder">{image.folder.name}</span>}
+                </div>
+                <div className="fm-list-col fm-list-col-owner">
+                  <div className="fm-owner">
+                    <div className="fm-owner-avatar">{getInitials(image.uploadedBy?.firstName, image.uploadedBy?.lastName)}</div>
+                    <span>{image.uploadedBy?.firstName} {image.uploadedBy?.lastName}</span>
+                  </div>
+                </div>
+                <div className="fm-list-col fm-list-col-size">{formatSize(image.fileSize)}</div>
+                <div className="fm-list-col fm-list-col-date">{formatDate(image.createdAt)}</div>
+                <div className="fm-list-col fm-list-col-actions">
+                  {!showTrash ? (
+                    <button className="fm-action-btn fm-action-danger" title="Supprimer" onClick={() => handleDelete(image.id)}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                     </button>
+                  ) : (
+                    <div className="fm-trash-actions">
+                      <button className="fm-btn fm-btn-sm fm-btn-outline" onClick={() => handleRestore(image.id)}>Restaurer</button>
+                      <button className="fm-btn fm-btn-sm fm-btn-danger" onClick={() => handlePermanentDelete(image.id)}>Supprimer</button>
+                    </div>
                   )}
                 </div>
               </div>
             ))}
           </div>
-        </>
-      )}
+        )}
+
+        {/* GRID VIEW */}
+        {!loading && viewMode === 'grid' && currentDisplayItems.length > 0 && (
+          <div className="fm-grid">
+            {!showTrash && !selectedFolder && filteredFolders.map(folder => (
+              <div
+                key={folder.id}
+                className={`fm-grid-folder ${dragOverFolder === folder.id ? 'dragover' : ''}`}
+                onDoubleClick={() => setSelectedFolder(folder.id)}
+                onDragOver={(e) => handleFolderDragOver(e, folder.id)}
+                onDrop={(e) => handleFolderDrop(e, folder.id)}
+                onDragLeave={() => setDragOverFolder(null)}
+              >
+                <div className="fm-grid-folder-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+                </div>
+                <span className="fm-grid-folder-name">{folder.name}</span>
+                <span className="fm-grid-folder-count">{images.filter(i => i.folder?.id === folder.id).length} fichiers</span>
+              </div>
+            ))}
+            {filteredImages.map(image => (
+              <div
+                key={image.id}
+                className={`fm-grid-card ${selectedImages.has(image.id) ? 'selected' : ''}`}
+                draggable
+                onDragStart={(e) => handleDragStart(e, image.id)}
+              >
+                <div className="fm-grid-card-thumb" onClick={() => setShowImageDetail(image)}>
+                  <img src={`http://localhost:3000${image.url}`} alt="" loading="lazy" />
+                  <div className="fm-grid-card-overlay">
+                    <button className="fm-grid-card-zoom" title="Agrandir">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div className="fm-grid-card-info">
+                  <span className="fm-grid-card-name">{image.originalName || image.filename}</span>
+                  <div className="fm-grid-card-meta">
+                    <span>{formatDate(image.createdAt)}</span>
+                    <span>{formatSize(image.fileSize)}</span>
+                  </div>
+                </div>
+                <div className="fm-grid-card-check" onClick={() => handleSelectImage(image.id)}>
+                  <div className={`fm-checkbox ${selectedImages.has(image.id) ? 'checked' : ''}`}>
+                    {selectedImages.has(image.id) && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* UPLOAD MODAL */}
       {showUploadModal && (
-        <div className="il-modal-overlay" onClick={() => { setShowUploadModal(false); setSelectedFiles([]); setFilePreviewUrls([]); }}>
-          <div className="il-modal il-modal-upload" onClick={e => e.stopPropagation()}>
-            <button className="il-modal-close" onClick={() => { setShowUploadModal(false); setSelectedFiles([]); setFilePreviewUrls([]); }}>
+        <div className="fm-modal-overlay" onClick={() => { setShowUploadModal(false); setSelectedFiles([]); setFilePreviewUrls([]); }}>
+          <div className="fm-modal" onClick={e => e.stopPropagation()}>
+            <button className="fm-modal-close" onClick={() => { setShowUploadModal(false); setSelectedFiles([]); setFilePreviewUrls([]); }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
-            <div className="il-modal-upload-header">
+            <div className="fm-modal-header">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               <h3>Ajouter des images</h3>
             </div>
-
-            <div className="il-modal-upload-body">
-              <div className="il-upload-field">
+            <div className="fm-modal-body">
+              <div className="fm-field">
                 <label>Nom du dossier ligne</label>
-                <input
-                  type="text"
-                  list="ligne-names-list"
-                  placeholder="Sélectionnez ou saisissez un nom de ligne..."
-                  value={uploadFolderName}
-                  onChange={e => setUploadFolderName(e.target.value)}
-                />
+                <input type="text" list="ligne-names-list" placeholder="Sélectionnez ou saisissez un nom..." value={uploadFolderName} onChange={e => setUploadFolderName(e.target.value)} />
                 <datalist id="ligne-names-list">
-                  {ligneNames.map(name => (
-                    <option key={name} value={name} />
-                  ))}
+                  {ligneNames.map(name => <option key={name} value={name} />)}
                 </datalist>
-                <span className="il-upload-hint">Les images seront classées dans ce dossier. S'il existe déjà, elles y seront ajoutées.</span>
+                <span className="fm-field-hint">Les images seront classées dans ce dossier.</span>
               </div>
-
-              <div className="il-upload-field">
+              <div className="fm-field">
                 <label>Description</label>
-                <input
-                  type="text"
-                  placeholder="Description des images..."
-                  value={uploadDescription}
-                  onChange={e => setUploadDescription(e.target.value)}
-                />
+                <input type="text" placeholder="Description des images..." value={uploadDescription} onChange={e => setUploadDescription(e.target.value)} />
               </div>
-
-              <div className="il-upload-field">
+              <div className="fm-field">
                 <label>Images</label>
-                <div className="il-upload-dropzone" onClick={() => fileInputRef.current?.click()}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <div className="fm-upload-zone" onClick={() => fileInputRef.current?.click()}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                   <p>Cliquez ou glissez vos images ici</p>
                   <span>JPG, PNG, GIF, WebP · Max 10 Mo</span>
                 </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  style={{ display: 'none' }}
-                  onChange={(e) => handleFilesSelect(e.target.files)}
-                />
+                <input ref={fileInputRef} type="file" multiple accept="image/*" style={{ display: 'none' }} onChange={e => handleFilesSelect(e.target.files)} />
               </div>
-
               {filePreviewUrls.length > 0 && (
-                <div className="il-upload-previews">
+                <div className="fm-previews">
                   {filePreviewUrls.map((url, idx) => (
-                    <div key={idx} className="il-upload-preview-item">
-                      <img src={url} alt={`Preview ${idx}`} />
-                      <button className="il-upload-preview-remove" onClick={() => handleRemoveFile(idx)}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    <div key={idx} className="fm-preview-item">
+                      <img src={url} alt="" />
+                      <button className="fm-preview-remove" onClick={() => handleRemoveFile(idx)}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                       </button>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-
-            <div className="il-modal-upload-footer">
-              <button className="il-btn il-btn-ghost" onClick={() => { setShowUploadModal(false); setSelectedFiles([]); setFilePreviewUrls([]); }}>Annuler</button>
-              <button
-                className="il-btn il-btn-primary"
-                onClick={handleUploadSubmit}
-                disabled={selectedFiles.length === 0 || uploading}
-              >
-                {uploading ? (
-                  <><span className="il-spinner" /> Upload...</>
-                ) : (
-                  <>Ajouter {selectedFiles.length > 0 && `(${selectedFiles.length})`}</>
-                )}
+            <div className="fm-modal-footer">
+              <button className="fm-btn fm-btn-ghost" onClick={() => { setShowUploadModal(false); setSelectedFiles([]); setFilePreviewUrls([]); }}>Annuler</button>
+              <button className="fm-btn fm-btn-primary" onClick={handleUploadSubmit} disabled={selectedFiles.length === 0 || uploading}>
+                {uploading ? <><span className="fm-spinner-sm" /> Upload...</> : <>Ajouter{selectedFiles.length > 0 ? ` (${selectedFiles.length})` : ''}</>}
               </button>
             </div>
           </div>
@@ -595,75 +640,51 @@ export default function ImageLibrary({ userRole }: Props) {
 
       {/* IMAGE DETAIL MODAL */}
       {showImageDetail && (
-        <div className="il-modal-overlay" onClick={() => setShowImageDetail(null)}>
-          <div className="il-modal" onClick={e => e.stopPropagation()}>
-            <button className="il-modal-close" onClick={() => setShowImageDetail(null)}>
+        <div className="fm-modal-overlay" onClick={() => setShowImageDetail(null)}>
+          <div className="fm-modal fm-modal-detail" onClick={e => e.stopPropagation()}>
+            <button className="fm-modal-close" onClick={() => setShowImageDetail(null)}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
-            <div className="il-modal-image">
-              <img src={`http://localhost:3000${showImageDetail.url}`} alt={showImageDetail.originalName || ''} />
+            <div className="fm-detail-image">
+              <img src={`http://localhost:3000${showImageDetail.url}`} alt="" />
             </div>
-            <div className="il-modal-details">
-              <div className="il-modal-uploader">
-                <div className="il-avatar-md">{getInitials(showImageDetail.uploadedBy?.firstName, showImageDetail.uploadedBy?.lastName)}</div>
+            <div className="fm-detail-body">
+              <div className="fm-detail-uploader">
+                <div className="fm-owner-avatar fm-owner-avatar-lg">{getInitials(showImageDetail.uploadedBy?.firstName, showImageDetail.uploadedBy?.lastName)}</div>
                 <div>
-                  <div className="il-modal-uploader-name">{showImageDetail.uploadedBy?.firstName} {showImageDetail.uploadedBy?.lastName}</div>
-                  <div className="il-modal-uploader-date">{formatDate(showImageDetail.createdAt)}</div>
+                  <div className="fm-detail-uploader-name">{showImageDetail.uploadedBy?.firstName} {showImageDetail.uploadedBy?.lastName}</div>
+                  <div className="fm-detail-uploader-date">{formatDate(showImageDetail.createdAt)} · {formatTime(showImageDetail.createdAt)}</div>
                 </div>
               </div>
-              <div className="il-modal-field">
-                <label>Nom du fichier</label>
-                <span>{showImageDetail.originalName}</span>
-              </div>
-              <div className="il-modal-field">
-                <label>Taille</label>
-                <span>{formatSize(showImageDetail.fileSize)}</span>
-              </div>
-              <div className="il-modal-field">
-                <label>Type</label>
-                <span>{showImageDetail.mimeType}</span>
-              </div>
-              {showImageDetail.folder && (
-                <div className="il-modal-field">
-                  <label>Dossier</label>
-                  <span>{showImageDetail.folder.name}</span>
+              <div className="fm-detail-grid">
+                <div className="fm-detail-item">
+                  <label>Fichier</label><span>{showImageDetail.originalName}</span>
                 </div>
-              )}
-              <div className="il-modal-field">
+                <div className="fm-detail-item">
+                  <label>Taille</label><span>{formatSize(showImageDetail.fileSize)}</span>
+                </div>
+                <div className="fm-detail-item">
+                  <label>Type</label><span>{showImageDetail.mimeType}</span>
+                </div>
+                {showImageDetail.folder && (
+                  <div className="fm-detail-item">
+                    <label>Dossier</label><span>{showImageDetail.folder.name}</span>
+                  </div>
+                )}
+              </div>
+              <div className="fm-detail-item fm-detail-full">
                 <label>Description</label>
-                <div className="il-modal-desc-edit">
-                  <input
-                    type="text"
-                    defaultValue={showImageDetail.description || ''}
-                    placeholder="Ajouter une description..."
-                    onBlur={(e) => handleUpdateDescription(showImageDetail.id, e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-                  />
-                </div>
+                <input type="text" defaultValue={showImageDetail.description || ''} placeholder="Ajouter une description..." onBlur={e => handleUpdateDescription(showImageDetail.id, e.target.value)} onKeyDown={e => e.key === 'Enter' && (e.target as HTMLInputElement).blur()} />
               </div>
-              <div className="il-modal-move">
+              <div className="fm-detail-item fm-detail-full">
                 <label>Déplacer vers</label>
-                <select
-                  defaultValue={showImageDetail.folder?.id || ''}
-                  onChange={async (e) => {
-                    await libraryAPI.updateImage(showImageDetail.id, { folderId: e.target.value || null });
-                    showToast('Image déplacée');
-                    loadImages();
-                  }}
-                >
+                <select defaultValue={showImageDetail.folder?.id || ''} onChange={async e => { await libraryAPI.updateImage(showImageDetail.id, { folderId: e.target.value || null }); showToast('Image déplacée'); loadImages(); }}>
                   <option value="">Sans dossier</option>
                   {folders.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
                 </select>
               </div>
-              <div className="il-modal-actions">
-                {tab === 'trash' ? (
-                  <>
-                    <button className="il-btn il-btn-outline" onClick={() => { handleRestore(showImageDetail.id); setShowImageDetail(null); }}>Restaurer</button>
-                    <button className="il-btn il-btn-danger" onClick={() => { handlePermanentDelete(showImageDetail.id); }}>Supprimer définitivement</button>
-                  </>
-                ) : (
-                  <button className="il-btn il-btn-danger" onClick={() => handleDelete(showImageDetail.id)}>Supprimer</button>
-                )}
+              <div className="fm-detail-actions">
+                <button className="fm-btn fm-btn-danger" onClick={() => handleDelete(showImageDetail.id)}>Supprimer</button>
               </div>
             </div>
           </div>
@@ -671,8 +692,8 @@ export default function ImageLibrary({ userRole }: Props) {
       )}
 
       {uploading && (
-        <div className="il-uploading-overlay">
-          <div className="il-spinner-lg" />
+        <div className="fm-uploading-overlay">
+          <div className="fm-spinner" />
           <p>Upload en cours...</p>
         </div>
       )}
