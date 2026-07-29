@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  BadRequestException,
-  NotFoundException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { ControleDate } from './entities/controle-date.entity';
@@ -12,10 +7,11 @@ import { User, UserRole } from '../auth/entities/user.entity';
 import { CreateControleDateDto } from './dto/create-controle-date.dto';
 import { CreateLigneControleDto } from './dto/create-ligne-controle.dto';
 import { RapportDto } from './dto/rapport.dto';
-import { unlink } from 'fs/promises';
+import { unlink, copyFile } from 'fs/promises';
 import { join } from 'path';
 import { NotificationService } from '../notification/notification.service';
 import { NotificationType } from '../notification/entities/notification.entity';
+import { LibraryService } from '../library/library.service';
 
 @Injectable()
 export class QualityService {
@@ -27,6 +23,7 @@ export class QualityService {
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     private readonly notificationService: NotificationService,
+    private readonly libraryService: LibraryService,
   ) {}
 
   async createControleDate(dto: CreateControleDateDto, user: User) {
@@ -184,6 +181,17 @@ export class QualityService {
 
     ligne.image = `/uploads/${file.filename}`;
     await this.ligneControleRepo.save(ligne);
+
+    const libraryDest = join(process.cwd(), 'uploads', 'library', file.filename);
+    try {
+      await copyFile(join(process.cwd(), 'uploads', file.filename), libraryDest);
+      await this.libraryService.saveLigneImage(
+        { ...file, filename: file.filename, originalname: file.originalname, mimetype: file.mimetype, size: file.size } as any,
+        user,
+        ligne.nomLigne,
+        `Image ligne "${ligne.nomLigne}"`,
+      );
+    } catch {}
 
     return {
       message: 'Image uploadée avec succès',

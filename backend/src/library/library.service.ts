@@ -170,4 +170,24 @@ export class LibraryService {
     });
     return { total, trashCount, folderCount };
   }
+
+  async saveLigneImage(file: Express.Multer.File, user: User, ligneNom: string, description?: string) {
+    let folder = await this.folderRepo.findOne({ where: { name: ligneNom, createdBy: { id: user.id } } });
+    if (!folder) {
+      folder = this.folderRepo.create({ name: ligneNom, createdBy: user });
+      await this.folderRepo.save(folder);
+    }
+
+    const image = this.imageRepo.create({
+      url: `/uploads/library/${file.filename}`,
+      filename: file.filename,
+      originalName: file.originalname,
+      mimeType: file.mimetype,
+      fileSize: file.size,
+      description: description || `Image ligne ${ligneNom}`,
+      uploadedBy: user,
+      folder,
+    });
+    return this.imageRepo.save(image);
+  }
 }

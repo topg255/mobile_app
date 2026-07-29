@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { LibraryImage, ImageFolder, LibraryStats } from '../../types';
-import { libraryAPI } from '../../api';
+import { LibraryImage, ImageFolder, LibraryStats } from '../types';
+import { libraryAPI } from '../api';
 
 type TabType = 'all' | 'folders' | 'trash';
 
