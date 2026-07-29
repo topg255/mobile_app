@@ -981,7 +981,7 @@ html, body, #root {
 .ov-time-panel {
   grid-column: 1 / -1;
   background: #fff;
-  border: 1px solid #eef2f7;
+  border: 1px solid #e8ecf1;
   border-radius: 16px;
   padding: 28px;
   animation: rapport-fadeUp 0.5s ease both;
@@ -989,15 +989,15 @@ html, body, #root {
 .ov-time-head {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: 14px;
+  margin-bottom: 28px;
 }
 .ov-time-icon-wrap {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #ecfeff, #cffafe);
-  color: #0891b2;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #f0f9ff;
+  color: #0ea5e9;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1007,17 +1007,17 @@ html, body, #root {
 .ov-time-body {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 28px;
 }
 .ov-time-main {
   display: flex;
   align-items: center;
-  gap: 36px;
+  gap: 48px;
 }
 .ov-time-ring {
   position: relative;
-  width: 120px;
-  height: 120px;
+  width: 140px;
+  height: 140px;
   flex-shrink: 0;
 }
 .ov-time-ring svg { width: 100%; height: 100%; }
@@ -1031,12 +1031,12 @@ html, body, #root {
   position: absolute;
   inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
 }
 .ov-time-ring-val {
-  font-size: 28px;
+  font-size: 36px;
   font-weight: 800;
   color: #0f172a;
   line-height: 1;
@@ -1045,42 +1045,60 @@ html, body, #root {
   font-size: 13px;
   font-weight: 600;
   color: #94a3b8;
-  align-self: flex-end;
-  margin-bottom: 2px;
+  margin-top: 2px;
 }
 .ov-time-details {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   flex: 1;
 }
-.ov-time-detail {
+.ov-time-detail-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 16px 20px;
   background: #f8fafc;
-  border-radius: 10px;
+  border-radius: 12px;
+  transition: background 0.15s;
+}
+.ov-time-detail-row:hover {
+  background: #f1f5f9;
+}
+.ov-time-detail-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ov-time-detail-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 .ov-time-detail-label {
-  font-size: 13px;
-  color: #64748b;
+  font-size: 14px;
+  color: #475569;
   font-weight: 500;
 }
 .ov-time-detail-val {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   color: #0f172a;
 }
 .ov-time-bar-section {
-  padding-top: 20px;
+  padding-top: 24px;
   border-top: 1px solid #eef2f7;
 }
 .ov-time-bar-header {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
-  color: #475569;
-  margin-bottom: 14px;
+  color: #334155;
+  margin-bottom: 16px;
+  text-align: center;
 }
 .ov-time-bar-row {
   display: flex;
@@ -1091,7 +1109,7 @@ html, body, #root {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: 13px;
   color: #64748b;
   font-weight: 500;
 }
@@ -1103,14 +1121,14 @@ html, body, #root {
 }
 .ov-time-bar-track {
   flex: 1;
-  height: 6px;
+  height: 8px;
   background: #f1f5f9;
-  border-radius: 3px;
+  border-radius: 4px;
   overflow: hidden;
 }
 .ov-time-bar-fill {
   height: 100%;
-  border-radius: 3px;
+  border-radius: 4px;
   transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
