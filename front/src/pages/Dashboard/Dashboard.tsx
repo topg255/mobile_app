@@ -518,8 +518,13 @@ const Dashboard: React.FC = () => {
               {/* Quality Distribution Panel */}
               <div className="ov-dist-panel">
                 <div className="ov-panel-head">
-                  <span className="ov-panel-label">DISTRIBUTION QUALITÉ</span>
-                  <h4 className="ov-panel-title">Aperçu par catégorie</h4>
+                  <div className="ov-panel-icon" style={{ background: '#f0fdf4', color: '#16a34a' }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+                  </div>
+                  <div>
+                    <span className="ov-panel-label">DISTRIBUTION QUALITÉ</span>
+                    <h4 className="ov-panel-title">Aperçu par catégorie</h4>
+                  </div>
                 </div>
                 <div className="ov-dist-chart">
                   <svg viewBox="0 0 140 140" className="ov-dist-donut">
@@ -527,16 +532,16 @@ const Dashboard: React.FC = () => {
                       const r = 52;
                       const c = 2 * Math.PI * r;
                       const data = [
-                        { pct: stats.total > 0 ? stats.vert / stats.total : 0, color: '#22c55e', label: 'Vert' },
-                        { pct: stats.total > 0 ? stats.jaune / stats.total : 0, color: '#eab308', label: 'Jaune' },
-                        { pct: stats.total > 0 ? stats.rouge / stats.total : 0, color: '#ef4444', label: 'Rouge' },
+                        { pct: stats.total > 0 ? stats.vert / stats.total : 0, color: '#34d399', label: 'Vert' },
+                        { pct: stats.total > 0 ? stats.jaune / stats.total : 0, color: '#fbbf24', label: 'Jaune' },
+                        { pct: stats.total > 0 ? stats.rouge / stats.total : 0, color: '#f87171', label: 'Rouge' },
                       ];
                       let offset = 0;
                       return data.map((d, i) => {
                         const len = d.pct * c;
                         const gap = c - len;
                         const el = (
-                          <circle key={i} cx="70" cy="70" r={r} fill="none" stroke={d.color} strokeWidth="16"
+                          <circle key={i} cx="70" cy="70" r={r} fill="none" stroke={d.color} strokeWidth="14"
                             strokeDasharray={`${len} ${gap}`} strokeDashoffset={-offset} strokeLinecap="round"
                             className="ov-dist-seg" style={{ animationDelay: `${i * 200 + 300}ms` }} />
                         );
@@ -552,21 +557,21 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div className="ov-dist-legend">
                   {[
-                    { label: 'Conforme (Vert)', count: stats.vert, color: '#22c55e', pct: stats.total > 0 ? Math.round((stats.vert / stats.total) * 100) : 0 },
-                    { label: 'À surveiller (Jaune)', count: stats.jaune, color: '#eab308', pct: stats.total > 0 ? Math.round((stats.jaune / stats.total) * 100) : 0 },
-                    { label: 'Non conforme (Rouge)', count: stats.rouge, color: '#ef4444', pct: stats.total > 0 ? Math.round((stats.rouge / stats.total) * 100) : 0 },
+                    { label: 'Conforme', sub: 'Vert', count: stats.vert, color: '#34d399', bg: '#f0fdf4', pct: stats.total > 0 ? Math.round((stats.vert / stats.total) * 100) : 0 },
+                    { label: 'À surveiller', sub: 'Jaune', count: stats.jaune, color: '#fbbf24', bg: '#fffbeb', pct: stats.total > 0 ? Math.round((stats.jaune / stats.total) * 100) : 0 },
+                    { label: 'Non conforme', sub: 'Rouge', count: stats.rouge, color: '#f87171', bg: '#fef2f2', pct: stats.total > 0 ? Math.round((stats.rouge / stats.total) * 100) : 0 },
                   ].map((item) => (
                     <div key={item.label} className="ov-dist-row">
                       <div className="ov-dist-row-left">
                         <span className="ov-dist-dot" style={{ background: item.color }} />
-                        <span className="ov-dist-label">{item.label}</span>
+                        <div className="ov-dist-text">
+                          <span className="ov-dist-label">{item.label}</span>
+                          <span className="ov-dist-sub">{item.sub}</span>
+                        </div>
                       </div>
                       <div className="ov-dist-row-right">
                         <span className="ov-dist-val">{item.count}</span>
-                        <span className="ov-dist-pct">· {item.pct}%</span>
-                      </div>
-                      <div className="ov-dist-bar-track">
-                        <div className="ov-dist-bar-fill" style={{ width: `${item.pct}%`, background: item.color }} />
+                        <span className="ov-dist-pct">{item.pct}%</span>
                       </div>
                     </div>
                   ))}
@@ -576,11 +581,16 @@ const Dashboard: React.FC = () => {
               {/* Recent Activity */}
               <div className="ov-activity-panel">
                 <div className="ov-panel-head">
-                  <span className="ov-panel-label">ACTIVITÉ RÉCENTE</span>
-                  <h4 className="ov-panel-title">Dernières inspections</h4>
+                  <div className="ov-panel-icon" style={{ background: '#eff6ff', color: '#2563eb' }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  </div>
+                  <div>
+                    <span className="ov-panel-label">ACTIVITÉ RÉCENTE</span>
+                    <h4 className="ov-panel-title">Dernières inspections</h4>
+                  </div>
                 </div>
                 <div className="ov-activity-list">
-                  {lignes.slice(0, 8).map((l, i) => (
+                  {lignes.slice(0, 6).map((l, i) => (
                     <div key={l.id} className="ov-activity-item" style={{ animationDelay: `${i * 50}ms` }}>
                       <div className={`ov-act-avatar ${l.note}`}>
                         {l.agent?.firstName?.[0]}{l.agent?.lastName?.[0]}
@@ -588,7 +598,9 @@ const Dashboard: React.FC = () => {
                       <div className="ov-act-info">
                         <span className="ov-act-name">{l.nomLigne}</span>
                         <span className="ov-act-meta">
-                          {l.agent?.firstName} {l.agent?.lastName} · {l.delais} min
+                          {l.agent?.firstName} {l.agent?.lastName}
+                          <span className="ov-act-sep">·</span>
+                          <span className="ov-act-time"><Clock size={11} /> {l.delais} min</span>
                         </span>
                       </div>
                       <div className="ov-act-right">
