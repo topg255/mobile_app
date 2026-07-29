@@ -33,7 +33,9 @@ export class LibraryService {
   async getImages(user: User, folderId?: string | null, agentId?: string) {
     const where: any = { isDeleted: false };
 
-    if (agentId) {
+    if (folderId) {
+      where.folder = { id: folderId };
+    } else if (agentId) {
       where.uploadedBy = { id: agentId };
     } else if (user.role === UserRole.AGENT_QUALITE) {
       where.uploadedBy = { id: user.id };
@@ -41,8 +43,6 @@ export class LibraryService {
 
     if (folderId === 'null' || folderId === '') {
       where.folder = null;
-    } else if (folderId) {
-      where.folder = { id: folderId };
     }
 
     return this.imageRepo.find({
@@ -135,10 +135,25 @@ export class LibraryService {
 
   async getFolders(user: User, agentId?: string) {
     if (agentId) {
-      return this.folderRepo.find({
+      const createdByAgent = await this.folderRepo.find({
         where: { createdBy: { id: agentId } },
         order: { name: 'ASC' },
       });
+      const imagesByAgent = await this.imageRepo.find({
+        where: { uploadedBy: { id: agentId }, isDeleted: false },
+        relations: { folder: true },
+      });
+      const folderIdsFromImages = imagesByAgent
+        .map(i => i.folder?.id)
+        .filter(Boolean) as string[];
+      if (folderIdsFromImages.length === 0) return createdByAgent;
+      const extraFolders = await this.folderRepo
+        .createQueryBuilder('folder')
+        .where('folder.id IN (:...ids)', { ids: folderIdsFromImages })
+        .getMany();
+      const existingIds = new Set(createdByAgent.map(f => f.id));
+      const merged = [...createdByAgent, ...extraFolders.filter(f => !existingIds.has(f.id))];
+      return merged.sort((a, b) => a.name.localeCompare(b.name));
     }
     if (user.role === UserRole.AGENT_QUALITE) {
       return this.folderRepo.find({
@@ -146,7 +161,6 @@ export class LibraryService {
         order: { name: 'ASC' },
       });
     }
-    // Superviseur sees all folders
     return this.folderRepo.find({
       order: { name: 'ASC' },
     });
