@@ -24,7 +24,7 @@ export class ReportService {
     private readonly notificationService: NotificationService,
   ) {}
 
-  @Cron('0 18 * * *')
+  @Cron('* * * * *')
   async handleDailyReport() {
     this.logger.log('=== Daily AI Report Generation Started ===');
     await this.generateAndSendReports(new Date());

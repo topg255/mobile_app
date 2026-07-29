@@ -2180,7 +2180,7 @@ const AiReportsTab: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Rapports IA Quotidiens</h3>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b' }}>Générés automatiquement chaque jour à 18h00</p>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b' }}>Générés automatiquement chaque minute (mode test)</p>
         </div>
         <button className="cd-create-btn" onClick={handleGenerate} disabled={generating}>
           {generating ? <span className="rapport-btn-loading" /> : <><Zap size={16} /> Générer maintenant</>}

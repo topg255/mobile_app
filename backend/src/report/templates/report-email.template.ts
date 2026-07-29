@@ -173,7 +173,7 @@ export function buildReportEmailHtml(params: {
               <div style="border-top:1px solid #e2e8f0;padding-top:20px;text-align:center">
                 <p style="margin:0;font-size:11px;color:#94a3b8;line-height:1.6">
                   Ce rapport a été généré automatiquement par le Système de Management Qualité LEONI<br>
-                  Intelligence Artificielle — Analyse quotidienne des KPI<br>
+                  Intelligence Artificielle — Analyse automatique des KPI<br>
                   ${dateFormatted}
                 </p>
               </div>
