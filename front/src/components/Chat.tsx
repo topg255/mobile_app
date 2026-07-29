@@ -181,6 +181,7 @@ const Chat: React.FC<ChatProps> = ({ onUnreadCountChange }) => {
   const openNewChat = async () => {
     setShowNewChat(true);
     setActiveConversation(null);
+    setMobileShowChat(true);
     try {
       const res = await chatAPI.getAvailableUsers();
       setAvailableUsers(res.data);
@@ -267,13 +268,13 @@ const Chat: React.FC<ChatProps> = ({ onUnreadCountChange }) => {
 
       <div className={`chat-main ${mobileShowChat ? 'mobile-open' : ''}`}>
         {showNewChat ? (
-          <div className="chat-new-panel">
-            <div className="chat-new-header">
-              <button className="btn-icon-sm" onClick={() => setShowNewChat(false)}>
-                <ArrowLeft size={18} />
-              </button>
-              <span>Nouvelle conversation</span>
-            </div>
+            <div className="chat-new-panel">
+              <div className="chat-new-header">
+                <button className="btn-icon-sm" onClick={() => { setShowNewChat(false); setMobileShowChat(false); }}>
+                  <ArrowLeft size={18} />
+                </button>
+                <span>Nouvelle conversation</span>
+              </div>
             <div className="chat-search-user">
               <Search size={16} />
               <input
@@ -307,7 +308,7 @@ const Chat: React.FC<ChatProps> = ({ onUnreadCountChange }) => {
         ) : activeConversation ? (
           <>
             <div className="chat-header">
-              <button className="btn-icon-sm chat-back-btn" onClick={() => { setActiveConversation(null); setMobileShowChat(false); }}>
+              <button className="btn-icon-sm chat-back-btn" onClick={() => { setActiveConversation(null); setMobileShowChat(false); setShowNewChat(false); }}>
                 <ArrowLeft size={18} />
               </button>
               <div className="chat-header-avatar">
