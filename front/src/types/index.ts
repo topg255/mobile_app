@@ -89,6 +89,7 @@ export interface HistoriqueAgent {
     firstName: string;
     lastName: string;
     matricule: string;
+    profileImage?: string;
   };
   totalLignes: number;
   lignes: LigneControle[];

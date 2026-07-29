@@ -263,6 +263,7 @@ export class QualityService {
             firstName: agent.firstName,
             lastName: agent.lastName,
             matricule: agent.matricule,
+            profileImage: agent.profileImage,
           },
           totalLignes: lignes.length,
           lignes,
