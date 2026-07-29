@@ -54,8 +54,8 @@ export class LibraryController {
   }
 
   @Get('stats')
-  getStats(@Request() req: any) {
-    return this.libraryService.getStats(req.user as User);
+  getStats(@Request() req: any, @Query('agentId') agentId?: string) {
+    return this.libraryService.getStats(req.user as User, agentId);
   }
 
   @Patch('images/:id')

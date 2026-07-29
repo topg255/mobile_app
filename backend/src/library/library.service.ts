@@ -188,18 +188,33 @@ export class LibraryService {
     return this.folderRepo.save(folder);
   }
 
-  async getStats(user: User) {
+  async getStats(user: User, agentId?: string) {
     const where: any = { isDeleted: false };
-    if (user.role === UserRole.AGENT_QUALITE) {
+    const trashWhere: any = { isDeleted: true };
+
+    if (agentId) {
+      where.uploadedBy = { id: agentId };
+      trashWhere.uploadedBy = { id: agentId };
+    } else if (user.role === UserRole.AGENT_QUALITE) {
       where.uploadedBy = { id: user.id };
+      trashWhere.uploadedBy = { id: user.id };
     }
+
     const total = await this.imageRepo.count({ where });
-    const trashCount = await this.imageRepo.count({
-      where: { isDeleted: true, ...(user.role === UserRole.AGENT_QUALITE ? { uploadedBy: { id: user.id } } : {}) },
-    });
-    const folderCount = user.role === UserRole.AGENT_QUALITE
-      ? await this.folderRepo.count({ where: { createdBy: { id: user.id } } })
-      : await this.folderRepo.count();
+    const trashCount = await this.imageRepo.count({ where: trashWhere });
+
+    let folderCount: number;
+    if (agentId || user.role === UserRole.AGENT_QUALITE) {
+      const aid = agentId || user.id;
+      const agentImages = await this.imageRepo.find({ where: { uploadedBy: { id: aid }, isDeleted: false }, relations: { folder: true } });
+      const imageFolderIds = new Set(agentImages.filter(i => i.folder).map(i => i.folder!.id));
+      const createdFolders = await this.folderRepo.find({ where: { createdBy: { id: aid } } });
+      createdFolders.forEach(f => imageFolderIds.add(f.id));
+      folderCount = imageFolderIds.size;
+    } else {
+      folderCount = await this.folderRepo.count();
+    }
+
     return { total, trashCount, folderCount };
   }
 

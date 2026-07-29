@@ -47,7 +47,7 @@ export default function ImageLibrary({ userRole }: Props) {
       const agentFilter = showAgentDossiers && selectedAgentId && !selectedFolder ? selectedAgentId : undefined;
       const [imgs, st, fols] = await Promise.all([
         libraryAPI.getImages(selectedFolder, agentFilter),
-        libraryAPI.getStats(),
+        libraryAPI.getStats(agentFilter),
         libraryAPI.getFolders(agentFilter),
       ]);
       setImages(imgs.data);

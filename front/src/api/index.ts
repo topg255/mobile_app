@@ -251,8 +251,8 @@ export const libraryAPI = {
   getTrash: (): Promise<{ data: import('../types').LibraryImage[] }> =>
     api.get('/library/trash'),
 
-  getStats: (): Promise<{ data: import('../types').LibraryStats }> =>
-    api.get('/library/stats'),
+  getStats: (agentId?: string): Promise<{ data: import('../types').LibraryStats }> =>
+    api.get('/library/stats', { params: agentId ? { agentId } : {} }),
 
   updateImage: (id: string, data: { description?: string; folderId?: string | null }): Promise<{ data: import('../types').LibraryImage }> =>
     api.patch(`/library/images/${id}`, data),
