@@ -184,18 +184,29 @@ const SuperAdminDashboard: React.FC = () => {
             <button className="hamburger-btn" onClick={() => setMobileOpen(true)}>
               <Menu size={20} />
             </button>
-            <h1>Super Admin</h1>
+            <div className="top-bar-brand">
+              <div className="top-bar-brand-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <div className="top-bar-brand-text">
+                <span className="top-bar-brand-label">SUPER ADMIN</span>
+                <span className="top-bar-brand-name">{user?.firstName} {user?.lastName}</span>
+              </div>
+            </div>
           </div>
           <div className="top-bar-right">
             <NotificationBell token={token} />
-            <button className="user-avatar-btn" onClick={() => setDrawerOpen(true)}>
-              {user?.profileImage ? (
-                <img src={`http://localhost:3000${user.profileImage}`} alt="" className="user-avatar-img" />
-              ) : (
-                <div className="user-avatar">
-                  {user?.firstName?.[0]}{user?.lastName?.[0]}
-                </div>
-              )}
+            <button className="top-bar-avatar-btn" onClick={() => setDrawerOpen(true)}>
+              <div className="top-bar-avatar-wrap">
+                {user?.profileImage ? (
+                  <img src={`http://localhost:3000${user.profileImage}`} alt="" className="top-bar-avatar-img" />
+                ) : (
+                  <div className="top-bar-avatar-text">
+                    {user?.firstName?.[0]}{user?.lastName?.[0]}
+                  </div>
+                )}
+                <span className="top-bar-online-dot" />
+              </div>
             </button>
           </div>
         </div>
