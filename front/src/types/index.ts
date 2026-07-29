@@ -150,3 +150,31 @@ export interface Notification {
   relatedId: string | null;
   createdAt: string;
 }
+
+export interface LibraryImage {
+  id: string;
+  url: string;
+  filename: string;
+  originalName: string;
+  description: string | null;
+  mimeType: string;
+  fileSize: number;
+  uploadedBy: User;
+  folder: ImageFolder | null;
+  isDeleted: boolean;
+  deletedAt: string | null;
+  createdAt: string;
+}
+
+export interface ImageFolder {
+  id: string;
+  name: string;
+  createdBy: User;
+  createdAt: string;
+}
+
+export interface LibraryStats {
+  total: number;
+  trashCount: number;
+  folderCount: number;
+}

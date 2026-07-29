@@ -231,4 +231,54 @@ export const notificationAPI = {
     api.delete(`/notifications/${id}`),
 };
 
+export const libraryAPI = {
+  upload: (file: File, description?: string): Promise<{ data: import('../types').LibraryImage }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (description) formData.append('description', description);
+    return api.post('/library/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
+  getImages: (folderId?: string | null): Promise<{ data: import('../types').LibraryImage[] }> => {
+    const params: any = {};
+    if (folderId !== undefined && folderId !== null) params.folderId = folderId;
+    return api.get('/library/images', { params });
+  },
+
+  getTrash: (): Promise<{ data: import('../types').LibraryImage[] }> =>
+    api.get('/library/trash'),
+
+  getStats: (): Promise<{ data: import('../types').LibraryStats }> =>
+    api.get('/library/stats'),
+
+  updateImage: (id: string, data: { description?: string; folderId?: string | null }): Promise<{ data: import('../types').LibraryImage }> =>
+    api.patch(`/library/images/${id}`, data),
+
+  delete: (id: string): Promise<{ data: { message: string } }> =>
+    api.delete(`/library/images/${id}`),
+
+  restore: (id: string): Promise<{ data: { message: string } }> =>
+    api.post(`/library/images/${id}/restore`),
+
+  permanentDelete: (id: string): Promise<{ data: { message: string } }> =>
+    api.delete(`/library/images/${id}/permanent`),
+
+  move: (imageIds: string[], folderId: string | null): Promise<{ data: { message: string } }> =>
+    api.post('/library/move', { imageIds, folderId }),
+
+  getFolders: (): Promise<{ data: import('../types').ImageFolder[] }> =>
+    api.get('/library/folders'),
+
+  createFolder: (name: string): Promise<{ data: import('../types').ImageFolder }> =>
+    api.post('/library/folders', { name }),
+
+  renameFolder: (id: string, name: string): Promise<{ data: import('../types').ImageFolder }> =>
+    api.patch(`/library/folders/${id}`, { name }),
+
+  deleteFolder: (id: string): Promise<{ data: { message: string } }> =>
+    api.delete(`/library/folders/${id}`),
+};
+
 export default api;
