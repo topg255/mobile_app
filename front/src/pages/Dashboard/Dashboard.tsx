@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { qualityAPI } from '../../api';
+import { reportAPI } from '../../api';
 import { LigneControle, NoteQualite } from '../../types';
 import { toast } from 'react-hot-toast';
 import Chat from '../../components/Chat';
@@ -213,6 +214,14 @@ const Dashboard: React.FC = () => {
               onClick={() => handleTab('rapport')}
             >
               <BarChart3 size={18} /> <span>Rapport</span>
+            </button>
+          )}
+          {isSuperviseur && (
+            <button
+              className={`nav-item ${activeTab === 'ai-reports' ? 'active' : ''}`}
+              onClick={() => handleTab('ai-reports')}
+            >
+              <Zap size={18} /> <span>Rapports IA</span>
             </button>
           )}
           <button
@@ -641,6 +650,7 @@ const Dashboard: React.FC = () => {
             <EditLigneTab ligne={editingLigne} onSuccess={() => { fetchLignes(); setActiveTab('mes-lignes'); }} onCancel={() => setActiveTab('mes-lignes')} />
           )}
           {activeTab === 'rapport' && <RapportTab />}
+          {activeTab === 'ai-reports' && <AiReportsTab />}
           {activeTab === 'messages' && <Chat onUnreadCountChange={setUnreadCount} />}
           {activeTab === 'images' && <ImageLibrary userRole={user?.role || ''} />}
         </div>
@@ -2095,6 +2105,186 @@ const RapportTab: React.FC = () => {
               </div>
             )}
           </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const AiReportsTab: React.FC = () => {
+  const [reports, setReports] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [stats, setStats] = useState({ total: 0, sent: 0, failed: 0 });
+  const [selectedReport, setSelectedReport] = useState<any>(null);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => { loadReports(); loadStats(); }, [page]);
+
+  const loadReports = async () => {
+    setLoading(true);
+    try {
+      const res = await reportAPI.getReports(page, 10);
+      setReports(res.data.items);
+    } catch { toast.error('Erreur chargement rapports'); }
+    setLoading(false);
+  };
+
+  const loadStats = async () => {
+    try {
+      const res = await reportAPI.getStats();
+      setStats(res.data);
+    } catch {}
+  };
+
+  const handleGenerate = async () => {
+    setGenerating(true);
+    try {
+      const res = await reportAPI.generate();
+      toast.success(res.data.message);
+      loadReports(); loadStats();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erreur de génération');
+    } finally { setGenerating(false); }
+  };
+
+  const formatDate = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+  const formatTime = (d: string) => new Date(d).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+  return (
+    <div className="tab-content">
+      <div className="cd-stats-row">
+        <div className="cd-stat">
+          <div className="cd-stat-icon cd-stat-total"><Zap size={18} /></div>
+          <div className="cd-stat-info">
+            <span className="cd-stat-val">{stats.total}</span>
+            <span className="cd-stat-lbl">Total rapports</span>
+          </div>
+        </div>
+        <div className="cd-stat">
+          <div className="cd-stat-icon cd-stat-active"><CheckCircle size={18} /></div>
+          <div className="cd-stat-info">
+            <span className="cd-stat-val">{stats.sent}</span>
+            <span className="cd-stat-lbl">Envoyés</span>
+          </div>
+        </div>
+        <div className="cd-stat">
+          <div className="cd-stat-icon cd-stat-inactive"><XCircle size={18} /></div>
+          <div className="cd-stat-info">
+            <span className="cd-stat-val">{stats.failed}</span>
+            <span className="cd-stat-lbl">Échoués</span>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div>
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Rapports IA Quotidiens</h3>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b' }}>Générés automatiquement chaque jour à 18h00</p>
+        </div>
+        <button className="cd-create-btn" onClick={handleGenerate} disabled={generating}>
+          {generating ? <span className="rapport-btn-loading" /> : <><Zap size={16} /> Générer maintenant</>}
+        </button>
+      </div>
+
+      {selectedReport && (
+        <div className="rapport-results animate-in" style={{ marginBottom: 24 }}>
+          <div className="rapport-top-row">
+            <div className="rapport-period-badge">
+              <Calendar size={14} />
+              <span>Rapport du {formatDate(selectedReport.reportDate)}</span>
+            </div>
+            <button className="rapport-export-btn" onClick={() => setSelectedReport(null)}>
+              <X size={14} /> Fermer
+            </button>
+          </div>
+          <div style={{ padding: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+              <div style={{ background: '#f0fdf4', borderRadius: 10, padding: 14, textAlign: 'center' }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: '#16a34a' }}>{selectedReport.kpis.vertCount}</div>
+                <div style={{ fontSize: 11, color: '#16a34a', textTransform: 'uppercase', fontWeight: 600 }}>Conformes</div>
+              </div>
+              <div style={{ background: '#fefce8', borderRadius: 10, padding: 14, textAlign: 'center' }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: '#ca8a04' }}>{selectedReport.kpis.jauneCount}</div>
+                <div style={{ fontSize: 11, color: '#ca8a04', textTransform: 'uppercase', fontWeight: 600 }}>À surveiller</div>
+              </div>
+              <div style={{ background: '#fef2f2', borderRadius: 10, padding: 14, textAlign: 'center' }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: '#dc2626' }}>{selectedReport.kpis.rougeCount}</div>
+                <div style={{ fontSize: 11, color: '#dc2626', textTransform: 'uppercase', fontWeight: 600 }}>Critiques</div>
+              </div>
+              <div style={{ background: '#eff6ff', borderRadius: 10, padding: 14, textAlign: 'center' }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: '#2563eb' }}>{selectedReport.kpis.totalMinutes}</div>
+                <div style={{ fontSize: 11, color: '#2563eb', textTransform: 'uppercase', fontWeight: 600 }}>Minutes arrêt</div>
+              </div>
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>🧠 Analyse IA</h4>
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: 16, fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-line' }}>
+                {selectedReport.aiAnalysis}
+              </div>
+            </div>
+            <div>
+              <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>💡 Recommandations</h4>
+              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: 16, fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-line' }}>
+                {selectedReport.recommendations}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {loading ? <div className="loading">Chargement...</div> : (
+        <div className="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Statut</th>
+                <th>Lignes</th>
+                <th>Vert</th>
+                <th>Jaune</th>
+                <th>Rouge</th>
+                <th>Minutes</th>
+                <th>Envoyé à</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reports.map((r) => (
+                <tr key={r.id}>
+                  <td data-label="Date">{formatDate(r.reportDate)}</td>
+                  <td data-label="Statut">
+                    <span className={`note-badge ${r.status === 'sent' ? 'vert' : r.status === 'failed' ? 'rouge' : 'jaune'}`}>
+                      {r.status === 'sent' ? 'Envoyé' : r.status === 'failed' ? 'Échoué' : 'Généré'}
+                    </span>
+                  </td>
+                  <td data-label="Lignes">{r.kpis.totalLignes}</td>
+                  <td data-label="Vert">{r.kpis.vertCount} ({r.kpis.vertPercent}%)</td>
+                  <td data-label="Jaune">{r.kpis.jauneCount} ({r.kpis.jaunePercent}%)</td>
+                  <td data-label="Rouge">{r.kpis.rougeCount} ({r.kpis.rougePercent}%)</td>
+                  <td data-label="Minutes">{r.kpis.totalMinutes} min</td>
+                  <td data-label="Envoyé à">{r.emailRecipient || '—'}</td>
+                  <td data-label="Actions">
+                    <button className="btn-icon-sm" onClick={() => setSelectedReport(r)} title="Voir le rapport">
+                      <Eye size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {reports.length === 0 && (
+                <tr><td colSpan={9} style={{ textAlign: 'center', padding: 40, color: '#94a3b8' }}>
+                  Aucun rapport généré. Cliquez sur "Générer maintenant" pour créer le premier rapport.
+                </td></tr>
+              )}
+            </tbody>
+          </table>
+          {stats.total > 10 && (
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: 16 }}>
+              <button className="btn btn-secondary btn-sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Précédent</button>
+              <span style={{ padding: '6px 12px', fontSize: 13, color: '#64748b' }}>Page {page}</span>
+              <button className="btn btn-secondary btn-sm" disabled={reports.length < 10} onClick={() => setPage(p => p + 1)}>Suivant</button>
+            </div>
+          )}
         </div>
       )}
     </div>

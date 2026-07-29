@@ -291,4 +291,18 @@ export const libraryAPI = {
     api.delete(`/library/folders/${id}`),
 };
 
+export const reportAPI = {
+  generate: (date?: string): Promise<{ data: { message: string; reports: any[] } }> =>
+    api.post('/reports/generate', null, { params: date ? { date } : {} }),
+
+  getReports: (page = 1, limit = 20): Promise<{ data: { items: any[]; total: number; page: number; limit: number; pages: number } }> =>
+    api.get('/reports', { params: { page, limit } }),
+
+  getReportById: (id: string): Promise<{ data: any }> =>
+    api.get(`/reports/${id}`),
+
+  getStats: (): Promise<{ data: { total: number; sent: number; failed: number } }> =>
+    api.get('/reports/stats'),
+};
+
 export default api;

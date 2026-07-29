@@ -9,6 +9,7 @@ import { SuperAdminModule } from './super-admin/super-admin.module';
 import { ChatModule } from './chat/chat.module';
 import { NotificationModule } from './notification/notification.module';
 import { LibraryModule } from './library/library.module';
+import { ReportModule } from './report/report.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { LibraryModule } from './library/library.module';
     ChatModule,
     NotificationModule,
     LibraryModule,
+    ReportModule,
   ],
   controllers: [AppController],
   providers: [AppService],
