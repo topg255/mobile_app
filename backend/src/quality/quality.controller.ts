@@ -174,7 +174,7 @@ export class QualityController {
   }
 
   @Post('lignes/:id/image')
-  @Roles(UserRole.AGENT_QUALITE)
+  @Roles(UserRole.AGENT_QUALITE, UserRole.SUPERVISEUR_QUALITE)
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({

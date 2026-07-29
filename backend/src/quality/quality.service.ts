@@ -163,7 +163,7 @@ export class QualityService {
       throw new NotFoundException('Ligne de contrôle non trouvée');
     }
 
-    if (ligne.agent.id !== user.id) {
+    if (user.role === UserRole.AGENT_QUALITE && ligne.agent.id !== user.id) {
       throw new ForbiddenException('Vous ne pouvez modifier que vos propres lignes');
     }
 
@@ -182,16 +182,17 @@ export class QualityService {
     ligne.image = `/uploads/${file.filename}`;
     await this.ligneControleRepo.save(ligne);
 
+    const libraryUser = ligne.agent;
     const libraryDest = join(process.cwd(), 'uploads', 'library', file.filename);
     try {
       await copyFile(join(process.cwd(), 'uploads', file.filename), libraryDest);
       await this.libraryService.saveLigneImage(
         { ...file, filename: file.filename, originalname: file.originalname, mimetype: file.mimetype, size: file.size } as any,
-        user,
+        libraryUser,
         ligne.nomLigne,
         `Image ligne "${ligne.nomLigne}"`,
       );
-    } catch {}
+    } catch (e) { console.error('Library save error:', e); }
 
     return {
       message: 'Image uploadée avec succès',
