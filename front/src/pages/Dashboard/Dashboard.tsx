@@ -13,7 +13,6 @@ import {
   Plus,
   List,
   BarChart3,
-  LogOut,
   Calendar,
   Clock,
   CheckCircle,
@@ -199,24 +198,6 @@ const Dashboard: React.FC = () => {
             <span>Images & Dossiers</span>
           </button>
         </nav>
-        <div className="sidebar-footer">
-          <div className="sidebar-user-card">
-            {user?.profileImage ? (
-              <img src={`http://localhost:3000${user.profileImage}`} alt="" className="sidebar-user-avatar" />
-            ) : (
-              <div className="sidebar-user-avatar sidebar-user-avatar-text">
-                {user?.firstName?.[0]}{user?.lastName?.[0]}
-              </div>
-            )}
-            <div className="sidebar-user-info">
-              <span className="sidebar-user-name">{user?.firstName} {user?.lastName}</span>
-              <span className="sidebar-user-role">{isSuperviseur ? 'Superviseur' : 'Agent'} · {user?.matricule}</span>
-            </div>
-          </div>
-          <button className="sidebar-logout-btn" onClick={logout} title="Déconnexion">
-            <LogOut size={16} />
-          </button>
-        </div>
       </aside>
 
       <main className="main-content">
@@ -225,21 +206,39 @@ const Dashboard: React.FC = () => {
             <button className="hamburger-btn" onClick={() => setMobileOpen(true)}>
               <Menu size={20} />
             </button>
-            <h1>Tableau de bord</h1>
-            <span className="role-badge">
-              {isSuperviseur ? 'Superviseur Qualité' : 'Agent Qualité'}
-            </span>
+            <div className="top-bar-brand">
+              <div className="top-bar-brand-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+              </div>
+              <div className="top-bar-brand-text">
+                <span className="top-bar-brand-label">COMPANY ACCOUNT</span>
+                <span className="top-bar-brand-name">{user?.firstName} {user?.lastName}</span>
+              </div>
+            </div>
           </div>
           <div className="top-bar-right">
+            <button className="top-bar-icon-btn" title="Messages" onClick={() => handleTab('messages')}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            </button>
+            <button className="top-bar-icon-btn" title="Rechercher">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </button>
+            <div className="top-bar-shortcut">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"/><line x1="6" y1="8" x2="6.01" y2="8"/><line x1="10" y1="8" x2="10.01" y2="8"/><line x1="14" y1="8" x2="14.01" y2="8"/><line x1="18" y1="8" x2="18.01" y2="8"/><line x1="8" y1="12" x2="8.01" y2="12"/><line x1="12" y1="12" x2="12.01" y2="12"/><line x1="16" y1="12" x2="16.01" y2="12"/><line x1="7" y1="16" x2="17" y2="16"/></svg>
+              <span>⌘K</span>
+            </div>
             <NotificationBell token={token} />
-            <button className="user-avatar-btn" onClick={() => setDrawerOpen(true)}>
-              {user?.profileImage ? (
-                <img src={`http://localhost:3000${user.profileImage}`} alt="" className="user-avatar-img" />
-              ) : (
-                <div className="user-avatar">
-                  {user?.firstName?.[0]}{user?.lastName?.[0]}
-                </div>
-              )}
+            <button className="top-bar-avatar-btn" onClick={() => setDrawerOpen(true)}>
+              <div className="top-bar-avatar-wrap">
+                {user?.profileImage ? (
+                  <img src={`http://localhost:3000${user.profileImage}`} alt="" className="top-bar-avatar-img" />
+                ) : (
+                  <div className="top-bar-avatar-text">
+                    {user?.firstName?.[0]}{user?.lastName?.[0]}
+                  </div>
+                )}
+                <span className="top-bar-online-dot" />
+              </div>
             </button>
           </div>
         </div>
