@@ -169,7 +169,9 @@ export class LibraryService {
   async deleteFolder(id: string, user: User) {
     const folder = await this.folderRepo.findOne({ where: { id }, relations: { createdBy: true } });
     if (!folder) throw new NotFoundException('Dossier non trouvé');
-    if (folder.createdBy.id !== user.id) throw new ForbiddenException('Non autorisé');
+    if (user.role === UserRole.AGENT_QUALITE && folder.createdBy.id !== user.id) {
+      throw new ForbiddenException('Non autorisé');
+    }
 
     await this.imageRepo.update({ folder: { id } }, { folder: null });
     await this.folderRepo.remove(folder);
@@ -179,7 +181,9 @@ export class LibraryService {
   async renameFolder(id: string, name: string, user: User) {
     const folder = await this.folderRepo.findOne({ where: { id }, relations: { createdBy: true } });
     if (!folder) throw new NotFoundException('Dossier non trouvé');
-    if (folder.createdBy.id !== user.id) throw new ForbiddenException('Non autorisé');
+    if (user.role === UserRole.AGENT_QUALITE && folder.createdBy.id !== user.id) {
+      throw new ForbiddenException('Non autorisé');
+    }
     folder.name = name;
     return this.folderRepo.save(folder);
   }
@@ -193,9 +197,9 @@ export class LibraryService {
     const trashCount = await this.imageRepo.count({
       where: { isDeleted: true, ...(user.role === UserRole.AGENT_QUALITE ? { uploadedBy: { id: user.id } } : {}) },
     });
-    const folderCount = await this.folderRepo.count({
-      where: { createdBy: { id: user.id } },
-    });
+    const folderCount = user.role === UserRole.AGENT_QUALITE
+      ? await this.folderRepo.count({ where: { createdBy: { id: user.id } } })
+      : await this.folderRepo.count();
     return { total, trashCount, folderCount };
   }
 
