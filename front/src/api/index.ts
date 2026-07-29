@@ -293,7 +293,7 @@ export const libraryAPI = {
 
 export const reportAPI = {
   generate: (date?: string): Promise<{ data: { message: string; reports: any[] } }> =>
-    api.post('/reports/generate', null, { params: date ? { date } : {} }),
+    api.post('/reports/generate', {}, { params: date ? { date } : undefined }),
 
   getReports: (page = 1, limit = 20): Promise<{ data: { items: any[]; total: number; page: number; limit: number; pages: number } }> =>
     api.get('/reports', { params: { page, limit } }),

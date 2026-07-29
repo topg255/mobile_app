@@ -31,13 +31,18 @@ export class ReportController {
   @Roles(UserRole.SUPER_ADMIN, UserRole.SUPERVISEUR_QUALITE)
   @ApiOperation({ summary: 'Générer les rapports IA manuellement' })
   @ApiQuery({ name: 'date', required: false, description: 'Date YYYY-MM-DD' })
-  @ApiResponse({ status: 201, description: 'Rapports générés' })
+  @ApiResponse({ status: 200, description: 'Rapports générés' })
+  @ApiResponse({ status: 400, description: 'Erreur de validation' })
   async manualGenerate(@Query('date') date?: string) {
-    const reports = await this.reportService.manualGenerate(date);
-    return {
-      message: `${reports.length} rapport(s) généré(s) avec succès`,
-      reports,
-    };
+    try {
+      const reports = await this.reportService.manualGenerate(date || undefined);
+      return {
+        message: `${reports.length} rapport(s) généré(s) avec succès`,
+        reports,
+      };
+    } catch (error) {
+      return { message: `Erreur: ${error.message}`, reports: [] };
+    }
   }
 
   @Get()

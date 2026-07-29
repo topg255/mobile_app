@@ -27,14 +27,17 @@ export class EmailService {
   }
 
   async sendEmail(options: EmailOptions): Promise<boolean> {
-    if (!this.configService.get<string>('SMTP_USER')) {
-      this.logger.warn('SMTP_USER not configured — email skipped');
+    const smtpUser = this.configService.get<string>('SMTP_USER');
+    const smtpPass = this.configService.get<string>('SMTP_PASS');
+
+    if (!smtpUser || !smtpPass) {
+      this.logger.warn(`SMTP not configured — email to ${options.to} skipped (report saved without email)`);
       return false;
     }
 
     try {
       const info = await this.transporter.sendMail({
-        from: `"LEONI Qualité IA" <${this.configService.get<string>('SMTP_USER')}>`,
+        from: `"LEONI Qualité IA" <${smtpUser}>`,
         to: options.to,
         subject: options.subject,
         html: options.html,
@@ -42,7 +45,7 @@ export class EmailService {
       this.logger.log(`Email sent to ${options.to}: ${info.messageId}`);
       return true;
     } catch (error) {
-      this.logger.error(`Failed to send email to ${options.to}: ${error.message}`);
+      this.logger.warn(`Email to ${options.to} failed: ${error.message} — report still saved`);
       return false;
     }
   }

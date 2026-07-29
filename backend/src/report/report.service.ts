@@ -107,9 +107,17 @@ export class ReportService {
         report.id,
       );
     } else {
-      report.status = ReportStatus.FAILED;
-      report.errorMessage = 'Email delivery failed — SMTP not configured or unreachable';
+      report.status = ReportStatus.GENERATED;
+      report.emailRecipient = superviseur.email;
+      report.errorMessage = 'Email non envoyé — SMTP non configuré ou inaccessible';
       await this.reportRepo.save(report);
+
+      await this.notificationService.create(
+        superviseur.id,
+        NotificationType.REPORT_GENERATED,
+        `📋 Votre rapport qualité du ${targetDate.toLocaleDateString('fr-FR')} a été généré. Email en attente de configuration SMTP.`,
+        report.id,
+      );
     }
 
     return report;
