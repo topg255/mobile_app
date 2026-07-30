@@ -2118,6 +2118,7 @@ const AiReportsTab: React.FC = () => {
   const [stats, setStats] = useState({ total: 0, sent: 0, failed: 0 });
   const [selectedReport, setSelectedReport] = useState<any>(null);
   const [page, setPage] = useState(1);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => { loadReports(); loadStats(); }, [page]);
 
@@ -2144,8 +2145,35 @@ const AiReportsTab: React.FC = () => {
       toast.success(res.data.message);
       loadReports(); loadStats();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Erreur de génération');
+      toast.error(err.response?.data?.message || 'Erreur de generation');
     } finally { setGenerating(false); }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Supprimer ce rapport ?')) return;
+    setDeletingId(id);
+    try {
+      await reportAPI.deleteReport(id);
+      toast.success('Rapport supprime');
+      if (selectedReport?.id === id) setSelectedReport(null);
+      loadReports(); loadStats();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erreur de suppression');
+    } finally { setDeletingId(null); }
+  };
+
+  const handleDownloadPdf = async (id: string) => {
+    try {
+      const blob = await reportAPI.downloadPdf(id);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rapport-qualite-${id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch { toast.error('Erreur lors du telechargement du PDF'); }
   };
 
   const formatDate = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -2165,14 +2193,14 @@ const AiReportsTab: React.FC = () => {
           <div className="cd-stat-icon cd-stat-active"><CheckCircle size={18} /></div>
           <div className="cd-stat-info">
             <span className="cd-stat-val">{stats.sent}</span>
-            <span className="cd-stat-lbl">Envoyés</span>
+            <span className="cd-stat-lbl">Envoyes</span>
           </div>
         </div>
         <div className="cd-stat">
           <div className="cd-stat-icon cd-stat-inactive"><XCircle size={18} /></div>
           <div className="cd-stat-info">
             <span className="cd-stat-val">{stats.failed}</span>
-            <span className="cd-stat-lbl">Échoués</span>
+            <span className="cd-stat-lbl">Echoues</span>
           </div>
         </div>
       </div>
@@ -2180,10 +2208,10 @@ const AiReportsTab: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Rapports IA Quotidiens</h3>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b' }}>Générés automatiquement chaque minute (mode test)</p>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b' }}>Generes automatiquement chaque minute (mode test)</p>
         </div>
         <button className="cd-create-btn" onClick={handleGenerate} disabled={generating}>
-          {generating ? <span className="rapport-btn-loading" /> : <><Zap size={16} /> Générer maintenant</>}
+          {generating ? <span className="rapport-btn-loading" /> : <><Zap size={16} /> Generer maintenant</>}
         </button>
       </div>
 
@@ -2194,38 +2222,59 @@ const AiReportsTab: React.FC = () => {
               <Calendar size={14} />
               <span>Rapport du {formatDate(selectedReport.reportDate)}</span>
             </div>
-            <button className="rapport-export-btn" onClick={() => setSelectedReport(null)}>
-              <X size={14} /> Fermer
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="rapport-export-btn" onClick={() => handleDownloadPdf(selectedReport.id)}>
+                <Download size={14} /> PDF
+              </button>
+              <button className="rapport-export-btn" style={{ background: '#fef2f2', color: '#dc2626', borderColor: '#fecaca' }} onClick={() => handleDelete(selectedReport.id)}>
+                <Trash2 size={14} /> Supprimer
+              </button>
+              <button className="rapport-export-btn" onClick={() => setSelectedReport(null)}>
+                <X size={14} /> Fermer
+              </button>
+            </div>
           </div>
           <div style={{ padding: 20 }}>
+            {/* KPI Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
-              <div style={{ background: '#f0fdf4', borderRadius: 10, padding: 14, textAlign: 'center' }}>
+              <div style={{ background: '#f0fdf4', borderRadius: 10, padding: 14, textAlign: 'center', border: '1px solid #bbf7d0' }}>
                 <div style={{ fontSize: 22, fontWeight: 800, color: '#16a34a' }}>{selectedReport.kpis.vertCount}</div>
                 <div style={{ fontSize: 11, color: '#16a34a', textTransform: 'uppercase', fontWeight: 600 }}>Conformes</div>
+                <div style={{ fontSize: 12, color: '#86efac', marginTop: 2 }}>{selectedReport.kpis.vertPercent}%</div>
               </div>
-              <div style={{ background: '#fefce8', borderRadius: 10, padding: 14, textAlign: 'center' }}>
+              <div style={{ background: '#fefce8', borderRadius: 10, padding: 14, textAlign: 'center', border: '1px solid #fde68a' }}>
                 <div style={{ fontSize: 22, fontWeight: 800, color: '#ca8a04' }}>{selectedReport.kpis.jauneCount}</div>
-                <div style={{ fontSize: 11, color: '#ca8a04', textTransform: 'uppercase', fontWeight: 600 }}>À surveiller</div>
+                <div style={{ fontSize: 11, color: '#ca8a04', textTransform: 'uppercase', fontWeight: 600 }}>A surveiller</div>
+                <div style={{ fontSize: 12, color: '#fde047', marginTop: 2 }}>{selectedReport.kpis.jaunePercent}%</div>
               </div>
-              <div style={{ background: '#fef2f2', borderRadius: 10, padding: 14, textAlign: 'center' }}>
+              <div style={{ background: '#fef2f2', borderRadius: 10, padding: 14, textAlign: 'center', border: '1px solid #fecaca' }}>
                 <div style={{ fontSize: 22, fontWeight: 800, color: '#dc2626' }}>{selectedReport.kpis.rougeCount}</div>
                 <div style={{ fontSize: 11, color: '#dc2626', textTransform: 'uppercase', fontWeight: 600 }}>Critiques</div>
+                <div style={{ fontSize: 12, color: '#fca5a5', marginTop: 2 }}>{selectedReport.kpis.rougePercent}%</div>
               </div>
-              <div style={{ background: '#eff6ff', borderRadius: 10, padding: 14, textAlign: 'center' }}>
+              <div style={{ background: '#eff6ff', borderRadius: 10, padding: 14, textAlign: 'center', border: '1px solid #bfdbfe' }}>
                 <div style={{ fontSize: 22, fontWeight: 800, color: '#2563eb' }}>{selectedReport.kpis.totalMinutes}</div>
-                <div style={{ fontSize: 11, color: '#2563eb', textTransform: 'uppercase', fontWeight: 600 }}>Minutes arrêt</div>
+                <div style={{ fontSize: 11, color: '#2563eb', textTransform: 'uppercase', fontWeight: 600 }}>Minutes arret</div>
+                <div style={{ fontSize: 12, color: '#93c5fd', marginTop: 2 }}>{selectedReport.kpis.totalLignes} lignes</div>
               </div>
             </div>
+            {/* Summary */}
             <div style={{ marginBottom: 16 }}>
-              <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>🧠 Analyse IA</h4>
-              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: 16, fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-line' }}>
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: 16, fontSize: 13, lineHeight: 1.7, color: '#475569' }}>
+                {selectedReport.summary}
+              </div>
+            </div>
+            {/* AI Analysis */}
+            <div style={{ marginBottom: 16 }}>
+              <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 8, color: '#1e293b' }}>Analyse IA</h4>
+              <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 10, padding: 16, fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-line', color: '#334155' }}>
                 {selectedReport.aiAnalysis}
               </div>
             </div>
+            {/* Recommendations */}
             <div>
-              <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>💡 Recommandations</h4>
-              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: 16, fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-line' }}>
+              <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 8, color: '#1e293b' }}>Recommandations</h4>
+              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: 16, fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-line', color: '#1e40af' }}>
                 {selectedReport.recommendations}
               </div>
             </div>
@@ -2245,7 +2294,7 @@ const AiReportsTab: React.FC = () => {
                 <th>Jaune</th>
                 <th>Rouge</th>
                 <th>Minutes</th>
-                <th>Envoyé à</th>
+                <th>Envoye a</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -2255,7 +2304,7 @@ const AiReportsTab: React.FC = () => {
                   <td data-label="Date">{formatDate(r.reportDate)}</td>
                   <td data-label="Statut">
                     <span className={`note-badge ${r.status === 'sent' ? 'vert' : r.status === 'failed' ? 'rouge' : 'jaune'}`}>
-                      {r.status === 'sent' ? 'Envoyé' : r.status === 'failed' ? 'Échoué' : 'Généré'}
+                      {r.status === 'sent' ? 'Envoye' : r.status === 'failed' ? 'Echoue' : 'Genere'}
                     </span>
                   </td>
                   <td data-label="Lignes">{r.kpis.totalLignes}</td>
@@ -2263,24 +2312,37 @@ const AiReportsTab: React.FC = () => {
                   <td data-label="Jaune">{r.kpis.jauneCount} ({r.kpis.jaunePercent}%)</td>
                   <td data-label="Rouge">{r.kpis.rougeCount} ({r.kpis.rougePercent}%)</td>
                   <td data-label="Minutes">{r.kpis.totalMinutes} min</td>
-                  <td data-label="Envoyé à">{r.emailRecipient || '—'}</td>
+                  <td data-label="Envoye a">{r.emailRecipient || '---'}</td>
                   <td data-label="Actions">
-                    <button className="btn-icon-sm" onClick={() => setSelectedReport(r)} title="Voir le rapport">
-                      <Eye size={16} />
-                    </button>
+                    <div className="actions-cell">
+                      <button className="btn-icon-sm" onClick={() => setSelectedReport(r)} title="Voir le rapport">
+                        <Eye size={16} />
+                      </button>
+                      <button className="btn-icon-sm" onClick={() => handleDownloadPdf(r.id)} title="Telecharger PDF">
+                        <Download size={16} />
+                      </button>
+                      <button
+                        className="btn-icon-sm btn-icon-danger"
+                        onClick={() => handleDelete(r.id)}
+                        title="Supprimer"
+                        disabled={deletingId === r.id}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
               {reports.length === 0 && (
                 <tr><td colSpan={9} style={{ textAlign: 'center', padding: 40, color: '#94a3b8' }}>
-                  Aucun rapport généré. Cliquez sur "Générer maintenant" pour créer le premier rapport.
+                  Aucun rapport genere. Cliquez sur "Generer maintenant" pour creer le premier rapport.
                 </td></tr>
               )}
             </tbody>
           </table>
           {stats.total > 10 && (
             <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: 16 }}>
-              <button className="btn btn-secondary btn-sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Précédent</button>
+              <button className="btn btn-secondary btn-sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Precedent</button>
               <span style={{ padding: '6px 12px', fontSize: 13, color: '#64748b' }}>Page {page}</span>
               <button className="btn btn-secondary btn-sm" disabled={reports.length < 10} onClick={() => setPage(p => p + 1)}>Suivant</button>
             </div>

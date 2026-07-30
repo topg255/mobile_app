@@ -303,6 +303,12 @@ export const reportAPI = {
 
   getStats: (): Promise<{ data: { total: number; sent: number; failed: number } }> =>
     api.get('/reports/stats'),
+
+  deleteReport: (id: string): Promise<{ data: { message: string } }> =>
+    api.delete(`/reports/${id}`),
+
+  downloadPdf: (id: string): Promise<Blob> =>
+    api.get(`/reports/${id}/pdf`, { responseType: 'blob' }).then(r => r.data),
 };
 
 export default api;

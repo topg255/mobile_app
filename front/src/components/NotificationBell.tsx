@@ -21,7 +21,7 @@ export default function NotificationBell({ token, onNotificationClick }: Notific
   const handleNewNotification = useCallback((notification: Notification) => {
     setNotifications(prev => [notification, ...prev]);
     setUnreadCount(prev => prev + 1);
-    toast(notification.message, { icon: '🔔', duration: 4000 });
+    toast(notification.message, { duration: 4000 });
   }, []);
 
   const handleUnreadCountUpdate = useCallback((data: { unreadCount: number }) => {

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Cron } from '@nestjs/schedule';
@@ -90,7 +90,7 @@ export class ReportService {
     }
 
     await this.reportRepo.save(report);
-    this.logger.log(`Report generated for ${superviseurName} — sending email...`);
+    this.logger.log(`Report generated for ${superviseurName} — sending email with PDF...`);
 
     const emailSent = await this.sendReportEmail(report, superviseur, superviseurName, targetDate);
 
@@ -103,19 +103,19 @@ export class ReportService {
       await this.notificationService.create(
         superviseur.id,
         NotificationType.REPORT_GENERATED,
-        `📋 Votre rapport qualité du ${targetDate.toLocaleDateString('fr-FR')} a été généré et envoyé à ${superviseur.email}`,
+        `Rapport qualite du ${targetDate.toLocaleDateString('fr-FR')} genere et envoye a ${superviseur.email}`,
         report.id,
       );
     } else {
       report.status = ReportStatus.GENERATED;
       report.emailRecipient = superviseur.email;
-      report.errorMessage = 'Email non envoyé — SMTP non configuré ou inaccessible';
+      report.errorMessage = 'Email non envoye — SMTP non configure ou inaccessible';
       await this.reportRepo.save(report);
 
       await this.notificationService.create(
         superviseur.id,
         NotificationType.REPORT_GENERATED,
-        `📋 Votre rapport qualité du ${targetDate.toLocaleDateString('fr-FR')} a été généré. Email en attente de configuration SMTP.`,
+        `Rapport qualite du ${targetDate.toLocaleDateString('fr-FR')} genere. Email en attente de configuration SMTP.`,
         report.id,
       );
     }
@@ -127,6 +127,12 @@ export class ReportService {
     const date = targetDate ? new Date(targetDate) : new Date();
     this.logger.log(`Manual report generation triggered for ${date.toISOString()}`);
     return this.generateAndSendReports(date);
+  }
+
+  async deleteReport(id: string): Promise<void> {
+    const report = await this.reportRepo.findOne({ where: { id } });
+    if (!report) throw new NotFoundException('Rapport non trouve');
+    await this.reportRepo.remove(report);
   }
 
   async getReports(superviseurId?: string, page = 1, limit = 20) {
@@ -158,6 +164,26 @@ export class ReportService {
     return { total, sent, failed };
   }
 
+  async downloadReportPdf(id: string): Promise<Buffer> {
+    const report = await this.reportRepo.findOne({ where: { id }, relations: { superviseur: true } });
+    if (!report) throw new NotFoundException('Rapport non trouve');
+
+    const superviseurName = `${report.superviseur.firstName} ${report.superviseur.lastName}`;
+    const targetDate = new Date(report.reportDate);
+    const dateFormatted = targetDate.toLocaleDateString('fr-FR', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    });
+
+    return this.emailService.generatePdf({
+      superviseurName,
+      dateFormatted,
+      kpis: report.kpis,
+      aiAnalysis: report.aiAnalysis || '',
+      recommendations: report.recommendations || '',
+      summary: report.summary,
+    });
+  }
+
   private async sendReportEmail(
     report: DailyReport,
     superviseur: User,
@@ -165,10 +191,7 @@ export class ReportService {
     targetDate: Date,
   ): Promise<boolean> {
     const dateFormatted = targetDate.toLocaleDateString('fr-FR', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
     });
 
     const html = buildReportEmailHtml({
@@ -180,10 +203,26 @@ export class ReportService {
       summary: report.summary,
     });
 
+    let pdfBuffer: Buffer | undefined;
+    try {
+      pdfBuffer = await this.emailService.generatePdf({
+        superviseurName,
+        dateFormatted,
+        kpis: report.kpis,
+        aiAnalysis: report.aiAnalysis || '',
+        recommendations: report.recommendations || '',
+        summary: report.summary,
+      });
+    } catch (e) {
+      this.logger.warn(`PDF generation failed: ${e.message} — sending email without attachment`);
+    }
+
     return this.emailService.sendEmail({
       to: superviseur.email,
-      subject: `📋 Rapport Qualité IA — ${dateFormatted}`,
+      subject: `Rapport Qualite IA — ${dateFormatted}`,
       html,
+      pdfBuffer,
+      pdfFilename: `rapport-qualite-${report.reportDate}.pdf`,
     });
   }
 }

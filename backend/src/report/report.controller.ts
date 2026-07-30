@@ -2,10 +2,13 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Param,
   Query,
+  Res,
   UseGuards,
   Request,
+  StreamableFile,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -14,6 +17,7 @@ import {
   ApiBearerAuth,
   ApiQuery,
 } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { ReportService } from './report.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -29,15 +33,15 @@ export class ReportController {
 
   @Post('generate')
   @Roles(UserRole.SUPER_ADMIN, UserRole.SUPERVISEUR_QUALITE)
-  @ApiOperation({ summary: 'Générer les rapports IA manuellement' })
+  @ApiOperation({ summary: 'Generer les rapports IA manuellement' })
   @ApiQuery({ name: 'date', required: false, description: 'Date YYYY-MM-DD' })
-  @ApiResponse({ status: 200, description: 'Rapports générés' })
+  @ApiResponse({ status: 200, description: 'Rapports generes' })
   @ApiResponse({ status: 400, description: 'Erreur de validation' })
   async manualGenerate(@Query('date') date?: string) {
     try {
       const reports = await this.reportService.manualGenerate(date || undefined);
       return {
-        message: `${reports.length} rapport(s) généré(s) avec succès`,
+        message: `${reports.length} rapport(s) genere(s) avec succes`,
         reports,
       };
     } catch (error) {
@@ -76,8 +80,29 @@ export class ReportController {
 
   @Get(':id')
   @Roles(UserRole.SUPER_ADMIN, UserRole.SUPERVISEUR_QUALITE)
-  @ApiOperation({ summary: 'Détail d\'un rapport' })
+  @ApiOperation({ summary: 'Detail d\'un rapport' })
   async getReportById(@Param('id') id: string) {
     return this.reportService.getReportById(id);
+  }
+
+  @Get(':id/pdf')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SUPERVISEUR_QUALITE)
+  @ApiOperation({ summary: 'Telecharger le PDF d\'un rapport' })
+  async downloadPdf(@Param('id') id: string, @Res() res: Response) {
+    const pdfBuffer = await this.reportService.downloadReportPdf(id);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="rapport-qualite-${id}.pdf"`,
+      'Content-Length': pdfBuffer.length,
+    });
+    res.end(pdfBuffer);
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SUPERVISEUR_QUALITE)
+  @ApiOperation({ summary: 'Supprimer un rapport' })
+  async deleteReport(@Param('id') id: string) {
+    await this.reportService.deleteReport(id);
+    return { message: 'Rapport supprime avec succes' };
   }
 }

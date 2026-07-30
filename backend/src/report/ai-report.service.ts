@@ -177,61 +177,61 @@ export class AiReportService {
     const paragraphs: string[] = [];
 
     paragraphs.push(
-      `📊 Analyse du ${dateFormatted}\n\n` +
-      `Ce jour, ${kpis.totalLignes} ligne(s) de contrôle qualité ont été enregistrées, réparties entre ${kpis.agentsActifs} agent(s) actif(s). ` +
-      `Le volume total d'arrêt cumulé est de ${kpis.totalMinutes} minutes.`
+      `Analyse du ${dateFormatted}\n\n` +
+      `Ce jour, ${kpis.totalLignes} ligne(s) de controle qualite ont ete enregistrees, reparties entre ${kpis.agentsActifs} agent(s) actif(s). ` +
+      `Le volume total d'arret cumule est de ${kpis.totalMinutes} minutes.`
     );
 
     paragraphs.push(
-      `📈 Répartition des résultats :\n` +
-      `• Vert (Conforme) : ${kpis.vertCount} ligne(s) — ${kpis.vertPercent}%\n` +
-      `• Jaune (À surveiller) : ${kpis.jauneCount} ligne(s) — ${kpis.jaunePercent}%\n` +
-      `• Rouge (Critique) : ${kpis.rougeCount} ligne(s) — ${kpis.rougePercent}%`
+      `Repartition des resultats :\n` +
+      `- Vert (Conforme) : ${kpis.vertCount} ligne(s) — ${kpis.vertPercent}%\n` +
+      `- Jaune (A surveiller) : ${kpis.jauneCount} ligne(s) — ${kpis.jaunePercent}%\n` +
+      `- Rouge (Critique) : ${kpis.rougeCount} ligne(s) — ${kpis.rougePercent}%`
     );
 
     if (kpis.vertPercent >= 80) {
       paragraphs.push(
-        `✅ Performance globale excellente. La conformité dépasse le seuil de 80%, ` +
-        `ce qui témoigne d'un contrôle qualité rigoureux et d'une bonne discipline opérationnelle.`
+        `Performance globale excellente. La conformite depasse le seuil de 80%, ` +
+        `ce qui temoigne d'un controle qualite rigoureux et d'une bonne discipline operationnelle.`
       );
     } else if (kpis.vertPercent >= 60) {
       paragraphs.push(
-        `⚠️ Performance satisfaisante mais des améliorations sont possibles. ` +
-        `Avec ${kpis.vertPercent}% de conformité, l'objectif reste d'atteindre 80% minimum.`
+        `Performance satisfaisante mais des ameliorations sont possibles. ` +
+        `Avec ${kpis.vertPercent}% de conformite, l'objectif reste d'atteindre 80% minimum.`
       );
     } else {
       paragraphs.push(
-        `🔴 Performance insuffisante. Avec seulement ${kpis.vertPercent}% de conformité, ` +
-        `des actions correctives urgentes sont nécessaires pour améliorer la qualité.`
+        `Performance insuffisante. Avec seulement ${kpis.vertPercent}% de conformite, ` +
+        `des actions correctives urgentes sont necessaires pour ameliorer la qualite.`
       );
     }
 
     if (kpis.rougeCount > 0) {
       paragraphs.push(
-        `🚨 Points critiques (${kpis.rougeCount}) :\n` +
+        `Points critiques (${kpis.rougeCount}) :\n` +
         kpis.criticalLignes
-          .map((l) => `• ${l.nom} — Agent: ${l.agent} — Délai: ${l.delais} min`)
+          .map((l) => `- ${l.nom} — Agent: ${l.agent} — Delai: ${l.delais} min`)
           .join('\n')
       );
     }
 
     if (kpis.totalMinutes > 120) {
       paragraphs.push(
-        `⏱️ Le volume d'arrêt cumulé (${kpis.totalMinutes} min) est élevé. ` +
-        `Une analyse des causes racines est recommandée pour réduire les temps d'arrêt.`
+        `Le volume d'arret cumule (${kpis.totalMinutes} min) est eleve. ` +
+        `Une analyse des causes racines est recommandee pour reduire les temps d'arret.`
       );
     }
 
     if (kpis.topAgent !== 'Aucun') {
       paragraphs.push(
-        `🏆 Agent le plus actif : ${kpis.topAgent}`
+        `Agent le plus actif : ${kpis.topAgent}`
       );
     }
 
     if (kpis.hourlyBreakdown.length > 0) {
       const peak = kpis.hourlyBreakdown.reduce((a, b) => (a.count > b.count ? a : b));
       paragraphs.push(
-        `⏰ Pic d'activité détecté à ${peak.heure} avec ${peak.count} contrôle(s).`
+        `Pic d'activite detecte a ${peak.heure} avec ${peak.count} controle(s).`
       );
     }
 
@@ -242,31 +242,31 @@ export class AiReportService {
     const recs: string[] = [];
 
     if (kpis.rougePercent > 30) {
-      recs.push('🔴 URGENT : Réunion de crise qualité à planifier dans les plus brefs délais.');
-      recs.push("Mettre en place un plan d'action correctif immédiat pour chaque ligne rouge.");
+      recs.push('[URGENT] Reunion de crise qualite a planifier dans les plus brefs delais.');
+      recs.push("Mettre en place un plan d'action correctif immediat pour chaque ligne rouge.");
     } else if (kpis.rougePercent > 15) {
       recs.push('Analyser les causes racines des points critiques et prioriser les actions correctives.');
     }
 
     if (kpis.jaunePercent > 25) {
-      recs.push('Renforcer la surveillance des lignes à risque (jaune) pour prévenir leur dégradation.');
+      recs.push('Renforcer la surveillance des lignes a risque (jaune) pour prevenir leur degradation.');
     }
 
     if (kpis.totalMinutes > 120) {
-      recs.push('Optimiser les procédures pour réduire les temps d\'arrêt cumulés.');
+      recs.push('Optimiser les procedures pour reduire les temps d\'arret cumules.');
     }
 
     if (kpis.agentsActifs < 2 && kpis.totalLignes > 5) {
-      recs.push('Considérer le renfort d\'équipe pour distribuer la charge de contrôle.');
+      recs.push('Considérer le renfort d\'equipe pour distribuer la charge de controle.');
     }
 
     if (kpis.vertPercent >= 80) {
-      recs.push('✅ Excellente performance — Maintenir le niveau actuel et documenter les bonnes pratiques.');
-      recs.push('Partager les succès avec toute l\'équipe via une communication interne.');
+      recs.push('[OK] Excellente performance — Maintenir le niveau actuel et documenter les bonnes pratiques.');
+      recs.push('Partager les succes avec toute l\'equipe via une communication interne.');
     }
 
     if (recs.length === 0) {
-      recs.push('Continuer le suivi régulier et maintenir la rigueur actuelle.');
+      recs.push('Continuer le suivi regulier et maintenir la rigueur actuelle.');
     }
 
     return recs.join('\n');
