@@ -73,10 +73,14 @@ const Dashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  const isAgentBlocked = isAgent && user?.isApprovedBySuperviseur === false;
+
   useEffect(() => {
-    fetchLignes();
-    fetchUnreadCount();
-  }, []);
+    if (!isAgentBlocked) {
+      fetchLignes();
+      fetchUnreadCount();
+    }
+  }, [isAgentBlocked]);
 
   const fetchUnreadCount = async () => {
     try {
@@ -144,6 +148,7 @@ const Dashboard: React.FC = () => {
   const closeSidebar = useCallback(() => setMobileOpen(false), []);
 
   const handleTab = (tab: string) => {
+    if (isAgentBlocked) return;
     setActiveTab(tab);
     setMobileOpen(false);
   };
@@ -268,8 +273,15 @@ const Dashboard: React.FC = () => {
                 )}
               </div>
               <div className="top-bar-brand-text">
-                <span className="top-bar-brand-label">{isSuperviseur ? 'SUPERVISEUR QUALITÉ' : 'AGENT QUALITÉ'}</span>
-                <span className="top-bar-brand-name">{user?.firstName} {user?.lastName}</span>
+                <span className="top-bar-brand-label">{isSuperviseur ? 'SUPERVISEUR QUALITE' : 'AGENT QUALITE'}</span>
+                <span className="top-bar-brand-name">
+                  {user?.firstName} {user?.lastName}
+                  {isAgent && user?.superviseur && (
+                    <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 400, marginLeft: 8 }}>
+                      ({user.superviseur.firstName} {user.superviseur.lastName} - Superviseur)
+                    </span>
+                  )}
+                </span>
               </div>
             </div>
           </div>
@@ -300,6 +312,89 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
         <div className="content-body">
+          {/* Agent Pending Approval Overlay */}
+          {isAgentBlocked && (
+            <div style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(15, 23, 42, 0.6)',
+              backdropFilter: 'blur(8px)',
+              zIndex: 1000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 20,
+            }}>
+              <div style={{
+                background: '#fff',
+                borderRadius: 20,
+                padding: '48px 40px',
+                maxWidth: 440,
+                width: '100%',
+                textAlign: 'center',
+                boxShadow: '0 25px 60px rgba(0,0,0,0.2)',
+              }}>
+                <div style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: '50%',
+                  background: '#fffbeb',
+                  border: '3px solid #f59e0b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 24px',
+                }}>
+                  <Clock size={36} color="#f59e0b" />
+                </div>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1e293b', marginBottom: 8 }}>
+                  En attente d'approbation
+                </h2>
+                <p style={{ fontSize: 14, color: '#64748b', lineHeight: 1.6, marginBottom: 8 }}>
+                  Votre compte a ete lie a un superviseur qualite. Vous devez etre approuve par votre superviseur pour acceder aux fonctionnalites.
+                </p>
+                {user?.superviseur && (
+                  <div style={{
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: 12,
+                    padding: '14px 18px',
+                    marginBottom: 24,
+                  }}>
+                    <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', fontWeight: 600, letterSpacing: 0.8, marginBottom: 4 }}>
+                      Votre superviseur
+                    </div>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: '#1e293b' }}>
+                      {user.superviseur.firstName} {user.superviseur.lastName}
+                    </div>
+                  </div>
+                )}
+                <p style={{ fontSize: 13, color: '#94a3b8', marginBottom: 24 }}>
+                  Veuillez patienter jusqu'a ce que votre superviseur valide votre inscription.
+                </p>
+                <button
+                  onClick={() => logout()}
+                  style={{
+                    background: '#f1f5f9',
+                    color: '#475569',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: 10,
+                    padding: '12px 24px',
+                    cursor: 'pointer',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    width: '100%',
+                  }}
+                >
+                  Se deconnecter
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Welcome Banner */}
           <div className="wb-banner">
             <div className="wb-bg-shapes">
