@@ -30,12 +30,20 @@ export class LibraryService {
     return this.imageRepo.save(image);
   }
 
+  private async verifyAgentBelongsToSuperviseur(agentId: string, superviseurId: string) {
+    const agent = await this.userRepo.findOne({ where: { id: agentId, superviseurId, role: UserRole.AGENT_QUALITE } });
+    if (!agent) throw new ForbiddenException('Cet agent ne vous appartient pas.');
+  }
+
   async getImages(user: User, folderId?: string | null, agentId?: string) {
     const where: any = { isDeleted: false };
 
     if (folderId) {
       where.folder = { id: folderId };
     } else if (agentId) {
+      if (user.role === UserRole.SUPERVISEUR_QUALITE) {
+        await this.verifyAgentBelongsToSuperviseur(agentId, user.id);
+      }
       where.uploadedBy = { id: agentId };
     } else if (user.role === UserRole.AGENT_QUALITE) {
       where.uploadedBy = { id: user.id };
@@ -135,6 +143,9 @@ export class LibraryService {
 
   async getFolders(user: User, agentId?: string) {
     if (agentId) {
+      if (user.role === UserRole.SUPERVISEUR_QUALITE) {
+        await this.verifyAgentBelongsToSuperviseur(agentId, user.id);
+      }
       const createdByAgent = await this.folderRepo.find({
         where: { createdBy: { id: agentId } },
         order: { name: 'ASC' },
@@ -189,6 +200,10 @@ export class LibraryService {
   }
 
   async getStats(user: User, agentId?: string) {
+    if (agentId && user.role === UserRole.SUPERVISEUR_QUALITE) {
+      await this.verifyAgentBelongsToSuperviseur(agentId, user.id);
+    }
+
     const where: any = { isDeleted: false };
     const trashWhere: any = { isDeleted: true };
 
