@@ -18,6 +18,8 @@ import {
   Eye,
   EyeOff,
   CheckCircle2,
+  Key,
+  Copy,
 } from 'lucide-react';
 
 const ProfilePage: React.FC = () => {
@@ -34,8 +36,8 @@ const ProfilePage: React.FC = () => {
   const getRoleLabel = (role?: UserRole) => {
     switch (role) {
       case UserRole.SUPER_ADMIN: return 'Super Admin';
-      case UserRole.SUPERVISEUR_QUALITE: return 'Superviseur Qualité';
-      case UserRole.AGENT_QUALITE: return 'Agent Qualité';
+      case UserRole.SUPERVISEUR_QUALITE: return 'Superviseur Qualite';
+      case UserRole.AGENT_QUALITE: return 'Agent Qualite';
       default: return 'Utilisateur';
     }
   };
@@ -46,7 +48,7 @@ const ProfilePage: React.FC = () => {
     setUploading(true);
     try {
       await authAPI.uploadProfileImage(file);
-      toast.success('Photo de profil mise à jour');
+      toast.success('Photo de profil mise a jour');
       const res = await authAPI.getProfile();
       localStorage.setItem('user', JSON.stringify(res.data));
       window.location.reload();
@@ -59,11 +61,18 @@ const ProfilePage: React.FC = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      toast.success('Profil mis à jour');
+      toast.success('Profil mis a jour');
     } catch {
       toast.error('Erreur');
     }
     setSaving(false);
+  };
+
+  const copyCode = () => {
+    if (user?.superviseurCode) {
+      navigator.clipboard.writeText(user.superviseurCode);
+      toast.success('Code copie dans le presse-papier');
+    }
   };
 
   if (!user) return null;
@@ -94,7 +103,7 @@ const ProfilePage: React.FC = () => {
                   <Shield size={12} /> {getRoleLabel(user.role)}
                 </span>
                 <h1 className="profile-name">{user.firstName} {user.lastName}</h1>
-                <p className="profile-desc">Gérez vos informations personnelles et vos préférences de sécurité.</p>
+                <p className="profile-desc">Gerez vos informations personnelles et vos preferences de securite.</p>
                 <div className="profile-email-row">
                   <Mail size={14} />
                   <span>{user.email}</span>
@@ -131,13 +140,65 @@ const ProfilePage: React.FC = () => {
               <CheckCircle2 size={18} />
             </div>
             <div className="profile-info-card-body">
-              <span className="profile-info-card-label">ACCÈS</span>
+              <span className="profile-info-card-label">ACCES</span>
               <span className="profile-info-card-title">{getRoleLabel(user.role)}</span>
               <span className="profile-info-card-status">
                 <span className="profile-status-dot" /> Actif
               </span>
             </div>
           </div>
+
+          {/* Superviseur Code Card */}
+          {user.role === UserRole.SUPERVISEUR_QUALITE && user.superviseurCode && (
+            <div className="profile-info-card" style={{ gridColumn: 'span 3' }}>
+              <div className="profile-info-card-icon" style={{ background: '#f5f3ff', color: '#7c3aed' }}>
+                <Key size={18} />
+              </div>
+              <div className="profile-info-card-body" style={{ flex: 1 }}>
+                <span className="profile-info-card-label">CODE SUPERVISEUR</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
+                  <span className="profile-info-card-title" style={{ fontFamily: 'monospace', fontSize: 20, letterSpacing: 2 }}>
+                    {user.superviseurCode}
+                  </span>
+                  <button
+                    onClick={copyCode}
+                    style={{
+                      background: '#f5f3ff',
+                      border: '1px solid #ddd6fe',
+                      borderRadius: 8,
+                      padding: '6px 12px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      color: '#7c3aed',
+                      fontSize: 12,
+                      fontWeight: 600,
+                    }}
+                  >
+                    <Copy size={14} /> Copier
+                  </button>
+                </div>
+                <span className="profile-info-card-sub">Partagez ce code avec vos agents pour qu'ils puissent s'inscrire dans votre equipe</span>
+              </div>
+            </div>
+          )}
+
+          {/* Agent Superviseur Info */}
+          {user.role === UserRole.AGENT_QUALITE && user.superviseur && (
+            <div className="profile-info-card" style={{ gridColumn: 'span 3' }}>
+              <div className="profile-info-card-icon" style={{ background: '#f5f3ff', color: '#7c3aed' }}>
+                <Key size={18} />
+              </div>
+              <div className="profile-info-card-body">
+                <span className="profile-info-card-label">SUPERVISEUR</span>
+                <span className="profile-info-card-title">{user.superviseur.firstName} {user.superviseur.lastName}</span>
+                <span className="profile-info-card-sub">
+                  {user.isApprovedBySuperviseur ? 'Approuve par votre superviseur' : 'En attente d\'approbation par votre superviseur'}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Tabs */}
@@ -146,13 +207,13 @@ const ProfilePage: React.FC = () => {
             className={`profile-tab ${activeTab === 'general' ? 'profile-tab-active' : ''}`}
             onClick={() => setActiveTab('general')}
           >
-            <UserCircle size={16} /> Général
+            <UserCircle size={16} /> General
           </button>
           <button
             className={`profile-tab ${activeTab === 'security' ? 'profile-tab-active' : ''}`}
             onClick={() => setActiveTab('security')}
           >
-            <Lock size={16} /> Sécurité
+            <Lock size={16} /> Securite
           </button>
         </div>
 
@@ -165,7 +226,7 @@ const ProfilePage: React.FC = () => {
               </div>
               <div>
                 <h3 className="profile-form-title">Modifier le profil</h3>
-                <p className="profile-form-sub">Mettez à jour vos informations personnelles.</p>
+                <p className="profile-form-sub">Mettez a jour vos informations personnelles.</p>
               </div>
               <div className="profile-auto-saved">
                 <span className="profile-auto-dot" /> Auto-saved
@@ -173,7 +234,7 @@ const ProfilePage: React.FC = () => {
             </div>
             <div className="profile-form-grid">
               <div className="profile-field">
-                <label className="profile-field-label">Prénom</label>
+                <label className="profile-field-label">Prenom</label>
                 <input
                   type="text"
                   className="profile-input"
@@ -198,7 +259,7 @@ const ProfilePage: React.FC = () => {
                   value={email}
                   disabled
                 />
-                <span className="profile-field-hint">L'email ne peut pas être modifié ici</span>
+                <span className="profile-field-hint">L'email ne peut pas etre modifie ici</span>
               </div>
               <div className="profile-field">
                 <label className="profile-field-label">Matricule</label>
@@ -226,22 +287,22 @@ const ProfilePage: React.FC = () => {
                 <Lock size={20} />
               </div>
               <div>
-                <h3 className="profile-form-title">Sécurité du compte</h3>
-                <p className="profile-form-sub">Gérez votre mot de passe et vos paramètres de sécurité.</p>
+                <h3 className="profile-form-title">Securite du compte</h3>
+                <p className="profile-form-sub">Gerez votre mot de passe et vos parametres de securite.</p>
               </div>
             </div>
             <div className="profile-form-grid">
               <div className="profile-field">
                 <label className="profile-field-label">Mot de passe actuel</label>
-                <input type="password" className="profile-input" placeholder="••••••••" />
+                <input type="password" className="profile-input" placeholder="********" />
               </div>
               <div className="profile-field">
                 <label className="profile-field-label">Nouveau mot de passe</label>
-                <input type="password" className="profile-input" placeholder="••••••••" />
+                <input type="password" className="profile-input" placeholder="********" />
               </div>
               <div className="profile-field">
                 <label className="profile-field-label">Confirmer le mot de passe</label>
-                <input type="password" className="profile-input" placeholder="••••••••" />
+                <input type="password" className="profile-input" placeholder="********" />
               </div>
             </div>
             <div className="profile-form-actions">

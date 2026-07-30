@@ -4,6 +4,8 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 
 export enum UserRole {
@@ -40,6 +42,19 @@ export class User {
 
   @Column({ name: 'profile_image', type: 'varchar', length: 500, nullable: true })
   profileImage: string | null;
+
+  @Column({ name: 'superviseur_code', type: 'varchar', length: 20, unique: true, nullable: true })
+  superviseurCode: string | null;
+
+  @Column({ name: 'superviseur_id', type: 'uuid', nullable: true })
+  superviseurId: string | null;
+
+  @ManyToOne(() => User, { nullable: true, eager: false })
+  @JoinColumn({ name: 'superviseur_id' })
+  superviseur: User | null;
+
+  @Column({ name: 'is_approved_by_superviseur', type: 'boolean', default: false })
+  isApprovedBySuperviseur: boolean;
 
   @Column({ name: 'reset_token', type: 'varchar', nullable: true, length: 255 })
   resetToken: string | null;

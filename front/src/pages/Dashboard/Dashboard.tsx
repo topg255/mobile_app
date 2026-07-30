@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { qualityAPI } from '../../api';
+import { qualityAPI, authAPI } from '../../api';
 import { reportAPI } from '../../api';
-import { LigneControle, NoteQualite } from '../../types';
+import { LigneControle, NoteQualite, User } from '../../types';
 import { toast } from 'react-hot-toast';
 import Chat from '../../components/Chat';
 import NotificationBell from '../../components/NotificationBell';
@@ -49,6 +49,10 @@ import {
   Users,
   ImageIcon,
   Trash2,
+  UserCheck,
+  UserX,
+  Copy,
+  Key,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -183,6 +187,12 @@ const Dashboard: React.FC = () => {
                 onClick={() => handleTab('historique')}
               >
                 <History size={18} /> <span>Historique agents</span>
+              </button>
+              <button
+                className={`nav-item ${activeTab === 'mes-agents' ? 'active' : ''}`}
+                onClick={() => handleTab('mes-agents')}
+              >
+                <UserCheck size={18} /> <span>Mes Agents</span>
               </button>
             </>
           )}
@@ -645,6 +655,7 @@ const Dashboard: React.FC = () => {
             <LignesTab lignes={lignes} loading={loading} onEdit={(ligne) => { setEditingLigne(ligne); setActiveTab('edit-ligne'); }} onDelete={fetchLignes} />
           )}
           {activeTab === 'historique' && isSuperviseur && <HistoriqueTab />}
+          {activeTab === 'mes-agents' && isSuperviseur && <AgentsTab />}
           {activeTab === 'add-ligne' && <AddLigneTab onSuccess={fetchLignes} onEdit={(ligne) => { setEditingLigne(ligne); setActiveTab('edit-ligne'); }} />}
           {activeTab === 'edit-ligne' && editingLigne && (
             <EditLigneTab ligne={editingLigne} onSuccess={() => { fetchLignes(); setActiveTab('mes-lignes'); }} onCancel={() => setActiveTab('mes-lignes')} />
@@ -1238,6 +1249,273 @@ const HistoriqueTab: React.FC = () => {
         <div className="ov-empty">
           <Users size={32} />
           <p>Aucun agent trouvé</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const AgentsTab: React.FC = () => {
+  const [agents, setAgents] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    loadAgents();
+  }, []);
+
+  const loadAgents = async () => {
+    setLoading(true);
+    try {
+      const res = await authAPI.getMyAgents();
+      setAgents(res.data);
+    } catch {
+      toast.error('Erreur chargement agents');
+    }
+    setLoading(false);
+  };
+
+  const handleApprove = async (agentId: string) => {
+    try {
+      await authAPI.approveAgent(agentId);
+      toast.success('Agent approuve');
+      loadAgents();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erreur');
+    }
+  };
+
+  const handleReject = async (agentId: string) => {
+    try {
+      await authAPI.rejectAgent(agentId);
+      toast.success('Agent rejete');
+      loadAgents();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erreur');
+    }
+  };
+
+  const pendingAgents = agents.filter(a => !a.isApprovedBySuperviseur);
+  const approvedAgents = agents.filter(a => a.isApprovedBySuperviseur);
+
+  if (loading) return <div className="loading">Chargement...</div>;
+
+  return (
+    <div className="tab-content">
+      {/* Stats */}
+      <div className="cd-stats-row">
+        <div className="cd-stat">
+          <div className="cd-stat-icon cd-stat-total"><Users size={18} /></div>
+          <div className="cd-stat-info">
+            <span className="cd-stat-val">{agents.length}</span>
+            <span className="cd-stat-lbl">Total agents</span>
+          </div>
+        </div>
+        <div className="cd-stat">
+          <div className="cd-stat-icon cd-stat-active"><UserCheck size={18} /></div>
+          <div className="cd-stat-info">
+            <span className="cd-stat-val">{approvedAgents.length}</span>
+            <span className="cd-stat-lbl">Approuves</span>
+          </div>
+        </div>
+        <div className="cd-stat">
+          <div className="cd-stat-icon cd-stat-inactive"><UserX size={18} /></div>
+          <div className="cd-stat-info">
+            <span className="cd-stat-val">{pendingAgents.length}</span>
+            <span className="cd-stat-lbl">En attente</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Superviseur Code Banner */}
+      {user?.superviseurCode && (
+        <div style={{
+          background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)',
+          border: '1px solid #ddd6fe',
+          borderRadius: 12,
+          padding: '16px 20px',
+          marginBottom: 20,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+        }}>
+          <div style={{ background: '#7c3aed', color: '#fff', borderRadius: 10, padding: '10px 14px' }}>
+            <Key size={20} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 12, color: '#7c3aed', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+              Votre code superviseur
+            </div>
+            <div style={{ fontFamily: 'monospace', fontSize: 20, fontWeight: 700, color: '#1e293b', letterSpacing: 2, marginTop: 2 }}>
+              {user.superviseurCode}
+            </div>
+            <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>
+              Partagez ce code avec vos agents pour qu'ils puissent s'inscrire dans votre equipe
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(user.superviseurCode!);
+              toast.success('Code copie');
+            }}
+            style={{
+              background: '#7c3aed',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '8px 16px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 13,
+              fontWeight: 600,
+            }}
+          >
+            <Copy size={14} /> Copier
+          </button>
+        </div>
+      )}
+
+      {/* Pending Agents */}
+      {pendingAgents.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 12, color: '#f59e0b' }}>
+            En attente d'approbation ({pendingAgents.length})
+          </h3>
+          <div style={{ display: 'grid', gap: 10 }}>
+            {pendingAgents.map((agent) => (
+              <div key={agent.id} style={{
+                background: '#fffbeb',
+                border: '1px solid #fde68a',
+                borderRadius: 10,
+                padding: '14px 18px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+              }}>
+                <div style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  background: '#fef3c7',
+                  color: '#d97706',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700,
+                  fontSize: 14,
+                }}>
+                  {agent.firstName?.[0]}{agent.lastName?.[0]}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: '#1e293b' }}>{agent.firstName} {agent.lastName}</div>
+                  <div style={{ fontSize: 12, color: '#92400e' }}>{agent.matricule} — {agent.email}</div>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    onClick={() => handleApprove(agent.id)}
+                    style={{
+                      background: '#16a34a',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 8,
+                      padding: '8px 14px',
+                      cursor: 'pointer',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    <UserCheck size={14} /> Approuver
+                  </button>
+                  <button
+                    onClick={() => handleReject(agent.id)}
+                    style={{
+                      background: '#dc2626',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 8,
+                      padding: '8px 14px',
+                      cursor: 'pointer',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    <UserX size={14} /> Rejeter
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Approved Agents */}
+      <div>
+        <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 12, color: '#16a34a' }}>
+          Agents approuves ({approvedAgents.length})
+        </h3>
+        {approvedAgents.length > 0 ? (
+          <div style={{ display: 'grid', gap: 10 }}>
+            {approvedAgents.map((agent) => (
+              <div key={agent.id} style={{
+                background: '#f0fdf4',
+                border: '1px solid #bbf7d0',
+                borderRadius: 10,
+                padding: '14px 18px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+              }}>
+                <div style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  background: '#dcfce7',
+                  color: '#16a34a',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700,
+                  fontSize: 14,
+                }}>
+                  {agent.firstName?.[0]}{agent.lastName?.[0]}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: '#1e293b' }}>{agent.firstName} {agent.lastName}</div>
+                  <div style={{ fontSize: 12, color: '#166534' }}>{agent.matricule} — {agent.email}</div>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  color: '#16a34a',
+                  fontSize: 12,
+                  fontWeight: 600,
+                }}>
+                  <CheckCircle size={14} /> Actif
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="ov-empty">
+            <Users size={32} />
+            <p>Aucun agent approuve</p>
+          </div>
+        )}
+      </div>
+
+      {agents.length === 0 && (
+        <div className="ov-empty">
+          <Users size={32} />
+          <p>Aucun agent dans votre equipe. Partagez votre code superviseur pour que les agents puissent s'inscrire.</p>
         </div>
       )}
     </div>

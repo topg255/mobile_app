@@ -48,6 +48,7 @@ export const authAPI = {
     matricule: string;
     email: string;
     password: string;
+    superviseurCode: string;
     image?: File;
   }): Promise<{ data: SignupResponse }> => {
     const formData = new FormData();
@@ -56,6 +57,7 @@ export const authAPI = {
     formData.append('matricule', data.matricule);
     formData.append('email', data.email);
     formData.append('password', data.password);
+    formData.append('superviseurCode', data.superviseurCode);
     if (data.image) formData.append('image', data.image);
     return api.post('/auth/signup/agent-qualite', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -108,6 +110,15 @@ export const authAPI = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
+
+  getMyAgents: (): Promise<{ data: User[] }> =>
+    api.get('/auth/agents'),
+
+  approveAgent: (agentId: string): Promise<{ data: { message: string; agent: User } }> =>
+    api.post(`/auth/agents/${agentId}/approve`),
+
+  rejectAgent: (agentId: string): Promise<{ data: { message: string; agent: User } }> =>
+    api.post(`/auth/agents/${agentId}/reject`),
 };
 
 export const qualityAPI = {

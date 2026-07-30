@@ -10,6 +10,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Patch,
+  Param,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -28,6 +29,8 @@ import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
+import { Roles } from './decorators/roles.decorator';
 import { UserRole } from './entities/user.entity';
 
 const imageStorage = diskStorage({
@@ -40,7 +43,7 @@ const imageStorage = diskStorage({
 
 const imageFileFilter = (req, file, cb) => {
   if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
-    cb(new Error('Seules les images sont acceptées'), false);
+    cb(new Error('Seules les images sont acceptees'), false);
   } else {
     cb(null, true);
   }
@@ -54,7 +57,7 @@ export class AuthController {
   @Post('signup/agent-qualite')
   @UseInterceptors(FileInterceptor('image', { storage: imageStorage, fileFilter: imageFileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Inscription d\'un Agent Qualité' })
+  @ApiOperation({ summary: 'Inscription d\'un Agent Qualite' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -65,11 +68,12 @@ export class AuthController {
         matricule: { type: 'string' },
         email: { type: 'string' },
         password: { type: 'string' },
+        superviseurCode: { type: 'string', description: 'Code SUPERV-QLT-XXXXX du superviseur' },
         image: { type: 'string', format: 'binary' },
       },
     },
   })
-  @ApiResponse({ status: 201, description: 'Inscription réussie. En attente d\'approbation.' })
+  @ApiResponse({ status: 201, description: 'Inscription reussie. En attente d\'approbation.' })
   async signupAgent(@Body() signupDto: SignupDto, @UploadedFile() file?: Express.Multer.File) {
     return this.authService.signup(signupDto, UserRole.AGENT_QUALITE, file);
   }
@@ -77,7 +81,7 @@ export class AuthController {
   @Post('signup/superviseur-qualite')
   @UseInterceptors(FileInterceptor('image', { storage: imageStorage, fileFilter: imageFileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Inscription d\'un Superviseur Qualité' })
+  @ApiOperation({ summary: 'Inscription d\'un Superviseur Qualite' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -92,7 +96,7 @@ export class AuthController {
       },
     },
   })
-  @ApiResponse({ status: 201, description: 'Inscription réussie. En attente d\'approbation.' })
+  @ApiResponse({ status: 201, description: 'Inscription reussie. En attente d\'approbation.' })
   async signupSuperviseur(@Body() signupDto: SignupDto, @UploadedFile() file?: Express.Multer.File) {
     return this.authService.signup(signupDto, UserRole.SUPERVISEUR_QUALITE, file);
   }
@@ -103,22 +107,13 @@ export class AuthController {
     summary: 'Connexion utilisateur',
     description:
       'Authentifie un utilisateur avec son matricule et mot de passe.\n\n' +
-      '**Condition :** Le compte doit être approuvé par le Super Admin (sauf le Super Admin lui-même).\n\n' +
+      '**Condition :** Le compte doit etre approuve par le Super Admin (sauf le Super Admin lui-meme).\n\n' +
       'Retourne un **token JWT** valable 24 heures.',
   })
   @ApiBody({ type: LoginDto })
-  @ApiResponse({
-    status: 200,
-    description: 'Connexion réussie.',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Identifiants incorrects',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Compte non approuvé par le Super Admin',
-  })
+  @ApiResponse({ status: 200, description: 'Connexion reussie.' })
+  @ApiResponse({ status: 401, description: 'Identifiants incorrects' })
+  @ApiResponse({ status: 403, description: 'Compte non approuve par le Super Admin' })
   async login(@Body() loginDto: LoginDto, @Request() req) {
     const ip = req.ip || req.connection?.remoteAddress;
     const userAgent = req.headers['user-agent'];
@@ -129,14 +124,8 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('access-token')
-  @ApiOperation({
-    summary: 'Déconnexion utilisateur',
-    description: 'Enregistre la déconnexion et retourne un message de confirmation.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Déconnexion réussie.',
-  })
+  @ApiOperation({ summary: 'Deconnexion utilisateur' })
+  @ApiResponse({ status: 200, description: 'Deconnexion reussie.' })
   async logout(@Request() req) {
     const ip = req.ip || req.connection?.remoteAddress;
     const userAgent = req.headers['user-agent'];
@@ -145,32 +134,18 @@ export class AuthController {
 
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Demander la réinitialisation du mot de passe',
-    description:
-      'Envoie un email contenant un lien de réinitialisation du mot de passe.\n\n' +
-      'Le lien expire après **15 minutes**.',
-  })
+  @ApiOperation({ summary: 'Demander la reinitialisation du mot de passe' })
   @ApiBody({ type: ForgotPasswordDto })
-  @ApiResponse({
-    status: 200,
-    description: 'Email de réinitialisation envoyé avec succès',
-  })
+  @ApiResponse({ status: 200, description: 'Email de reinitialisation envoye avec succes' })
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
     return this.authService.forgotPassword(forgotPasswordDto);
   }
 
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Réinitialiser le mot de passe',
-    description: 'Réinitialise le mot de passe avec un nouveau mot de passe.',
-  })
+  @ApiOperation({ summary: 'Reinitialiser le mot de passe' })
   @ApiBody({ type: ResetPasswordDto })
-  @ApiResponse({
-    status: 200,
-    description: 'Mot de passe réinitialisé avec succès',
-  })
+  @ApiResponse({ status: 200, description: 'Mot de passe reinitialise avec succes' })
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(resetPasswordDto);
   }
@@ -178,14 +153,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   @ApiBearerAuth('access-token')
-  @ApiOperation({
-    summary: 'Récupérer le profil utilisateur connecté',
-    description: 'Retourne les informations du profil de l\'utilisateur authentifié.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Profil utilisateur retourné avec succès',
-  })
+  @ApiOperation({ summary: 'Recuperer le profil utilisateur connecte' })
+  @ApiResponse({ status: 200, description: 'Profil utilisateur retourne avec succes' })
   async getProfile(@Request() req) {
     return this.authService.getProfile(req.user.id);
   }
@@ -196,8 +165,37 @@ export class AuthController {
   @ApiBearerAuth('access-token')
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Uploader une photo de profil' })
-  @ApiResponse({ status: 201, description: 'Photo de profil uploadée avec succès' })
+  @ApiResponse({ status: 201, description: 'Photo de profil uploadee avec succes' })
   async uploadProfileImage(@Request() req, @UploadedFile() file: Express.Multer.File) {
     return this.authService.uploadProfileImage(req.user.id, file);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPERVISEUR_QUALITE)
+  @Get('agents')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Liste des agents du superviseur' })
+  async getAgentsBySuperviseur(@Request() req) {
+    return this.authService.getAgentsBySuperviseur(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPERVISEUR_QUALITE)
+  @Post('agents/:agentId/approve')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Approuver un agent par le superviseur' })
+  async approveAgent(@Request() req, @Param('agentId') agentId: string) {
+    return this.authService.approveAgentBySuperviseur(req.user.id, agentId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPERVISEUR_QUALITE)
+  @Post('agents/:agentId/reject')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Rejeter un agent par le superviseur' })
+  async rejectAgent(@Request() req, @Param('agentId') agentId: string) {
+    return this.authService.rejectAgentBySuperviseur(req.user.id, agentId);
   }
 }

@@ -34,8 +34,24 @@ export class AuthService {
     private readonly mailService: MailService,
   ) {}
 
+  private async generateSuperviseurCode(): Promise<string> {
+    let code: string;
+    let exists = true;
+    while (exists) {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let suffix = '';
+      for (let i = 0; i < 5; i++) {
+        suffix += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      code = `SUPERV-QLT-${suffix}`;
+      const existing = await this.userRepository.findOne({ where: { superviseurCode: code } });
+      exists = !!existing;
+    }
+    return code!;
+  }
+
   async signup(signupDto: SignupDto, role: UserRole, file?: Express.Multer.File) {
-    const { firstName, lastName, matricule, email, password } = signupDto;
+    const { firstName, lastName, matricule, email, password, superviseurCode } = signupDto;
 
     const existingUser = await this.userRepository.findOne({
       where: [{ matricule }, { email }],
@@ -43,9 +59,23 @@ export class AuthService {
 
     if (existingUser) {
       if (existingUser.matricule === matricule) {
-        throw new ConflictException('Ce matricule est déjà utilisé');
+        throw new ConflictException('Ce matricule est deja utilise');
       }
-      throw new ConflictException('Cet email est déjà utilisé');
+      throw new ConflictException('Cet email est deja utilise');
+    }
+
+    let superviseur: User | null = null;
+
+    if (role === UserRole.AGENT_QUALITE) {
+      if (!superviseurCode) {
+        throw new BadRequestException('Le code superviseur est requis pour inscrire un agent');
+      }
+      superviseur = await this.userRepository.findOne({
+        where: { superviseurCode, role: UserRole.SUPERVISEUR_QUALITE },
+      });
+      if (!superviseur) {
+        throw new BadRequestException('Code superviseur invalide ou superviseur non trouve');
+      }
     }
 
     const salt = await bcrypt.genSalt(12);
@@ -60,12 +90,20 @@ export class AuthService {
       role,
       isApproved: false,
       profileImage: file ? `/uploads/${file.filename}` : null,
+      superviseurId: superviseur?.id || null,
+      isApprovedBySuperviseur: false,
     });
+
+    if (role === UserRole.SUPERVISEUR_QUALITE) {
+      user.superviseurCode = await this.generateSuperviseurCode();
+    }
 
     await this.userRepository.save(user);
 
-    return {
-      message: 'Inscription réussie. En attente d\'approbation par le Super Admin.',
+    const response: any = {
+      message: role === UserRole.SUPERVISEUR_QUALITE
+        ? `Inscription reussie. Votre code superviseur est : ${user.superviseurCode}. Vous le trouverez dans votre profil. En attente d'approbation par le Super Admin.`
+        : 'Inscription reussie. En attente d\'approbation par le Super Admin.',
       user: {
         id: user.id,
         firstName: user.firstName,
@@ -79,6 +117,12 @@ export class AuthService {
         updatedAt: user.updatedAt,
       },
     };
+
+    if (role === UserRole.SUPERVISEUR_QUALITE && user.superviseurCode) {
+      response.user.superviseurCode = user.superviseurCode;
+    }
+
+    return response;
   }
 
   async login(loginDto: LoginDto, ip?: string, userAgent?: string) {
@@ -100,7 +144,7 @@ export class AuthService {
 
     if (user.role !== UserRole.SUPER_ADMIN && !user.isApproved) {
       throw new ForbiddenException(
-        'Votre compte n\'a pas encore été approuvé par le Super Admin. Veuillez patienter.',
+        'Votre compte n\'a pas encore ete approuve par le Super Admin. Veuillez patienter.',
       );
     }
 
@@ -121,7 +165,7 @@ export class AuthService {
     await this.logAction(user, LoginAction.LOGIN, ip, userAgent);
 
     return {
-      message: 'Connexion réussie',
+      message: 'Connexion reussie',
       accessToken,
       user: {
         id: user.id,
@@ -132,6 +176,9 @@ export class AuthService {
         role: user.role,
         isApproved: user.isApproved,
         profileImage: user.profileImage,
+        superviseurCode: user.superviseurCode,
+        superviseurId: user.superviseurId,
+        isApprovedBySuperviseur: user.isApprovedBySuperviseur,
       },
     };
   }
@@ -145,7 +192,7 @@ export class AuthService {
       await this.logAction(user, LoginAction.LOGOUT, ip, userAgent);
     }
 
-    return { message: 'Déconnexion réussie' };
+    return { message: 'Deconnexion reussie' };
   }
 
   private async logAction(
@@ -171,7 +218,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new NotFoundException('Aucun compte associé à cet email');
+      throw new NotFoundException('Aucun compte associe a cet email');
     }
 
     const resetToken = crypto.randomBytes(32).toString('hex');
@@ -187,7 +234,7 @@ export class AuthService {
     await this.mailService.sendResetPasswordEmail(user.email, user.firstName, resetLink);
 
     return {
-      message: 'Un email de réinitialisation a été envoyé',
+      message: 'Un email de reinitialisation a ete envoye',
     };
   }
 
@@ -201,7 +248,7 @@ export class AuthService {
       .getOne();
 
     if (!user) {
-      throw new BadRequestException('Token invalide ou expiré');
+      throw new BadRequestException('Token invalide ou expire');
     }
 
     const isTokenValid = user.resetToken
@@ -209,7 +256,7 @@ export class AuthService {
       : false;
 
     if (!isTokenValid) {
-      throw new BadRequestException('Token invalide ou expiré');
+      throw new BadRequestException('Token invalide ou expire');
     }
 
     const salt = await bcrypt.genSalt(12);
@@ -219,17 +266,18 @@ export class AuthService {
     await this.userRepository.save(user);
 
     return {
-      message: 'Mot de passe réinitialisé avec succès',
+      message: 'Mot de passe reinitialise avec succes',
     };
   }
 
   async getProfile(userId: string) {
     const user = await this.userRepository.findOne({
       where: { id: userId },
+      relations: { superviseur: true },
     });
 
     if (!user) {
-      throw new NotFoundException('Utilisateur non trouvé');
+      throw new NotFoundException('Utilisateur non trouve');
     }
 
     const { password, resetToken, resetTokenExpires, ...userWithoutSensitiveData } = user;
@@ -240,10 +288,10 @@ export class AuthService {
   async uploadProfileImage(userId: string, file: Express.Multer.File) {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
-      throw new NotFoundException('Utilisateur non trouvé');
+      throw new NotFoundException('Utilisateur non trouve');
     }
     if (!file) {
-      throw new BadRequestException('Aucun fichier uploadé');
+      throw new BadRequestException('Aucun fichier uploade');
     }
     if (user.profileImage) {
       const filename = user.profileImage.split('/').pop();
@@ -254,8 +302,88 @@ export class AuthService {
     user.profileImage = `/uploads/${file.filename}`;
     await this.userRepository.save(user);
     return {
-      message: 'Photo de profil mise à jour',
+      message: 'Photo de profil mise a jour',
       profileImage: user.profileImage,
     };
+  }
+
+  async approveAgentBySuperviseur(superviseurId: string, agentId: string) {
+    const superviseur = await this.userRepository.findOne({ where: { id: superviseurId } });
+    if (!superviseur || superviseur.role !== UserRole.SUPERVISEUR_QUALITE) {
+      throw new ForbiddenException('Action reservee aux superviseurs');
+    }
+
+    const agent = await this.userRepository.findOne({ where: { id: agentId } });
+    if (!agent || agent.role !== UserRole.AGENT_QUALITE) {
+      throw new NotFoundException('Agent non trouve');
+    }
+
+    if (agent.superviseurId !== superviseurId) {
+      throw new ForbiddenException('Cet agent n\'appartient pas a votre equipe');
+    }
+
+    agent.isApprovedBySuperviseur = true;
+    await this.userRepository.save(agent);
+
+    return {
+      message: `Agent ${agent.firstName} ${agent.lastName} approuve`,
+      agent: {
+        id: agent.id,
+        firstName: agent.firstName,
+        lastName: agent.lastName,
+        matricule: agent.matricule,
+        email: agent.email,
+        role: agent.role,
+        isApproved: agent.isApproved,
+        isApprovedBySuperviseur: agent.isApprovedBySuperviseur,
+      },
+    };
+  }
+
+  async rejectAgentBySuperviseur(superviseurId: string, agentId: string) {
+    const superviseur = await this.userRepository.findOne({ where: { id: superviseurId } });
+    if (!superviseur || superviseur.role !== UserRole.SUPERVISEUR_QUALITE) {
+      throw new ForbiddenException('Action reservee aux superviseurs');
+    }
+
+    const agent = await this.userRepository.findOne({ where: { id: agentId } });
+    if (!agent || agent.role !== UserRole.AGENT_QUALITE) {
+      throw new NotFoundException('Agent non trouve');
+    }
+
+    if (agent.superviseurId !== superviseurId) {
+      throw new ForbiddenException('Cet agent n\'appartient pas a votre equipe');
+    }
+
+    agent.isApprovedBySuperviseur = false;
+    await this.userRepository.save(agent);
+
+    return {
+      message: `Agent ${agent.firstName} ${agent.lastName} rejete`,
+      agent: {
+        id: agent.id,
+        firstName: agent.firstName,
+        lastName: agent.lastName,
+        matricule: agent.matricule,
+        email: agent.email,
+        role: agent.role,
+        isApproved: agent.isApproved,
+        isApprovedBySuperviseur: agent.isApprovedBySuperviseur,
+      },
+    };
+  }
+
+  async getAgentsBySuperviseur(superviseurId: string) {
+    const superviseur = await this.userRepository.findOne({ where: { id: superviseurId } });
+    if (!superviseur || superviseur.role !== UserRole.SUPERVISEUR_QUALITE) {
+      throw new ForbiddenException('Action reservee aux superviseurs');
+    }
+
+    const agents = await this.userRepository.find({
+      where: { superviseurId, role: UserRole.AGENT_QUALITE },
+      order: { createdAt: 'DESC' },
+    });
+
+    return agents.map(({ password, resetToken, resetTokenExpires, ...agent }) => agent);
   }
 }

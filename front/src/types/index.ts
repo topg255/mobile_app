@@ -13,6 +13,10 @@ export interface User {
   role: UserRole;
   isApproved?: boolean;
   profileImage?: string;
+  superviseurCode?: string;
+  superviseurId?: string;
+  superviseur?: User;
+  isApprovedBySuperviseur?: boolean;
   createdAt: string;
   updatedAt?: string;
 }
@@ -141,6 +145,7 @@ export enum NotificationType {
   MESSAGE = 'message',
   LIGNE_ADDED = 'ligne_added',
   LIGNE_UPDATED = 'ligne_updated',
+  REPORT_GENERATED = 'report_generated',
 }
 
 export interface Notification {

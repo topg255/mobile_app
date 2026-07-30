@@ -35,7 +35,7 @@ export class QualityService {
 
     if (requestedDate < today) {
       throw new BadRequestException(
-        'Vous ne pouvez pas ajouter une date passée. Seules les dates d\'aujourd\'hui ou futures sont acceptées.',
+        'Vous ne pouvez pas ajouter une date passee. Seules les dates d\'aujourd\'hui ou futures sont acceptees.',
       );
     }
 
@@ -45,7 +45,7 @@ export class QualityService {
 
     if (existing) {
       throw new BadRequestException(
-        `La date de contrôle ${dto.dateControle} existe déjà.`,
+        `La date de controle ${dto.dateControle} existe deja.`,
       );
     }
 
@@ -58,7 +58,7 @@ export class QualityService {
     await this.controleDateRepo.save(controleDate);
 
     return {
-      message: 'Date de contrôle créée avec succès',
+      message: 'Date de controle creee avec succes',
       controleDate,
     };
   }
@@ -76,7 +76,7 @@ export class QualityService {
     });
 
     if (!controleDate) {
-      throw new NotFoundException('Date de contrôle non trouvée');
+      throw new NotFoundException('Date de controle non trouvee');
     }
 
     const ligne = this.ligneControleRepo.create({
@@ -92,21 +92,23 @@ export class QualityService {
 
     await this.ligneControleRepo.save(ligne);
 
-    // Notify all superviseurs
-    const superviseurs = await this.userRepo.find({
-      where: { role: UserRole.SUPERVISEUR_QUALITE, isApproved: true },
-    });
-    for (const sup of superviseurs) {
-      await this.notificationService.create(
-        sup.id,
-        NotificationType.LIGNE_ADDED,
-        `${user.firstName} ${user.lastName} a ajouté la ligne "${ligne.nomLigne}"`,
-        ligne.id,
-      );
+    // Notify only the agent's superviseur
+    if (user.superviseurId) {
+      const superviseur = await this.userRepo.findOne({
+        where: { id: user.superviseurId },
+      });
+      if (superviseur && superviseur.isApproved) {
+        await this.notificationService.create(
+          superviseur.id,
+          NotificationType.LIGNE_ADDED,
+          `${user.firstName} ${user.lastName} a ajoute la ligne "${ligne.nomLigne}"`,
+          ligne.id,
+        );
+      }
     }
 
     return {
-      message: 'Ligne de contrôle ajoutée avec succès',
+      message: 'Ligne de controle ajoutee avec succes',
       ligne,
     };
   }
@@ -118,7 +120,7 @@ export class QualityService {
     });
 
     if (!ligne) {
-      throw new NotFoundException('Ligne de contrôle non trouvée');
+      throw new NotFoundException('Ligne de controle non trouvee');
     }
 
     if (ligne.agent.id !== user.id) {
@@ -134,21 +136,23 @@ export class QualityService {
 
     await this.ligneControleRepo.save(ligne);
 
-    // Notify all superviseurs
-    const superviseurs = await this.userRepo.find({
-      where: { role: UserRole.SUPERVISEUR_QUALITE, isApproved: true },
-    });
-    for (const sup of superviseurs) {
-      await this.notificationService.create(
-        sup.id,
-        NotificationType.LIGNE_UPDATED,
-        `${user.firstName} ${user.lastName} a modifié la ligne "${ligne.nomLigne}"`,
-        ligne.id,
-      );
+    // Notify only the agent's superviseur
+    if (user.superviseurId) {
+      const superviseur = await this.userRepo.findOne({
+        where: { id: user.superviseurId },
+      });
+      if (superviseur && superviseur.isApproved) {
+        await this.notificationService.create(
+          superviseur.id,
+          NotificationType.LIGNE_UPDATED,
+          `${user.firstName} ${user.lastName} a modifie la ligne "${ligne.nomLigne}"`,
+          ligne.id,
+        );
+      }
     }
 
     return {
-      message: 'Ligne modifiée avec succès',
+      message: 'Ligne modifiee avec succes',
       ligne,
     };
   }
@@ -158,9 +162,16 @@ export class QualityService {
       where: { id },
       relations: { agent: true },
     });
-    if (!ligne) throw new NotFoundException('Ligne de contrôle non trouvée');
+    if (!ligne) throw new NotFoundException('Ligne de controle non trouvee');
     if (user.role === UserRole.AGENT_QUALITE && ligne.agent.id !== user.id) {
       throw new ForbiddenException('Vous ne pouvez supprimer que vos propres lignes');
+    }
+    if (user.role === UserRole.SUPERVISEUR_QUALITE) {
+      // Superviseur can only delete lines from their own agents
+      const agent = await this.userRepo.findOne({ where: { id: ligne.agent.id } });
+      if (!agent || agent.superviseurId !== user.id) {
+        throw new ForbiddenException('Vous ne pouvez supprimer que les lignes de vos agents');
+      }
     }
     if (ligne.image) {
       const filename = ligne.image.split('/').pop();
@@ -170,12 +181,12 @@ export class QualityService {
       }
     }
     await this.ligneControleRepo.remove(ligne);
-    return { message: 'Ligne supprimée avec succès' };
+    return { message: 'Ligne supprimee avec succes' };
   }
 
   async deleteControleDate(id: string) {
     const date = await this.controleDateRepo.findOne({ where: { id } });
-    if (!date) throw new NotFoundException('Date de contrôle non trouvée');
+    if (!date) throw new NotFoundException('Date de controle non trouvee');
     const lignes = await this.ligneControleRepo.find({ where: { controleDate: { id } } });
     for (const l of lignes) {
       if (l.image) {
@@ -187,7 +198,7 @@ export class QualityService {
     }
     if (lignes.length > 0) await this.ligneControleRepo.remove(lignes);
     await this.controleDateRepo.remove(date);
-    return { message: 'Date de contrôle supprimée avec succès' };
+    return { message: 'Date de controle supprimee avec succes' };
   }
 
   async uploadLigneImage(id: string, file: Express.Multer.File, user: User) {
@@ -197,7 +208,7 @@ export class QualityService {
     });
 
     if (!ligne) {
-      throw new NotFoundException('Ligne de contrôle non trouvée');
+      throw new NotFoundException('Ligne de controle non trouvee');
     }
 
     if (user.role === UserRole.AGENT_QUALITE && ligne.agent.id !== user.id) {
@@ -205,7 +216,7 @@ export class QualityService {
     }
 
     if (!file) {
-      throw new BadRequestException('Aucun fichier uploadé');
+      throw new BadRequestException('Aucun fichier uploade');
     }
 
     if (ligne.image) {
@@ -232,7 +243,7 @@ export class QualityService {
     } catch (e) { console.error('Library save error:', e); }
 
     return {
-      message: 'Image uploadée avec succès',
+      message: 'Image uploadée avec succes',
       ligne,
     };
   }
@@ -248,13 +259,17 @@ export class QualityService {
   async getLignesAgent(agentId: string, requestor: User) {
     if (requestor.role !== UserRole.SUPERVISEUR_QUALITE) {
       throw new ForbiddenException(
-        'Seuls les superviseurs qualité peuvent consulter les lignes d\'un agent.',
+        'Seuls les superviseurs qualite peuvent consulter les lignes d\'un agent.',
       );
     }
 
     const agent = await this.userRepo.findOne({ where: { id: agentId } });
     if (!agent) {
-      throw new NotFoundException('Agent qualité non trouvé');
+      throw new NotFoundException('Agent qualite non trouve');
+    }
+
+    if (agent.superviseurId !== requestor.id) {
+      throw new ForbiddenException('Cet agent n\'appartient pas a votre equipe');
     }
 
     return this.ligneControleRepo.find({
@@ -267,11 +282,22 @@ export class QualityService {
   async getAllLignes(requestor: User) {
     if (requestor.role !== UserRole.SUPERVISEUR_QUALITE) {
       throw new ForbiddenException(
-        'Seuls les superviseurs qualité peuvent consulter toutes les lignes.',
+        'Seuls les superviseurs qualite peuvent consulter toutes les lignes.',
       );
     }
 
+    // Only return lines from agents belonging to this superviseur
+    const agents = await this.userRepo.find({
+      where: { superviseurId: requestor.id, role: UserRole.AGENT_QUALITE },
+    });
+    const agentIds = agents.map(a => a.id);
+
+    if (agentIds.length === 0) {
+      return [];
+    }
+
     return this.ligneControleRepo.find({
+      where: { agent: { id: In(agentIds) } },
       order: { createdAt: 'DESC' },
       relations: { controleDate: true, agent: true },
     });
@@ -280,12 +306,13 @@ export class QualityService {
   async getHistoriqueAgents(requestor: User) {
     if (requestor.role !== UserRole.SUPERVISEUR_QUALITE) {
       throw new ForbiddenException(
-        'Seuls les superviseurs qualité peuvent voir l\'historique des agents.',
+        'Seuls les superviseurs qualite peuvent voir l\'historique des agents.',
       );
     }
 
+    // Only return agents belonging to this superviseur
     const agents = await this.userRepo.find({
-      where: { role: UserRole.AGENT_QUALITE },
+      where: { superviseurId: requestor.id, role: UserRole.AGENT_QUALITE },
     });
 
     const historique = await Promise.all(
@@ -319,7 +346,7 @@ export class QualityService {
 
     if (debutDate > endDate) {
       throw new BadRequestException(
-        'La date de début doit être antérieure à la date de fin.',
+        'La date de debut doit etre anterieure a la date de fin.',
       );
     }
 
@@ -333,7 +360,7 @@ export class QualityService {
 
     if (controleDates.length === 0) {
       return {
-        message: 'Aucune date de contrôle trouvée pour cette période',
+        message: 'Aucune date de controle trouvee pour cette periode',
         rapport: {
           periode: { debut: dto.debutDate, fin: dto.endDate },
           totalLignes: 0,
@@ -353,8 +380,34 @@ export class QualityService {
 
     if (user.role === UserRole.AGENT_QUALITE) {
       whereCondition.agent = { id: user.id };
-    } else if (user.role === UserRole.SUPERVISEUR_QUALITE && dto.agentId) {
-      whereCondition.agent = { id: dto.agentId };
+    } else if (user.role === UserRole.SUPERVISEUR_QUALITE) {
+      // Scope to superviseur's agents
+      const agents = await this.userRepo.find({
+        where: { superviseurId: user.id, role: UserRole.AGENT_QUALITE },
+      });
+      const agentIds = agents.map(a => a.id);
+
+      if (dto.agentId) {
+        // Verify the requested agent belongs to this superviseur
+        if (!agentIds.includes(dto.agentId)) {
+          throw new ForbiddenException('Cet agent n\'appartient pas a votre equipe');
+        }
+        whereCondition.agent = { id: dto.agentId };
+      } else if (agentIds.length > 0) {
+        whereCondition.agent = { id: In(agentIds) };
+      } else {
+        return {
+          message: 'Aucun agent dans votre equipe',
+          rapport: {
+            periode: { debut: dto.debutDate, fin: dto.endDate },
+            totalLignes: 0,
+            repartition: { vert: 0, jaune: 0, rouge: 0 },
+            repartitionPourcentage: { vert: 0, jaune: 0, rouge: 0 },
+            minutesArretCumulees: 0,
+            details: [],
+          },
+        };
+      }
     }
 
     const lignes = await this.ligneControleRepo.find({
@@ -366,7 +419,7 @@ export class QualityService {
 
     if (totalLignes === 0) {
       return {
-        message: 'Aucune ligne de contrôle trouvée pour cette période',
+        message: 'Aucune ligne de controle trouvee pour cette periode',
         rapport: {
           periode: { debut: dto.debutDate, fin: dto.endDate },
           totalLignes: 0,

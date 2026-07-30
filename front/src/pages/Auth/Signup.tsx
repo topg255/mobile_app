@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authAPI } from '../../api';
 import { toast } from 'react-hot-toast';
-import { Mail, Lock, Eye, EyeOff, User, Hash, Briefcase, Camera, X, CheckCircle2, XCircle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, User, Hash, Briefcase, Camera, X, CheckCircle2, XCircle, Key } from 'lucide-react';
 
 const Signup: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -12,6 +12,7 @@ const Signup: React.FC = () => {
     email: '',
     password: '',
     confirmPassword: '',
+    superviseurCode: '',
   });
   const [role, setRole] = useState<'agent' | 'superviseur'>('agent');
   const [showPassword, setShowPassword] = useState(false);
@@ -21,7 +22,7 @@ const Signup: React.FC = () => {
   const navigate = useNavigate();
 
   const passwordRules = [
-    { id: 'length', label: 'Au moins 6 caractères', test: (p: string) => p.length >= 6 },
+    { id: 'length', label: 'Au moins 6 caracteres', test: (p: string) => p.length >= 6 },
     { id: 'upper', label: 'Une lettre majuscule', test: (p: string) => /[A-Z]/.test(p) },
     { id: 'lower', label: 'Une lettre minuscule', test: (p: string) => /[a-z]/.test(p) },
     { id: 'number', label: 'Un chiffre', test: (p: string) => /[0-9]/.test(p) },
@@ -30,7 +31,8 @@ const Signup: React.FC = () => {
 
   const passwordValid = passwordRules.every((r) => r.test(formData.password));
   const passwordsMatch = formData.password === formData.confirmPassword && formData.confirmPassword.length > 0;
-  const canSubmit = passwordValid && passwordsMatch && formData.firstName && formData.lastName && formData.matricule && formData.email;
+  const codeValid = role === 'superviseur' || /^SUPERV-QLT-[A-Z0-9]{5}$/.test(formData.superviseurCode);
+  const canSubmit = passwordValid && passwordsMatch && codeValid && formData.firstName && formData.lastName && formData.matricule && formData.email;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -44,11 +46,12 @@ const Signup: React.FC = () => {
       const { confirmPassword, ...submitData } = formData;
       const payload = { ...submitData, image: profileImage || undefined };
       if (role === 'agent') {
-        await authAPI.signupAgent(payload);
+        const res = await authAPI.signupAgent(payload as any);
+        toast.success(res.data.message, { duration: 6000 });
       } else {
-        await authAPI.signupSuperviseur(payload);
+        const res = await authAPI.signupSuperviseur(payload as any);
+        toast.success(res.data.message, { duration: 8000 });
       }
-      toast.success('Inscription réussie');
       navigate('/login');
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Erreur d'inscription");
@@ -86,10 +89,10 @@ const Signup: React.FC = () => {
           <div className="auth-5s-badge">
             <img src="/5s.jpeg" alt="5S" />
           </div>
-          <h2>Rejoignez notre équipe</h2>
+          <h2>Rejoignez notre equipe</h2>
           <p>
-            Créez votre compte et commencez à contribuer
-            à l'amélioration continue de la qualité.
+            Creez votre compte et commencez a contribuer
+            a l'amelioration continue de la qualite.
           </p>
 
           <div className="auth-illustration">
@@ -126,12 +129,12 @@ const Signup: React.FC = () => {
 
         {/* Right panel — form */}
         <div className="auth-right">
-          <h2>Créer un compte</h2>
+          <h2>Creer un compte</h2>
 
           <div className="auth-role-pills">
             <button type="button" className={`auth-role-pill ${role === 'agent' ? 'active' : ''}`}
                     onClick={() => setRole('agent')}>
-              <User size={15} /> Agent Qualité
+              <User size={15} /> Agent Qualite
             </button>
             <button type="button" className={`auth-role-pill ${role === 'superviseur' ? 'active' : ''}`}
                     onClick={() => setRole('superviseur')}>
@@ -143,7 +146,7 @@ const Signup: React.FC = () => {
             <div className="auth-signup-grid">
               {inputGroup(<User size={20} />,
                 <input type="text" name="firstName" value={formData.firstName} onChange={handleChange}
-                       placeholder="Prénom" required />
+                       placeholder="Prenom" required />
               )}
               {inputGroup(<User size={20} />,
                 <input type="text" name="lastName" value={formData.lastName} onChange={handleChange}
@@ -159,6 +162,32 @@ const Signup: React.FC = () => {
             {inputGroup(<Mail size={20} />,
               <input type="email" name="email" value={formData.email} onChange={handleChange}
                      placeholder="Email" required />
+            )}
+
+            {/* Superviseur Code — Agent only */}
+            {role === 'agent' && (
+              <div className="auth-input-group">
+                <div className="auth-input-icon"><Key size={20} /></div>
+                <div className="auth-input-divider" />
+                <input
+                  type="text"
+                  name="superviseurCode"
+                  value={formData.superviseurCode}
+                  onChange={handleChange}
+                  placeholder="Code superviseur (SUPERV-QLT-XXXXX)"
+                  required
+                  style={{ textTransform: 'uppercase' }}
+                  maxLength={16}
+                />
+                {formData.superviseurCode.length > 0 && (
+                  <span className={codeValid ? 'pwd-match' : 'pwd-no-match'}>
+                    {codeValid ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
+                  </span>
+                )}
+              </div>
+            )}
+            {role === 'agent' && formData.superviseurCode.length > 0 && !codeValid && (
+              <span className="pwd-match-text">Format requis : SUPERV-QLT-XXXXX (5 caracteres alphanumeriques)</span>
             )}
 
             <div className="auth-input-group auth-pwd-wrapper">
@@ -219,7 +248,7 @@ const Signup: React.FC = () => {
                 />
                 <label htmlFor="profile-image" className="auth-profile-photo-circle">
                   {imagePreview ? (
-                    <img src={imagePreview} alt="Aperçu" />
+                    <img src={imagePreview} alt="Apercu" />
                   ) : (
                     <Camera size={24} />
                   )}
@@ -244,7 +273,7 @@ const Signup: React.FC = () => {
           </form>
 
           <div className="auth-footer-text">
-            Déjà un compte? <Link to="/login">Se connecter</Link>
+            Deja un compte? <Link to="/login">Se connecter</Link>
           </div>
         </div>
       </div>
