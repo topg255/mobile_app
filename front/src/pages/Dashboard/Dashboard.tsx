@@ -773,6 +773,56 @@ const Dashboard: React.FC = () => {
           {activeTab === 'images' && <ImageLibrary userRole={user?.role || ''} />}
         </div>
       </main>
+
+      {/* MOBILE BOTTOM NAV */}
+      <nav className="bottom-nav">
+        <button
+          className={`bottom-nav-item ${activeTab === 'messages' ? 'active' : ''}`}
+          onClick={() => handleTab('messages')}
+        >
+          <MessageSquare size={20} />
+          <span>Messages</span>
+          {unreadCount > 0 && <span className="bottom-nav-badge">{unreadCount}</span>}
+        </button>
+        <button
+          className={`bottom-nav-item ${activeTab === 'overview' ? 'active' : ''}`}
+          onClick={() => handleTab('overview')}
+        >
+          <LayoutDashboard size={20} />
+          <span>Accueil</span>
+        </button>
+        <button
+          className={`bottom-nav-item bottom-nav-center ${activeTab === 'add-ligne' ? 'active' : ''}`}
+          onClick={() => handleTab('add-ligne')}
+        >
+          <div className="bottom-nav-fab"><Plus size={24} /></div>
+        </button>
+        {isSuperviseur && (
+          <button
+            className={`bottom-nav-item ${activeTab === 'mes-agents' ? 'active' : ''}`}
+            onClick={() => handleTab('mes-agents')}
+          >
+            <Users size={20} />
+            <span>Agents</span>
+          </button>
+        )}
+        {isAgent && (
+          <button
+            className={`bottom-nav-item ${activeTab === 'mes-lignes' ? 'active' : ''}`}
+            onClick={() => handleTab('mes-lignes')}
+          >
+            <ClipboardList size={20} />
+            <span>Mes lignes</span>
+          </button>
+        )}
+        <button
+          className={`bottom-nav-item ${mobileOpen ? 'active' : ''}`}
+          onClick={() => setMobileOpen(!mobileOpen)}
+        >
+          <Menu size={20} />
+          <span>Menu</span>
+        </button>
+      </nav>
       <UserProfileDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
       {/* SEARCH MODAL */}
