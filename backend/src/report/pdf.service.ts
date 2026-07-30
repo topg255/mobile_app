@@ -9,6 +9,8 @@ export interface PdfReportParams {
   superviseurMatricule?: string;
   dateFormatted: string;
   reference: string;
+  ligneName?: string;
+  agentName?: string;
   kpis: ReportKPIs;
   aiAnalysis: string;
   recommendations: string;
@@ -101,33 +103,38 @@ export class PdfService {
   private drawHeader(doc: PDFKit.PDFDocument, W: number, fiveSPath: string, leoniPng: string, leoniSvg: string): number {
     const C = this.C;
     const ML = 40;
-    const h = 64;
+    const MR = 40;
+    const h = 60;
 
-    doc.rect(0, 0, W, h).fill(C.navy);
+    // Soft light header background
+    doc.rect(0, 0, W, h).fill(C.offWhite);
+    // Bottom accent line
     doc.rect(0, h, W, 2).fill(C.accent);
 
-    // 5S logo (left) — try image, fallback to drawn circle with "5S" text
+    // 5S logo (left) — smaller, properly centered vertically
+    const logoSize = 36;
+    const logoY = (h - logoSize) / 2;
     let fiveSLoaded = false;
     try {
       if (existsSync(fiveSPath)) {
-        doc.image(fiveSPath, ML, 10, { width: 44, height: 44 });
+        doc.image(fiveSPath, ML, logoY, { width: logoSize, height: logoSize });
         fiveSLoaded = true;
       }
     } catch {}
     if (!fiveSLoaded) {
-      this.drawFiveSBadge(doc, ML + 2, 12, 40);
+      this.drawFiveSBadge(doc, ML, logoY, logoSize);
     }
 
-    // LEONI text (right) — bold white
-    doc.font('Helvetica-Bold').fontSize(26).fillColor(C.white);
-    doc.text('LEONI', W - 85, 18, { width: 60, align: 'right' });
+    // LEONI text (right) — properly sized with enough width
+    doc.font('Helvetica-Bold').fontSize(28).fillColor(C.navyLight);
+    doc.text('LEONI', W - MR - 130, (h - 30) / 2, { width: 130, align: 'right' });
 
-    // Title (center)
-    doc.font('Helvetica-Bold').fontSize(14).fillColor(C.white);
-    doc.text('RAPPORT QUALITE QUOTIDIEN', 100, 16, { width: W - 240, align: 'center' });
+    // Title (center between logos)
+    doc.font('Helvetica-Bold').fontSize(14).fillColor(C.navyLight);
+    doc.text('RAPPORT QUALITE QUOTIDIEN', ML + logoSize + 15, 12, { width: W - ML - MR - logoSize - 15 - 140, align: 'center' });
 
-    doc.font('Helvetica').fontSize(8).fillColor(C.slateMuted);
-    doc.text('Systeme de Controle Qualite  |  Intelligence Artificielle', 100, 34, { width: W - 240, align: 'center' });
+    doc.font('Helvetica').fontSize(8).fillColor(C.slateLight);
+    doc.text('Systeme de Controle Qualite  |  Intelligence Artificielle', ML + logoSize + 15, 32, { width: W - ML - MR - logoSize - 15 - 140, align: 'center' });
 
     return h + 10;
   }

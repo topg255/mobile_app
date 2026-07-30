@@ -176,13 +176,16 @@ export class ReportService {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
     });
 
-    const reference = this.generateReference(report);
+    const refParts = this.buildReferenceParts(report);
+    const reference = await this.generateReference(refParts);
 
     return this.pdfService.generatePdf({
       superviseurName,
       superviseurMatricule: report.superviseur.matricule,
       dateFormatted,
       reference,
+      ligneName: refParts.ligne,
+      agentName: refParts.agent,
       kpis: report.kpis,
       aiAnalysis: report.aiAnalysis || '',
       recommendations: report.recommendations || '',
@@ -190,10 +193,32 @@ export class ReportService {
     });
   }
 
-  private generateReference(report: DailyReport): string {
-    const date = report.reportDate.replace(/-/g, '');
-    const shortId = report.id.substring(0, 8).toUpperCase();
-    return `RPT-${date}-${shortId}`;
+  private buildReferenceParts(report: DailyReport): { ligne: string; agent: string; number: number } {
+    const kpis = report.kpis as any;
+    let ligne = 'GEN';
+    let agent = 'GEN';
+
+    if (kpis.criticalLignes && kpis.criticalLignes.length > 0) {
+      ligne = kpis.criticalLignes[0].nom || 'GEN';
+    } else if (kpis.hourlyBreakdown && kpis.hourlyBreakdown.length > 0) {
+      ligne = 'ACTIF';
+    }
+
+    if (kpis.topAgent && kpis.topAgent !== 'Aucun') {
+      agent = kpis.topAgent;
+    }
+
+    const number = (this.reportRepo as any).totalCount || 0;
+
+    return { ligne, agent, number };
+  }
+
+  private async generateReference(refParts: { ligne: string; agent: string; number: number }): Promise<string> {
+    const count = await this.reportRepo.count();
+    const num = String(count + 1).padStart(3, '0');
+    const ligneClean = refParts.ligne.replace(/[^a-zA-Z0-9]/g, '').substring(0, 10).toUpperCase();
+    const agentClean = refParts.agent.replace(/[^a-zA-Z0-9]/g, '').substring(0, 10).toUpperCase();
+    return `REF-LEONI-${ligneClean}-${agentClean}-${num}`;
   }
 
   private async sendReportEmail(
@@ -217,12 +242,15 @@ export class ReportService {
 
     let pdfBuffer: Buffer | undefined;
     try {
-      const reference = this.generateReference(report);
+      const refParts = this.buildReferenceParts(report);
+      const reference = await this.generateReference(refParts);
       pdfBuffer = await this.pdfService.generatePdf({
         superviseurName,
         superviseurMatricule: superviseur.matricule,
         dateFormatted,
         reference,
+        ligneName: refParts.ligne,
+        agentName: refParts.agent,
         kpis: report.kpis,
         aiAnalysis: report.aiAnalysis || '',
         recommendations: report.recommendations || '',
