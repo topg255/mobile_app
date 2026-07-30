@@ -36,7 +36,7 @@ export class SuperAdminService {
 
   async getPendingUsers() {
     const users = await this.userRepository.find({
-      where: { isApproved: false },
+      where: { isApproved: false, role: UserRole.SUPERVISEUR_QUALITE },
       order: { createdAt: 'DESC' },
     });
     return users.map(({ password, resetToken, resetTokenExpires, ...user }) => user);
@@ -46,18 +46,22 @@ export class SuperAdminService {
     const user = await this.userRepository.findOne({ where: { id: userId } });
 
     if (!user) {
-      throw new NotFoundException('Utilisateur non trouvé');
+      throw new NotFoundException('Utilisateur non trouve');
     }
 
     if (user.role === UserRole.SUPER_ADMIN) {
       throw new ConflictException('Impossible de modifier le Super Admin');
     }
 
+    if (user.role === UserRole.AGENT_QUALITE) {
+      throw new ConflictException('Les agents sont approuves par leur superviseur, pas par le Super Admin');
+    }
+
     user.isApproved = true;
     await this.userRepository.save(user);
 
     return {
-      message: `Compte de ${user.firstName} ${user.lastName} approuvé avec succès`,
+      message: `Compte de ${user.firstName} ${user.lastName} approuve avec succes`,
       user: {
         id: user.id,
         firstName: user.firstName,
@@ -74,18 +78,22 @@ export class SuperAdminService {
     const user = await this.userRepository.findOne({ where: { id: userId } });
 
     if (!user) {
-      throw new NotFoundException('Utilisateur non trouvé');
+      throw new NotFoundException('Utilisateur non trouve');
     }
 
     if (user.role === UserRole.SUPER_ADMIN) {
       throw new ConflictException('Impossible de modifier le Super Admin');
     }
 
+    if (user.role === UserRole.AGENT_QUALITE) {
+      throw new ConflictException('Les agents sont geres par leur superviseur, pas par le Super Admin');
+    }
+
     user.isApproved = false;
     await this.userRepository.save(user);
 
     return {
-      message: `Compte de ${user.firstName} ${user.lastName} désapprouvé`,
+      message: `Compte de ${user.firstName} ${user.lastName} desapprouve`,
       user: {
         id: user.id,
         firstName: user.firstName,

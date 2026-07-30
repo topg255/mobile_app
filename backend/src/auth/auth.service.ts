@@ -88,7 +88,7 @@ export class AuthService {
       email,
       password: hashedPassword,
       role,
-      isApproved: false,
+      isApproved: role === UserRole.AGENT_QUALITE ? true : false,
       profileImage: file ? `/uploads/${file.filename}` : null,
       superviseurId: superviseur?.id || null,
       isApprovedBySuperviseur: false,
@@ -103,7 +103,7 @@ export class AuthService {
     const response: any = {
       message: role === UserRole.SUPERVISEUR_QUALITE
         ? `Inscription reussie. Votre code superviseur est : ${user.superviseurCode}. Vous le trouverez dans votre profil. En attente d'approbation par le Super Admin.`
-        : 'Inscription reussie. En attente d\'approbation par le Super Admin.',
+        : 'Inscription reussie. Vous pouvez vous connecter. En attente de l\'approbation de votre superviseur pour acceder au tableau de bord.',
       user: {
         id: user.id,
         firstName: user.firstName,
