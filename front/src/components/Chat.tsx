@@ -21,6 +21,7 @@ const Chat: React.FC<ChatProps> = ({ onUnreadCountChange }) => {
   const [showNewChat, setShowNewChat] = useState(false);
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [searchUser, setSearchUser] = useState('');
+  const [searchConv, setSearchConv] = useState('');
   const [mobileShowChat, setMobileShowChat] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
@@ -210,7 +211,26 @@ const Chat: React.FC<ChatProps> = ({ onUnreadCountChange }) => {
         u.matricule.toLowerCase().includes(searchUser.toLowerCase()))
   );
 
+  const filteredConversations = conversations.filter((c) =>
+    `${c.user.firstName} ${c.user.lastName}`.toLowerCase().includes(searchConv.toLowerCase())
+  );
+
   const formatTime = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    } else if (diffDays === 1) {
+      return 'Hier';
+    } else if (diffDays < 7) {
+      return d.toLocaleDateString('fr-FR', { weekday: 'short' });
+    }
+    return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  };
+
+  const formatMsgTime = (dateStr: string) => {
     const d = new Date(dateStr);
     return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   };
@@ -219,19 +239,33 @@ const Chat: React.FC<ChatProps> = ({ onUnreadCountChange }) => {
     <div className="chat-container">
       <div className="chat-sidebar">
         <div className="chat-sidebar-header">
-          <MessageSquare size={20} />
+          <MessageSquare size={22} />
           <span>Messages</span>
-          <button className="btn-icon-sm chat-new-btn" onClick={openNewChat} title="Nouvelle conversation">
-            <UserPlus size={16} />
+          <button className="chat-new-btn" onClick={openNewChat} title="Nouvelle conversation">
+            <UserPlus size={18} />
           </button>
         </div>
+
+        {/* Search */}
+        <div className="chat-sidebar-search">
+          <Search size={16} />
+          <input
+            type="text"
+            placeholder="Rechercher ou démarrer une conversation"
+            value={searchConv}
+            onChange={(e) => setSearchConv(e.target.value)}
+          />
+        </div>
+
         <div className="chat-conversations">
           {loading ? (
             <div className="chat-loading">Chargement...</div>
-          ) : conversations.length === 0 ? (
-            <div className="chat-empty">Aucune conversation</div>
+          ) : filteredConversations.length === 0 ? (
+            <div className="chat-empty">
+              {searchConv ? 'Aucune conversation trouvée' : 'Aucune conversation'}
+            </div>
           ) : (
-            conversations.map((conv) => (
+            filteredConversations.map((conv) => (
               <div
                 key={conv.user.id}
                 className={`chat-conv-item ${activeConversation?.user.id === conv.user.id ? 'active' : ''}`}
@@ -245,21 +279,31 @@ const Chat: React.FC<ChatProps> = ({ onUnreadCountChange }) => {
                   )}
                 </div>
                 <div className="chat-conv-info">
-                  <div className="chat-conv-name">{conv.user.firstName} {conv.user.lastName}</div>
-                  <div className="chat-conv-preview">
-                    {conv.lastMessage?.isDeleted ? (
-                      <em>Message supprimé</em>
-                    ) : (
-                      <>
-                        {conv.lastMessage?.isEdited && <em>Modifié: </em>}
-                        {conv.lastMessage?.content?.substring(0, 30)}{conv.lastMessage?.content?.length > 30 ? '...' : ''}
-                      </>
+                  <div className="chat-conv-top">
+                    <span className="chat-conv-name">{conv.user.firstName} {conv.user.lastName}</span>
+                    {conv.lastMessage && (
+                      <span className={`chat-conv-time ${conv.unreadCount > 0 ? 'unread' : ''}`}>
+                        {formatTime(conv.lastMessage.createdAt)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="chat-conv-bottom">
+                    <span className="chat-conv-preview">
+                      {conv.lastMessage?.isDeleted ? (
+                        <em>Message supprimé</em>
+                      ) : (
+                        <>
+                          {conv.lastMessage?.isEdited && <em>Modifié: </em>}
+                          {conv.lastMessage?.sender?.id === user?.id && <span>Vous: </span>}
+                          {conv.lastMessage?.content?.substring(0, 40)}{conv.lastMessage?.content?.length > 40 ? '...' : ''}
+                        </>
+                      )}
+                    </span>
+                    {conv.unreadCount > 0 && (
+                      <span className="chat-unread-badge">{conv.unreadCount}</span>
                     )}
                   </div>
                 </div>
-                {conv.unreadCount > 0 && (
-                  <span className="chat-unread-badge">{conv.unreadCount}</span>
-                )}
               </div>
             ))
           )}
@@ -268,15 +312,15 @@ const Chat: React.FC<ChatProps> = ({ onUnreadCountChange }) => {
 
       <div className={`chat-main ${mobileShowChat ? 'mobile-open' : ''}`}>
         {showNewChat ? (
-            <div className="chat-new-panel">
-              <div className="chat-new-header">
-                <button className="btn-icon-sm" onClick={() => { setShowNewChat(false); setMobileShowChat(false); }}>
-                  <ArrowLeft size={18} />
-                </button>
-                <span>Nouvelle conversation</span>
-              </div>
+          <div className="chat-new-panel">
+            <div className="chat-new-header">
+              <button className="chat-back-btn" onClick={() => { setShowNewChat(false); setMobileShowChat(false); }}>
+                <ArrowLeft size={20} />
+              </button>
+              <span>Nouvelle conversation</span>
+            </div>
             <div className="chat-search-user">
-              <Search size={16} />
+              <Search size={18} />
               <input
                 type="text"
                 placeholder="Rechercher un utilisateur..."
@@ -308,8 +352,8 @@ const Chat: React.FC<ChatProps> = ({ onUnreadCountChange }) => {
         ) : activeConversation ? (
           <>
             <div className="chat-header">
-              <button className="btn-icon-sm chat-back-btn" onClick={() => { setActiveConversation(null); setMobileShowChat(false); setShowNewChat(false); }}>
-                <ArrowLeft size={18} />
+              <button className="chat-back-btn" onClick={() => { setActiveConversation(null); setMobileShowChat(false); setShowNewChat(false); }}>
+                <ArrowLeft size={20} />
               </button>
               <div className="chat-header-avatar">
                 {activeConversation.user.profileImage ? (
@@ -355,15 +399,15 @@ const Chat: React.FC<ChatProps> = ({ onUnreadCountChange }) => {
                           <div className="chat-msg-footer">
                             <span className="chat-msg-time">
                               {msg.isEdited && <span className="chat-edited-badge">Modifié</span>}
-                              {formatTime(msg.createdAt)}
+                              {formatMsgTime(msg.createdAt)}
                             </span>
                             {isMine && (
                               <div className="chat-msg-actions">
                                 <button className="chat-msg-action" onClick={() => handleEdit(msg)} title="Modifier">
-                                  <Pencil size={12} />
+                                  <Pencil size={13} />
                                 </button>
                                 <button className="chat-msg-action chat-msg-action-danger" onClick={() => handleDelete(msg)} title="Supprimer">
-                                  <Trash2 size={12} />
+                                  <Trash2 size={13} />
                                 </button>
                               </div>
                             )}
@@ -377,13 +421,15 @@ const Chat: React.FC<ChatProps> = ({ onUnreadCountChange }) => {
               <div ref={messagesEndRef} />
             </div>
             <div className="chat-input-area">
-              <textarea
-                placeholder="Tapez votre message..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyDown={handleKeyDown}
-                rows={1}
-              />
+              <div className="chat-input-wrap">
+                <textarea
+                  placeholder="Tapez un message"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  rows={1}
+                />
+              </div>
               <button className="chat-send-btn" onClick={handleSend} disabled={!newMessage.trim()}>
                 <Send size={18} />
               </button>
@@ -391,8 +437,9 @@ const Chat: React.FC<ChatProps> = ({ onUnreadCountChange }) => {
           </>
         ) : (
           <div className="chat-placeholder">
-            <MessageSquare size={48} />
-            <p>Sélectionnez une conversation ou commencez-en une nouvelle</p>
+            <MessageSquare />
+            <h3>Messagerie</h3>
+            <p>Envoyez des messages à vos collègues. Sélectionnez une conversation ou commencez-en une nouvelle.</p>
           </div>
         )}
       </div>
