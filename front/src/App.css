@@ -5300,3 +5300,232 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
   .ag-code-banner { flex-direction: column; text-align: center; }
   .ag-info-grid { grid-template-columns: 1fr; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   GLOBAL MOBILE RESPONSIVE FIX — Dashboard-wide
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  /* ── Layout ── */
+  .dashboard-layout { flex-direction: column; }
+  .main-content { margin-left: 0 !important; width: 100%; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  .sidebar { width: 280px; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 100; }
+  .sidebar.mobile-open { transform: translateX(0); }
+  .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 90; display: none; opacity: 0; transition: opacity 0.3s; }
+  .sidebar-overlay.active { display: block; opacity: 1; }
+  .hamburger-btn { display: flex !important; }
+
+  /* ── Top Bar ── */
+  .top-bar {
+    padding: 0 12px;
+    height: 56px;
+    gap: 8px;
+  }
+  .top-bar-left { gap: 8px; min-width: 0; flex: 1; }
+  .top-bar-brand { gap: 8px; min-width: 0; }
+  .top-bar-brand-icon { width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0; }
+  .top-bar-brand-text { min-width: 0; flex: 1; overflow: hidden; }
+  .top-bar-brand-label { display: none; }
+  .top-bar-brand-name {
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+    display: block;
+  }
+  .top-bar-brand-name span { display: none; }
+  .top-bar-right { gap: 4px; flex-shrink: 0; }
+  .top-bar-icon-btn { width: 34px; height: 34px; }
+  .top-bar-shortcut { display: none; }
+  .top-bar-avatar-btn { padding: 2px; }
+  .top-bar-avatar-wrap { width: 34px; height: 34px; }
+  .top-bar-avatar-img { width: 34px; height: 34px; }
+  .top-bar-avatar-text { width: 34px; height: 34px; font-size: 12px; }
+
+  /* ── Content Body ── */
+  .content-body { padding: 14px 12px !important; }
+
+  /* ── Welcome Banner ── */
+  .wb-banner {
+    padding: 20px 16px !important;
+    border-radius: 14px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .wb-content { width: 100%; }
+  .wb-greeting { margin-bottom: 4px; }
+  .wb-greeting h2 { font-size: 18px !important; }
+  .wb-subtitle { font-size: 12px !important; margin-bottom: 12px !important; }
+  .wb-quick-stats {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+  .wb-qs-item {
+    background: rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 8px 10px;
+    gap: 8px;
+  }
+  .wb-qs-val { font-size: 16px; }
+  .wb-qs-icon { width: 28px; height: 28px; border-radius: 6px; }
+  .wb-qs-divider { display: none !important; }
+  .wb-donut-wrap { display: none !important; }
+  .wb-quick-actions { width: 100%; }
+  .wb-qa-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+  .wb-qa-btn { padding: 8px 10px !important; font-size: 11px !important; }
+
+  /* ── Overview KPIs ── */
+  .ov-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+  .ov-kpi-full { grid-column: span 2 !important; }
+  .ov-kpi { padding: 14px !important; }
+  .ov-kpi-val { font-size: 20px !important; }
+  .ov-dist-panel, .ov-activity-panel { grid-column: span 2 !important; }
+  .ov-time-main { flex-direction: column; align-items: center; gap: 16px; }
+  .ov-time-ring { width: 90px; height: 90px; }
+  .ov-time-details { width: 100%; }
+
+  /* ── Tab Content Common ── */
+  .tab-content { padding: 0 !important; }
+
+  /* ── Stats Rows ── */
+  .cd-stats-row { flex-direction: column; gap: 8px !important; }
+
+  /* ── Tables → Cards ── */
+  .table-container { padding: 0 8px !important; border-radius: 12px; background: transparent; box-shadow: none; border: none; }
+  .table-container table { display: block; width: 100%; border: none; }
+  .table-container thead { display: none; }
+  .table-container tbody { display: flex; flex-direction: column; gap: 10px; }
+  .table-container tbody tr {
+    display: flex; flex-direction: column;
+    background: white; border-radius: 12px;
+    padding: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    border: 1px solid #f1f5f9;
+  }
+  .table-container tbody td {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 0; border-bottom: 1px solid #f1f5f9;
+    font-size: 13px; gap: 10px; text-align: left;
+  }
+  .table-container tbody td:last-child { border-bottom: none; padding-top: 10px; }
+  .table-container tbody td::before {
+    content: attr(data-label);
+    font-size: 10px; font-weight: 700; color: #94a3b8;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    flex-shrink: 0; min-width: 70px;
+  }
+
+  /* ── Search Bar ── */
+  .search-bar { padding: 10px 12px; flex-direction: column; align-items: stretch; }
+  .search-bar input { min-width: 0; font-size: 14px; }
+
+  /* ── Forms ── */
+  .inline-form { flex-direction: column; align-items: stretch; padding: 14px; gap: 10px; }
+  .inline-form .form-group { flex: 1; min-width: 0; }
+  .inline-form .btn { width: 100%; }
+  .form-card { padding: 14px; }
+  .form-row { grid-template-columns: 1fr !important; }
+
+  /* ── Sub Tabs ── */
+  .sub-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .sub-tabs::-webkit-scrollbar { display: none; }
+  .sub-tab { padding: 8px 12px; font-size: 12px; min-width: 0; white-space: nowrap; }
+
+  /* ── Rapport ── */
+  .rapport-kpis { grid-template-columns: 1fr 1fr !important; }
+  .rapport-charts-grid { grid-template-columns: 1fr !important; }
+  .rapport-form-inner { flex-wrap: wrap; }
+  .rapport-form-fields { flex-wrap: wrap; }
+
+  /* ── Detail Grids ── */
+  .detail-grid { grid-template-columns: 1fr !important; }
+
+  /* ── Modals ── */
+  .modal-overlay { padding: 0 !important; align-items: flex-end !important; }
+  .modal-content { border-radius: 16px 16px 0 0 !important; max-height: 95vh; }
+  .modal-header { padding: 14px 16px !important; }
+  .modal-body { padding: 14px 16px !important; }
+
+  /* ── Auth ── */
+  .auth-split { padding: 12px; align-items: flex-start; padding-top: 60px; }
+  .auth-split-card { flex-direction: column; max-width: 100%; min-height: auto; max-height: calc(100vh - 72px); overflow-y: auto; }
+  .auth-left { display: none !important; }
+  .auth-right { width: 100%; padding: 24px 18px !important; }
+  .auth-right h2 { font-size: 15px; }
+  .auth-signup-grid { grid-template-columns: 1fr !important; }
+
+  /* ── History ── */
+  .hist-summary-bar { flex-direction: column; gap: 8px; }
+  .hist-lignes-header, .hist-ligne-row { grid-template-columns: 1fr 60px 50px !important; }
+  .hist-ligne-row .hist-ligne-durée { display: none; }
+
+  /* ── Agent Cards ── */
+  .ag-cards-grid { grid-template-columns: 1fr !important; }
+  .ag-stats { grid-template-columns: 1fr !important; }
+  .ag-code-banner { flex-direction: column; text-align: center; gap: 12px; padding: 14px 16px !important; }
+  .ag-code-copy { width: 100%; justify-content: center; }
+  .ag-info-grid { grid-template-columns: 1fr !important; }
+  .ag-card-actions { flex-direction: column; }
+  .ag-detail-header { flex-direction: column; text-align: center; }
+  .ag-detail-kpis { grid-template-columns: 1fr 1fr !important; }
+
+  /* ── Rapport Libraries ── */
+  .rl-stats-row { grid-template-columns: 1fr !important; }
+  .rl-folders-grid { grid-template-columns: 1fr !important; }
+  .rl-detail-kpis { grid-template-columns: 1fr 1fr !important; }
+  .rl-detail-header { flex-direction: column; text-align: center; padding: 16px !important; }
+  .rl-detail-meta { justify-content: center; flex-wrap: wrap; }
+  .rl-detail-actions { width: 100%; flex-direction: column; }
+  .rl-detail-actions .rl-btn { width: 100%; justify-content: center; }
+
+  /* ── PDF Overlay ── */
+  .rl-pdf-header { padding: 10px 12px !important; }
+  .rl-pdf-title { font-size: 11px !important; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rl-pdf-download { padding: 5px 10px; font-size: 11px; }
+
+  /* ── Image Library ── */
+  .fm { flex-direction: column; border-radius: 12px; }
+  .fm-sidebar { width: 100%; flex-direction: row; overflow-x: auto; border-right: none; border-bottom: 1px solid #e8ecf1; padding: 6px; }
+  .fm-sidebar-top { display: flex; gap: 4px; }
+  .fm-sidebar-item { padding: 6px 12px; border-radius: 8px; white-space: nowrap; font-size: 12px; }
+  .fm-sidebar-item span:not(.fm-sidebar-count) { display: none; }
+  .fm-sidebar-storage { display: none; }
+  .fm-toolbar { flex-direction: column; align-items: stretch; gap: 8px; }
+  .fm-toolbar-right { justify-content: flex-end; flex-wrap: wrap; }
+  .fm-list-col-owner, .fm-list-col-size { display: none; }
+  .fm-list-col-actions { opacity: 1; }
+  .fm-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important; gap: 8px; padding: 10px; }
+  .fm-modal { max-width: 100%; margin: 8px; border-radius: 14px; }
+  .fm-detail-grid { grid-template-columns: 1fr !important; }
+
+  /* ── Chat ── */
+  .chat-container { border-radius: 0 !important; }
+}
+
+/* Small mobile: <=480px */
+@media (max-width: 480px) {
+  .top-bar { padding: 0 10px; height: 52px; }
+  .top-bar-brand-name { font-size: 12px; max-width: 140px; }
+  .wb-banner { padding: 16px 14px !important; border-radius: 12px; }
+  .wb-greeting h2 { font-size: 16px !important; }
+  .wb-quick-stats { grid-template-columns: 1fr 1fr !important; gap: 6px !important; }
+  .wb-qs-item { padding: 6px 8px; }
+  .wb-qs-val { font-size: 14px; }
+  .wb-qa-grid { grid-template-columns: 1fr !important; }
+  .content-body { padding: 10px 8px !important; }
+  .ov-grid { grid-template-columns: 1fr !important; }
+  .ov-kpi-full { grid-column: span 1 !important; }
+  .ov-dist-panel, .ov-activity-panel { grid-column: span 1 !important; }
+  .rapport-kpis { grid-template-columns: 1fr !important; }
+  .rapport-detail-header-row, .rapport-detail-row { grid-template-columns: 60px 1fr 60px !important; }
+  .rapport-detail-header-row .rd-agent, .rapport-detail-row .rd-agent,
+  .rapport-detail-header-row .rd-resp, .rapport-detail-row .rd-resp,
+  .rapport-detail-header-row .rd-date, .rapport-detail-row .rd-date { display: none; }
+  .ag-detail-kpis { grid-template-columns: 1fr !important; }
+  .rl-detail-kpis { grid-template-columns: 1fr !important; }
+}
