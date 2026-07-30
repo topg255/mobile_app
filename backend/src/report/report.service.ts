@@ -26,10 +26,14 @@ export class ReportService {
     private readonly notificationService: NotificationService,
   ) {}
 
-  @Cron('* * * * *')
+  @Cron('0 18 * * *')
   async handleDailyReport() {
-    this.logger.log('=== Daily AI Report Generation Started ===');
-    await this.generateAndSendReports(new Date());
+    this.logger.log('=== Daily AI Report Generation Started (18:00) ===');
+    try {
+      await this.generateAndSendReports(new Date());
+    } catch (error) {
+      this.logger.error(`Daily report generation failed: ${error.message}`);
+    }
     this.logger.log('=== Daily AI Report Generation Completed ===');
   }
 
@@ -260,12 +264,30 @@ export class ReportService {
       this.logger.warn(`PDF generation failed: ${e.message} — sending email without attachment`);
     }
 
-    return this.emailService.sendEmail({
+    return this.sendEmailWithRetry({
       to: superviseur.email,
       subject: `Rapport Qualite IA — ${dateFormatted}`,
       html,
       pdfBuffer,
       pdfFilename: `rapport-qualite-${report.reportDate}.pdf`,
-    });
+    }, 3);
+  }
+
+  private async sendEmailWithRetry(options: any, retries: number): Promise<boolean> {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const sent = await this.emailService.sendEmail(options);
+        if (sent) return true;
+        this.logger.warn(`Email attempt ${attempt}/${retries} failed — retrying in ${attempt * 5}s...`);
+        await new Promise(resolve => setTimeout(resolve, attempt * 5000));
+      } catch (error) {
+        this.logger.warn(`Email attempt ${attempt}/${retries} error: ${error.message}`);
+        if (attempt < retries) {
+          await new Promise(resolve => setTimeout(resolve, attempt * 5000));
+        }
+      }
+    }
+    this.logger.error(`Email to ${options.to} failed after ${retries} attempts`);
+    return false;
   }
 }
