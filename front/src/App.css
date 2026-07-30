@@ -5584,7 +5584,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid rgba(0, 0, 0, 0.06);
-  padding: 6px 0 env(safe-area-inset-bottom, 8px);
+  padding: 6px 0 calc(env(safe-area-inset-bottom, 8px) + 4px);
   height: auto;
 }
 
@@ -5620,13 +5620,13 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 .bottom-nav-item.active::before {
   content: '';
   position: absolute;
-  top: -1px;
+  bottom: -6px;
   left: 50%;
   transform: translateX(-50%);
   width: 28px;
   height: 3px;
   background: #2563eb;
-  border-radius: 0 0 4px 4px;
+  border-radius: 4px 4px 0 0;
   animation: bottomNavIndicator 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
