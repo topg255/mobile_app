@@ -1115,17 +1115,19 @@ const LignesSuperviseurTab: React.FC<{
                   {subTab === 'agent-lignes' && <td data-label="Agent">{l.agent?.firstName} {l.agent?.lastName}</td>}
                   <td data-label="Détails" className="details-cell">{l.details}</td>
                   <td data-label="Actions">
-                    <button className="btn-icon-sm" onClick={() => setViewLigne(l)} title="Voir les détails">
-                      <Eye size={16} />
-                    </button>
-                    <button
-                      className="btn-icon-sm btn-icon-danger"
-                      onClick={() => handleDelete(l.id)}
-                      title="Supprimer"
-                      disabled={deletingId === l.id}
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="actions-cell">
+                      <button className="btn-icon-sm" onClick={() => setViewLigne(l)} title="Voir les détails">
+                        <Eye size={16} />
+                      </button>
+                      <button
+                        className="btn-icon-sm btn-icon-danger"
+                        onClick={() => handleDelete(l.id)}
+                        title="Supprimer"
+                        disabled={deletingId === l.id}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
