@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { qualityAPI, authAPI } from '../../api';
 import { reportAPI } from '../../api';
 import { LigneControle, NoteQualite, User } from '../../types';
+import RapportLibraries from '../../components/RapportLibraries';
 import { toast } from 'react-hot-toast';
 import Chat from '../../components/Chat';
 import NotificationBell from '../../components/NotificationBell';
@@ -53,6 +54,7 @@ import {
   UserX,
   Copy,
   Key,
+  Folder,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -237,6 +239,14 @@ const Dashboard: React.FC = () => {
               onClick={() => handleTab('ai-reports')}
             >
               <Zap size={18} /> <span>Rapports IA</span>
+            </button>
+          )}
+          {isSuperviseur && (
+            <button
+              className={`nav-item ${activeTab === 'rapport-libraries' ? 'active' : ''}`}
+              onClick={() => handleTab('rapport-libraries')}
+            >
+              <Folder size={18} /> <span>Rapport Libraries</span>
             </button>
           )}
           <button
@@ -757,6 +767,7 @@ const Dashboard: React.FC = () => {
           )}
           {activeTab === 'rapport' && <RapportTab />}
           {activeTab === 'ai-reports' && <AiReportsTab />}
+          {activeTab === 'rapport-libraries' && <RapportLibraries />}
           {activeTab === 'messages' && <Chat onUnreadCountChange={setUnreadCount} />}
           {activeTab === 'images' && <ImageLibrary userRole={user?.role || ''} />}
         </div>
