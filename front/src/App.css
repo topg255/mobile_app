@@ -2619,27 +2619,26 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
   .modal-header { padding: 16px 20px; }
   .modal-body { padding: 16px 20px; }
 
-  .auth-split { padding: 0; align-items: stretch; min-height: 100vh; background: #fff; overflow: hidden; }
-  .auth-split::before, .auth-split::after { display: none !important; }
-  .auth-green-blob { display: none !important; }
-  .auth-split-card { flex-direction: column; max-width: 100%; min-height: 100vh; border-radius: 0; box-shadow: none; max-height: none; }
+  .auth-split { padding: 16px; align-items: flex-start; padding-top: 16px; min-height: 100vh; }
+  .auth-split-card { flex-direction: column; max-width: 100%; min-height: auto; border-radius: 16px; max-height: none; }
   .auth-left { display: none; }
-  .auth-right { width: 100%; min-height: 100vh; padding: 20px 20px 32px; display: flex; flex-direction: column; justify-content: center; flex: 1; }
-  .auth-right h2 { font-size: 16px; margin-bottom: 20px; }
+  .auth-right { width: 100%; padding: 28px 24px 32px; display: flex; flex-direction: column; justify-content: center; flex: 1; }
+  .auth-right h2 { font-size: 16px; margin-bottom: 24px; }
   .auth-input-group { margin-bottom: 16px; }
   .auth-signup-grid { grid-template-columns: 1fr; }
   .auth-profile-photo-wrapper { flex-wrap: wrap; }
 
-  /* Logo: centered above form */
+  /* Logo: centered above card */
   .auth-logo-wrap {
     position: relative !important;
     top: auto !important;
     left: auto !important;
     transform: none !important;
-    margin-bottom: 20px;
+    margin-bottom: 14px;
     text-align: center;
+    width: 100%;
   }
-  .auth-logo-wrap img { height: 40px !important; }
+  .auth-logo-wrap img { height: 42px !important; }
 
   .chart-legend { gap: 12px; }
   .chart-legend span { font-size: 12px; }
@@ -2673,10 +2672,10 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
   .wb-greeting h2 { font-size: 18px; }
   .wb-greeting h2 span { display: block; }
   .content-body { padding: 12px; }
-  .auth-right { padding: 16px 16px 24px; }
-  .auth-logo-wrap { margin-bottom: 16px; }
-  .auth-logo-wrap img { height: 34px !important; }
-  .auth-split-card { border-radius: 0; }
+  .auth-right { padding: 24px 18px 28px; }
+  .auth-logo-wrap { margin-bottom: 10px; }
+  .auth-logo-wrap img { height: 36px !important; }
+  .auth-split-card { border-radius: 14px; }
   .auth-role-pills { flex-direction: column; }
   .auth-profile-photo-wrapper { flex-direction: column; align-items: flex-start; }
   .cd-card { flex-direction: column; }
