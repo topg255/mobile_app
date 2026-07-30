@@ -297,7 +297,7 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
           <div className="top-bar-right">
-            <button className="top-bar-icon-btn" title="Messages" onClick={() => handleTab('messages')}>
+            <button className="top-bar-icon-btn top-bar-msg-btn" title="Messages" onClick={() => handleTab('messages')}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
             </button>
             <button className="top-bar-icon-btn" title="Rechercher" onClick={() => setSearchOpen(true)}>
@@ -308,7 +308,7 @@ const Dashboard: React.FC = () => {
               <span>⌘K</span>
             </div>
             <NotificationBell token={token} />
-            <button className="top-bar-avatar-btn" onClick={() => setDrawerOpen(true)}>
+            <button className="top-bar-avatar-btn top-bar-profile-btn" onClick={() => setDrawerOpen(true)}>
               <div className="top-bar-avatar-wrap">
                 {user?.profileImage ? (
                   <img src={`http://localhost:3000${user.profileImage}`} alt="" className="top-bar-avatar-img" />
@@ -816,11 +816,15 @@ const Dashboard: React.FC = () => {
           </button>
         )}
         <button
-          className={`bottom-nav-item ${mobileOpen ? 'active' : ''}`}
-          onClick={() => setMobileOpen(!mobileOpen)}
+          className={`bottom-nav-item ${drawerOpen ? 'active' : ''}`}
+          onClick={() => setDrawerOpen(true)}
         >
-          <Menu size={20} />
-          <span>Menu</span>
+          {user?.profileImage ? (
+            <img src={`http://localhost:3000${user.profileImage}`} alt="" className="bottom-nav-avatar" />
+          ) : (
+            <div className="bottom-nav-avatar-text">{user?.firstName?.[0]}{user?.lastName?.[0]}</div>
+          )}
+          <span>Profil</span>
         </button>
       </nav>
       <UserProfileDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />

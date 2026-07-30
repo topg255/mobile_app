@@ -5690,4 +5690,47 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
     min-width: 14px;
     height: 14px;
   }
+
+  /* Hide top bar message + profile on mobile (moved to bottom nav) */
+  .top-bar-msg-btn,
+  .top-bar-profile-btn {
+    display: none !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   BOTTOM NAV AVATAR
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.bottom-nav-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.bottom-nav-item.active .bottom-nav-avatar {
+  border-color: #2563eb;
+}
+
+.bottom-nav-avatar-text {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #94a3b8, #64748b);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.bottom-nav-item.active .bottom-nav-avatar-text {
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  border-color: #2563eb;
 }
