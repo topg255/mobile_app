@@ -1366,18 +1366,14 @@ const AgentsTab: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
-  useEffect(() => {
-    loadAgents();
-  }, []);
+  useEffect(() => { loadAgents(); }, []);
 
   const loadAgents = async () => {
     setLoading(true);
     try {
       const res = await authAPI.getMyAgents();
       setAgents(res.data);
-    } catch {
-      toast.error('Erreur chargement agents');
-    }
+    } catch { toast.error('Erreur chargement agents'); }
     setLoading(false);
   };
 
@@ -1386,9 +1382,7 @@ const AgentsTab: React.FC = () => {
       await authAPI.approveAgent(agentId);
       toast.success('Agent approuve');
       loadAgents();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Erreur');
-    }
+    } catch (err: any) { toast.error(err.response?.data?.message || 'Erreur'); }
   };
 
   const handleReject = async (agentId: string) => {
@@ -1396,232 +1390,153 @@ const AgentsTab: React.FC = () => {
       await authAPI.rejectAgent(agentId);
       toast.success('Agent rejete');
       loadAgents();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Erreur');
-    }
+    } catch (err: any) { toast.error(err.response?.data?.message || 'Erreur'); }
   };
 
   const pendingAgents = agents.filter(a => !a.isApprovedBySuperviseur);
   const approvedAgents = agents.filter(a => a.isApprovedBySuperviseur);
 
-  if (loading) return <div className="loading">Chargement...</div>;
+  if (loading) return <div className="ag-loading"><div className="ag-spinner" /><p>Chargement...</p></div>;
+
+  const AgentCard = ({ agent, isPending }: { agent: User; isPending: boolean }) => {
+    const colors = isPending
+      ? { bg: '#fffbeb', border: '#fde68a', accent: '#f59e0b', badge: '#fef3c7', badgeText: '#92400e', ring: '#fcd34d' }
+      : { bg: '#f0fdf4', border: '#bbf7d0', accent: '#22c55e', badge: '#dcfce7', badgeText: '#166534', ring: '#86efac' };
+
+    return (
+      <div className="ag-card" style={{ background: colors.bg, borderColor: colors.border }}>
+        {/* Top accent line */}
+        <div className="ag-card-accent" style={{ background: colors.accent }} />
+
+        <div className="ag-card-body">
+          {/* Avatar + Name + Status */}
+          <div className="ag-card-top">
+            <div className="ag-avatar" style={{ background: colors.badge, color: colors.accent, borderColor: colors.ring }}>
+              {agent.profileImage ? (
+                <img src={`http://localhost:3000${agent.profileImage}`} alt="" />
+              ) : (
+                <span>{agent.firstName?.[0]}{agent.lastName?.[0]}</span>
+              )}
+            </div>
+            <div className="ag-card-name">
+              <h4>{agent.firstName} {agent.lastName}</h4>
+              <span className="ag-badge" style={{ background: colors.badge, color: colors.badgeText, borderColor: colors.accent }}>
+                {isPending ? 'En attente' : 'Actif'}
+              </span>
+            </div>
+          </div>
+
+          {/* Info Grid */}
+          <div className="ag-info-grid">
+            <div className="ag-info-item">
+              <span className="ag-info-label">Matricule</span>
+              <span className="ag-info-value">{agent.matricule}</span>
+            </div>
+            <div className="ag-info-item">
+              <span className="ag-info-label">Email</span>
+              <span className="ag-info-value">{agent.email}</span>
+            </div>
+            <div className="ag-info-item">
+              <span className="ag-info-label">Role</span>
+              <span className="ag-info-value">Agent Qualite</span>
+            </div>
+            <div className="ag-info-item">
+              <span className="ag-info-label">Inscription</span>
+              <span className="ag-info-value">{new Date(agent.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+            </div>
+          </div>
+
+          {/* Actions */}
+          {isPending && (
+            <div className="ag-card-actions">
+              <button className="ag-btn ag-btn-approve" onClick={() => handleApprove(agent.id)}>
+                <UserCheck size={14} /> Approuver
+              </button>
+              <button className="ag-btn ag-btn-reject" onClick={() => handleReject(agent.id)}>
+                <UserX size={14} /> Rejeter
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
-    <div className="tab-content">
-      {/* Stats */}
-      <div className="cd-stats-row">
-        <div className="cd-stat">
-          <div className="cd-stat-icon cd-stat-total"><Users size={18} /></div>
-          <div className="cd-stat-info">
-            <span className="cd-stat-val">{agents.length}</span>
-            <span className="cd-stat-lbl">Total agents</span>
-          </div>
-        </div>
-        <div className="cd-stat">
-          <div className="cd-stat-icon cd-stat-active"><UserCheck size={18} /></div>
-          <div className="cd-stat-info">
-            <span className="cd-stat-val">{approvedAgents.length}</span>
-            <span className="cd-stat-lbl">Approuves</span>
-          </div>
-        </div>
-        <div className="cd-stat">
-          <div className="cd-stat-icon cd-stat-inactive"><UserX size={18} /></div>
-          <div className="cd-stat-info">
-            <span className="cd-stat-val">{pendingAgents.length}</span>
-            <span className="cd-stat-lbl">En attente</span>
-          </div>
+    <div className="tab-content ag-tab">
+      {/* Header */}
+      <div className="ag-header">
+        <div>
+          <h2 className="ag-title">Mes Agents</h2>
+          <p className="ag-subtitle">Gerez les agents de votre equipe qualite</p>
         </div>
       </div>
 
       {/* Superviseur Code Banner */}
       {user?.superviseurCode && (
-        <div style={{
-          background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)',
-          border: '1px solid #ddd6fe',
-          borderRadius: 12,
-          padding: '16px 20px',
-          marginBottom: 20,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 16,
-        }}>
-          <div style={{ background: '#7c3aed', color: '#fff', borderRadius: 10, padding: '10px 14px' }}>
-            <Key size={20} />
+        <div className="ag-code-banner">
+          <div className="ag-code-icon"><Key size={20} /></div>
+          <div className="ag-code-info">
+            <span className="ag-code-label">Votre code superviseur</span>
+            <span className="ag-code-value">{user.superviseurCode}</span>
+            <span className="ag-code-hint">Partagez ce code avec vos agents pour qu'ils puissent s'inscrire</span>
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, color: '#7c3aed', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8 }}>
-              Votre code superviseur
-            </div>
-            <div style={{ fontFamily: 'monospace', fontSize: 20, fontWeight: 700, color: '#1e293b', letterSpacing: 2, marginTop: 2 }}>
-              {user.superviseurCode}
-            </div>
-            <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>
-              Partagez ce code avec vos agents pour qu'ils puissent s'inscrire dans votre equipe
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              navigator.clipboard.writeText(user.superviseurCode!);
-              toast.success('Code copie');
-            }}
-            style={{
-              background: '#7c3aed',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 8,
-              padding: '8px 16px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: 13,
-              fontWeight: 600,
-            }}
-          >
+          <button className="ag-code-copy" onClick={() => { navigator.clipboard.writeText(user.superviseurCode!); toast.success('Code copie'); }}>
             <Copy size={14} /> Copier
           </button>
         </div>
       )}
 
-      {/* Pending Agents */}
+      {/* Stats */}
+      <div className="ag-stats">
+        <div className="ag-stat-card ag-stat-total">
+          <Users size={20} />
+          <div><span className="ag-stat-val">{agents.length}</span><span className="ag-stat-lbl">Total</span></div>
+        </div>
+        <div className="ag-stat-card ag-stat-active">
+          <UserCheck size={20} />
+          <div><span className="ag-stat-val">{approvedAgents.length}</span><span className="ag-stat-lbl">Approuves</span></div>
+        </div>
+        <div className="ag-stat-card ag-stat-pending">
+          <UserX size={20} />
+          <div><span className="ag-stat-val">{pendingAgents.length}</span><span className="ag-stat-lbl">En attente</span></div>
+        </div>
+      </div>
+
+      {/* Pending */}
       {pendingAgents.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 12, color: '#f59e0b' }}>
-            En attente d'approbation ({pendingAgents.length})
+        <div className="ag-section">
+          <h3 className="ag-section-title ag-section-pending">
+            <Clock size={16} /> En attente d'approbation ({pendingAgents.length})
           </h3>
-          <div style={{ display: 'grid', gap: 10 }}>
-            {pendingAgents.map((agent) => (
-              <div key={agent.id} style={{
-                background: '#fffbeb',
-                border: '1px solid #fde68a',
-                borderRadius: 10,
-                padding: '14px 18px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 14,
-              }}>
-                <div style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: '50%',
-                  background: '#fef3c7',
-                  color: '#d97706',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 700,
-                  fontSize: 14,
-                }}>
-                  {agent.firstName?.[0]}{agent.lastName?.[0]}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: '#1e293b' }}>{agent.firstName} {agent.lastName}</div>
-                  <div style={{ fontSize: 12, color: '#92400e' }}>{agent.matricule} — {agent.email}</div>
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    onClick={() => handleApprove(agent.id)}
-                    style={{
-                      background: '#16a34a',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 8,
-                      padding: '8px 14px',
-                      cursor: 'pointer',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 4,
-                    }}
-                  >
-                    <UserCheck size={14} /> Approuver
-                  </button>
-                  <button
-                    onClick={() => handleReject(agent.id)}
-                    style={{
-                      background: '#dc2626',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 8,
-                      padding: '8px 14px',
-                      cursor: 'pointer',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 4,
-                    }}
-                  >
-                    <UserX size={14} /> Rejeter
-                  </button>
-                </div>
-              </div>
-            ))}
+          <div className="ag-cards-grid">
+            {pendingAgents.map(agent => <AgentCard key={agent.id} agent={agent} isPending={true} />)}
           </div>
         </div>
       )}
 
-      {/* Approved Agents */}
-      <div>
-        <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 12, color: '#16a34a' }}>
-          Agents approuves ({approvedAgents.length})
+      {/* Approved */}
+      <div className="ag-section">
+        <h3 className="ag-section-title ag-section-approved">
+          <CheckCircle size={16} /> Agents approuves ({approvedAgents.length})
         </h3>
         {approvedAgents.length > 0 ? (
-          <div style={{ display: 'grid', gap: 10 }}>
-            {approvedAgents.map((agent) => (
-              <div key={agent.id} style={{
-                background: '#f0fdf4',
-                border: '1px solid #bbf7d0',
-                borderRadius: 10,
-                padding: '14px 18px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 14,
-              }}>
-                <div style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: '50%',
-                  background: '#dcfce7',
-                  color: '#16a34a',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 700,
-                  fontSize: 14,
-                }}>
-                  {agent.firstName?.[0]}{agent.lastName?.[0]}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: '#1e293b' }}>{agent.firstName} {agent.lastName}</div>
-                  <div style={{ fontSize: 12, color: '#166534' }}>{agent.matricule} — {agent.email}</div>
-                </div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  color: '#16a34a',
-                  fontSize: 12,
-                  fontWeight: 600,
-                }}>
-                  <CheckCircle size={14} /> Actif
-                </div>
-              </div>
-            ))}
+          <div className="ag-cards-grid">
+            {approvedAgents.map(agent => <AgentCard key={agent.id} agent={agent} isPending={false} />)}
           </div>
         ) : (
-          <div className="ov-empty">
-            <Users size={32} />
+          <div className="ag-empty">
+            <Users size={40} />
             <p>Aucun agent approuve</p>
           </div>
         )}
       </div>
 
       {agents.length === 0 && (
-        <div className="ov-empty">
-          <Users size={32} />
-          <p>Aucun agent dans votre equipe. Partagez votre code superviseur pour que les agents puissent s'inscrire.</p>
+        <div className="ag-empty-full">
+          <Users size={48} />
+          <h3>Aucun agent dans votre equipe</h3>
+          <p>Partagez votre code superviseur pour que les agents puissent s'inscrire.</p>
         </div>
       )}
     </div>
