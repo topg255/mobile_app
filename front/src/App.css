@@ -2619,14 +2619,24 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
   .modal-header { padding: 16px 20px; }
   .modal-body { padding: 16px 20px; }
 
-  .auth-split { padding: 16px; align-items: flex-start; padding-top: 80px; }
-  .auth-split-card { flex-direction: column; max-width: 460px; min-height: auto; max-height: calc(100vh - 96px); overflow-y: auto; }
+  .auth-split { padding: 16px; align-items: flex-start; padding-top: 24px; }
+  .auth-split-card { flex-direction: column; max-width: 460px; min-height: auto; max-height: calc(100vh - 48px); overflow-y: auto; }
   .auth-left { display: none; }
   .auth-right { width: 100%; padding: 32px 24px; }
   .auth-right h2 { font-size: 16px; margin-bottom: 24px; }
   .auth-input-group { margin-bottom: 18px; }
   .auth-signup-grid { grid-template-columns: 1fr; }
   .auth-profile-photo-wrapper { flex-wrap: wrap; }
+
+  /* Logo: flow above the card on mobile */
+  .auth-logo-wrap {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+    margin-bottom: 16px;
+    text-align: center;
+  }
 
   .chart-legend { gap: 12px; }
   .chart-legend span { font-size: 12px; }
@@ -2661,6 +2671,9 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
   .wb-greeting h2 span { display: block; }
   .content-body { padding: 12px; }
   .auth-right { padding: 24px 16px; }
+  .auth-logo-wrap { margin-bottom: 12px; }
+  .auth-logo-wrap img { height: 40px !important; }
+  .auth-split-card { border-radius: 16px; }
   .auth-role-pills { flex-direction: column; }
   .auth-profile-photo-wrapper { flex-direction: column; align-items: flex-start; }
   .cd-card { flex-direction: column; }

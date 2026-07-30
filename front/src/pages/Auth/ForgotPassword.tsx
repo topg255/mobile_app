@@ -27,7 +27,7 @@ const ForgotPassword: React.FC = () => {
     return (
       <div className="auth-split">
         <div className="auth-green-blob" />
-        <div style={{ position: 'absolute', top: '40px', left: '50%', transform: 'translateX(-50%)', zIndex: 10 }}>
+        <div className="auth-logo-wrap" style={{ position: 'absolute', top: '40px', left: '50%', transform: 'translateX(-50%)', zIndex: 10 }}>
           <img src="/leoni-logo.svg" alt="LEONI" style={{ height: '52px', objectFit: 'contain' }} />
         </div>
         <div className="auth-split-card">

@@ -40,7 +40,7 @@ const Login: React.FC = () => {
       <div className="auth-green-blob" />
 
       {/* Logo above card */}
-      <div style={{
+      <div className="auth-logo-wrap" style={{
         position: 'absolute',
         top: '40px',
         left: '50%',
