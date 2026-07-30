@@ -286,15 +286,12 @@ export class QualityService {
       );
     }
 
-    // Only return lines from agents belonging to this superviseur
+    // Include lines from agents belonging to this superviseur AND the superviseur's own lines
     const agents = await this.userRepo.find({
       where: { superviseurId: requestor.id, role: UserRole.AGENT_QUALITE },
     });
     const agentIds = agents.map(a => a.id);
-
-    if (agentIds.length === 0) {
-      return [];
-    }
+    agentIds.push(requestor.id); // Also include superviseur's own lines
 
     return this.ligneControleRepo.find({
       where: { agent: { id: In(agentIds) } },
@@ -310,13 +307,15 @@ export class QualityService {
       );
     }
 
-    // Only return agents belonging to this superviseur
+    // Include agents belonging to this superviseur AND the superviseur themselves
     const agents = await this.userRepo.find({
       where: { superviseurId: requestor.id, role: UserRole.AGENT_QUALITE },
     });
 
+    const allUsers = [...agents, requestor]; // Include superviseur's own history
+
     const historique = await Promise.all(
-      agents.map(async (agent) => {
+      allUsers.map(async (agent) => {
         const lignes = await this.ligneControleRepo.find({
           where: { agent: { id: agent.id } },
           order: { createdAt: 'DESC' },
@@ -381,32 +380,21 @@ export class QualityService {
     if (user.role === UserRole.AGENT_QUALITE) {
       whereCondition.agent = { id: user.id };
     } else if (user.role === UserRole.SUPERVISEUR_QUALITE) {
-      // Scope to superviseur's agents
+      // Scope to superviseur's agents AND the superviseur's own lines
       const agents = await this.userRepo.find({
         where: { superviseurId: user.id, role: UserRole.AGENT_QUALITE },
       });
       const agentIds = agents.map(a => a.id);
+      agentIds.push(user.id); // Also include superviseur's own lines
 
       if (dto.agentId) {
-        // Verify the requested agent belongs to this superviseur
+        // Verify the requested agent belongs to this superviseur (or is the superviseur themselves)
         if (!agentIds.includes(dto.agentId)) {
           throw new ForbiddenException('Cet agent n\'appartient pas a votre equipe');
         }
         whereCondition.agent = { id: dto.agentId };
-      } else if (agentIds.length > 0) {
-        whereCondition.agent = { id: In(agentIds) };
       } else {
-        return {
-          message: 'Aucun agent dans votre equipe',
-          rapport: {
-            periode: { debut: dto.debutDate, fin: dto.endDate },
-            totalLignes: 0,
-            repartition: { vert: 0, jaune: 0, rouge: 0 },
-            repartitionPourcentage: { vert: 0, jaune: 0, rouge: 0 },
-            minutesArretCumulees: 0,
-            details: [],
-          },
-        };
+        whereCondition.agent = { id: In(agentIds) };
       }
     }
 
