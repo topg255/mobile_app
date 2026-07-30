@@ -339,133 +339,135 @@ export class PdfService {
     });
   }
 
-  // ─── BAR CHART (Power BI style) ────────────────────────────────────────────
+  // ─── BAR CHART (Power BI professional) ─────────────────────────────────────
   private drawLineChartSection(doc: PDFKit.PDFDocument, ML: number, CW: number, y: number, kpis: ReportKPIs): number {
     const C = this.C;
 
     if (kpis.hourlyBreakdown.length === 0) return y;
 
-    // Section header with subtitle
-    doc.font('Helvetica-Bold').fontSize(8).fillColor(C.slateLight);
+    // ── Section title ──
+    doc.font('Helvetica-Bold').fontSize(9).fillColor(C.navyLight);
     doc.text('SUIVI D\'ACTIVITE', ML, y);
-    doc.font('Helvetica').fontSize(6).fillColor(C.slateMuted);
-    doc.text('Nombre de controles par heure', ML + 90, y + 1);
-    y += 12;
+    doc.font('Helvetica').fontSize(6.5).fillColor(C.slateMuted);
+    doc.text('Nombre de controles par heure', ML + 95, y + 1.5);
+    y += 14;
 
-    // KPI mini-cards row — Power BI style
-    const miniCardW = (CW - 16) / 3;
-    const miniCards = [
-      { label: 'Total controles', value: `${kpis.totalLignes}`, delta: `${kpis.agentsActifs} agents`, color: C.blue, bg: C.blueBg },
-      { label: 'Conformite', value: `${kpis.vertPercent}%`, delta: `${kpis.vertCount} lignes`, color: C.greenDark, bg: C.greenBg },
-      { label: 'Arrets cumules', value: `${kpis.totalMinutes} min`, delta: `${kpis.rougeCount} rouge`, color: C.amberDark, bg: C.amberBg },
+    // ── KPI cards ──
+    const cardGap = 10;
+    const cardW = (CW - cardGap * 2) / 3;
+
+    const kpiData = [
+      { label: 'Total controles', value: `${kpis.totalLignes}`, badge: `${kpis.agentsActifs} agent(s)`, accent: '#3b82f6', bg: '#eff6ff' },
+      { label: 'Conformite', value: `${kpis.vertPercent}%`, badge: `${kpis.vertCount} lignes`, accent: '#22c55e', bg: '#f0fdf4' },
+      { label: 'Arrets cumules', value: `${kpis.totalMinutes} min`, badge: `${kpis.rougeCount} rouge`, accent: '#f59e0b', bg: '#fffbeb' },
     ];
 
-    miniCards.forEach((card, i) => {
-      const cx = ML + i * (miniCardW + 8);
-      // Card with soft shadow simulation (double rect)
-      doc.roundedRect(cx + 1, y + 1, miniCardW, 30, 5).fill('#f0f0f0');
-      doc.roundedRect(cx, y, miniCardW, 30, 5).fill(C.white);
-      doc.roundedRect(cx, y, miniCardW, 30, 5).lineWidth(0.3).strokeColor(C.slateGhost);
-      // Left color accent
-      doc.roundedRect(cx, y, 3, 30, 1.5).fill(card.color);
-      // Label
-      doc.font('Helvetica').fontSize(6).fillColor(C.slateMuted);
-      doc.text(card.label, cx + 10, y + 6, { width: miniCardW - 60 });
-      // Value
-      doc.font('Helvetica-Bold').fontSize(14).fillColor(C.navyLight);
-      doc.text(card.value, cx + 10, y + 15, { width: miniCardW * 0.55 });
-      // Delta badge
-      doc.roundedRect(cx + miniCardW - 52, y + 16, 44, 11, 3).fill(card.bg);
-      doc.font('Helvetica-Bold').fontSize(6).fillColor(card.color);
-      doc.text(card.delta, cx + miniCardW - 52, y + 19, { width: 44, align: 'center' });
-    });
-    y += 38;
+    kpiData.forEach((kpi, i) => {
+      const cx = ML + i * (cardW + cardGap);
 
-    // Chart card
-    const chartH = 100;
-    const padL = 30;
-    const padR = 10;
-    const padT = 12;
-    const padB = 20;
+      // Card body
+      doc.roundedRect(cx, y, cardW, 34, 4).fill(C.white);
+      doc.roundedRect(cx, y, cardW, 34, 4).lineWidth(0.4).strokeColor(C.slateGhost);
+
+      // Top accent stripe
+      doc.rect(cx + 1, y + 1, cardW - 2, 2.5).fill(kpi.accent);
+
+      // Label
+      doc.font('Helvetica').fontSize(6.5).fillColor(C.slateMuted);
+      doc.text(kpi.label.toUpperCase(), cx + 10, y + 7, { width: cardW - 70 });
+
+      // Value
+      doc.font('Helvetica-Bold').fontSize(16).fillColor(C.navyLight);
+      doc.text(kpi.value, cx + 10, y + 16, { width: cardW * 0.5 });
+
+      // Badge pill
+      const badgeW = 50;
+      doc.roundedRect(cx + cardW - badgeW - 8, y + 18, badgeW, 12, 6).fill(kpi.bg);
+      doc.roundedRect(cx + cardW - badgeW - 8, y + 18, badgeW, 12, 6).lineWidth(0.3).strokeColor(kpi.accent);
+      doc.font('Helvetica-Bold').fontSize(6).fillColor(kpi.accent);
+      doc.text(kpi.badge, cx + cardW - badgeW - 8, y + 21, { width: badgeW, align: 'center' });
+    });
+    y += 42;
+
+    // ── Chart card ──
+    const chartH = 110;
+    const padL = 32;
+    const padR = 12;
+    const padT = 14;
+    const padB = 22;
     const plotW = CW - padL - padR;
     const plotH = chartH - padT - padB;
 
-    // Card with shadow
-    doc.roundedRect(ML + 1, y + 1, CW, chartH, 6).fill('#f0f0f0');
-    doc.roundedRect(ML, y, CW, chartH, 6).fill(C.white);
-    doc.roundedRect(ML, y, CW, chartH, 6).lineWidth(0.3).strokeColor(C.slateGhost);
+    // Card
+    doc.roundedRect(ML, y, CW, chartH, 5).fill(C.white);
+    doc.roundedRect(ML, y, CW, chartH, 5).lineWidth(0.4).strokeColor(C.slateGhost);
 
     const data = kpis.hourlyBreakdown;
     const maxCount = Math.max(...data.map((d) => d.count), 1);
     const barCount = data.length;
-    const totalGap = plotW * 0.3;
-    const barW = Math.min((plotW - totalGap) / barCount, 22);
-    const gap = barCount > 1 ? (plotW - barW * barCount) / (barCount - 1) : 0;
-    const startX = ML + padL;
 
-    // Grid lines (dashed effect with dots)
-    for (let i = 0; i <= 4; i++) {
-      const gy = y + padT + plotH - (plotH * i) / 4;
-      // Dotted line effect
-      for (let dx = 0; dx < plotW; dx += 6) {
-        doc.rect(startX + dx, gy, 3, 0.3).fill(C.slateGhost);
-      }
-      doc.font('Helvetica').fontSize(5).fillColor(C.slateFaint);
-      doc.text(String(Math.round((maxCount * i) / 4)), ML + 2, gy - 3, { width: 24, align: 'right' });
+    // Bar sizing — ensure bars are visible and well-spaced
+    const barW = Math.min(Math.max(plotW / barCount * 0.6, 6), 20);
+    const gapW = barCount > 1 ? (plotW - barW * barCount) / (barCount - 1) : 0;
+    const offsetX = ML + padL;
+
+    // ── Horizontal grid lines ──
+    const gridSteps = 4;
+    for (let i = 0; i <= gridSteps; i++) {
+      const gy = y + padT + plotH - (plotH * i) / gridSteps;
+
+      // Solid light line
+      doc.rect(offsetX, gy, plotW, 0.4).fill(C.slateGhost);
+
+      // Y-axis value label
+      const val = Math.round((maxCount * i) / gridSteps);
+      doc.font('Helvetica').fontSize(5.5).fillColor(C.slateMuted);
+      doc.text(String(val), ML, gy - 3.5, { width: padL - 4, align: 'right' });
     }
 
-    // Baseline
-    doc.rect(startX, y + padT + plotH, plotW, 0.5).fill(C.slateGhost);
+    // ── Baseline ──
+    doc.rect(offsetX, y + padT + plotH, plotW, 0.6).fill(C.slateFaint);
 
-    // Bars
+    // ── Bars ──
+    const barBlue = '#3b82f6';
+    const barBlueSoft = '#93c5fd';
+    const barBluePale = '#dbeafe';
+
     data.forEach((entry, i) => {
-      const bx = startX + i * (barW + gap);
-      const barH = Math.max((entry.count / maxCount) * plotH, 2);
+      const bx = offsetX + i * (barW + gapW);
+      const rawH = (entry.count / maxCount) * plotH;
+      const barH = Math.max(rawH, entry.count > 0 ? 4 : 0);
       const by = y + padT + plotH - barH;
 
-      // Color: gradient from soft to vivid based on value
-      const ratio = entry.count / maxCount;
-      let barColor: string;
-      let barBg: string;
-      if (ratio >= 0.7) {
-        barColor = C.blue;
-        barBg = C.blueBg;
-      } else if (ratio >= 0.3) {
-        barColor = C.accent;
-        barBg = C.accentBg;
-      } else {
-        barColor = C.blueLight;
-        barBg = C.slateWash;
+      if (barH <= 0) return;
+
+      // Bar body — solid blue fill
+      doc.roundedRect(bx, by, barW, barH, 2).fill(barBlue);
+
+      // Light inner highlight (top half lighter)
+      if (barH > 8) {
+        doc.save();
+        doc.roundedRect(bx, by, barW, barH, 2).clip();
+        doc.rect(bx, by, barW, barH * 0.4).fill(barBlueSoft);
+        doc.restore();
       }
 
-      // Shadow under bar
-      doc.roundedRect(bx + 1, by + 2, barW, barH, 3).fill('#e8e8e8');
-
-      // Main bar with rounded top
-      doc.roundedRect(bx, by, barW, barH, 3).fill(barBg);
-      // Top color accent (rounded top only)
-      if (barH > 6) {
-        doc.roundedRect(bx, by, barW, 6, 3).fill(barColor);
-      }
-
-      // Value on top
-      if (entry.count > 0) {
-        doc.font('Helvetica-Bold').fontSize(5.5).fillColor(C.navyLight);
-        doc.text(String(entry.count), bx, by - 8, { width: barW, align: 'center' });
-      }
+      // Value label on top
+      doc.font('Helvetica-Bold').fontSize(6).fillColor(C.navyLight);
+      doc.text(String(entry.count), bx, by - 9, { width: barW, align: 'center' });
     });
 
-    // X-axis labels
-    const labelEvery = Math.max(Math.ceil(barCount / 10), 1);
+    // ── X-axis labels ──
+    const showEvery = barCount <= 12 ? 1 : Math.ceil(barCount / 12);
     data.forEach((d, i) => {
-      if (i % labelEvery === 0 || i === data.length - 1) {
-        const lx = startX + i * (barW + gap);
-        doc.font('Helvetica').fontSize(4.5).fillColor(C.slateMuted);
-        doc.text(d.heure, lx, y + padT + plotH + 4, { width: barW, align: 'center' });
+      if (i % showEvery === 0 || i === data.length - 1) {
+        const lx = offsetX + i * (barW + gapW);
+        doc.font('Helvetica').fontSize(5).fillColor(C.slateMuted);
+        doc.text(d.heure, lx - 2, y + padT + plotH + 5, { width: barW + 4, align: 'center' });
       }
     });
 
-    return y + chartH + 12;
+    return y + chartH + 10;
   }
 
   // ─── ANALYSIS ──────────────────────────────────────────────────────────────
