@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authAPI } from '../../api';
 import { toast } from 'react-hot-toast';
-import { Mail, Lock, Eye, EyeOff, User, Hash, Briefcase, Camera, X, CheckCircle2, XCircle, Key } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, User, Hash, Briefcase, Camera, X, CheckCircle2, XCircle, Key, Copy } from 'lucide-react';
 
 const Signup: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -19,6 +19,7 @@ const Signup: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [successData, setSuccessData] = useState<{ code?: string; message: string } | null>(null);
   const navigate = useNavigate();
 
   const passwordRules = [
@@ -45,18 +46,27 @@ const Signup: React.FC = () => {
     try {
       const { confirmPassword, ...submitData } = formData;
       const payload = { ...submitData, image: profileImage || undefined };
+      let res;
       if (role === 'agent') {
-        const res = await authAPI.signupAgent(payload as any);
-        toast.success(res.data.message, { duration: 6000 });
+        res = await authAPI.signupAgent(payload as any);
       } else {
-        const res = await authAPI.signupSuperviseur(payload as any);
-        toast.success(res.data.message, { duration: 8000 });
+        res = await authAPI.signupSuperviseur(payload as any);
       }
-      navigate('/login');
+      setSuccessData({
+        code: res.data.user?.superviseurCode,
+        message: res.data.message,
+      });
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Erreur d'inscription");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const copyCode = () => {
+    if (successData?.code) {
+      navigator.clipboard.writeText(successData.code);
+      toast.success('Code copie');
     }
   };
 
@@ -67,6 +77,116 @@ const Signup: React.FC = () => {
       {children}
     </div>
   );
+
+  // Success Modal
+  if (successData) {
+    return (
+      <div className="auth-split">
+        <div className="auth-green-blob" />
+        <div style={{
+          position: 'absolute',
+          top: '40px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 10,
+        }}>
+          <img src="/leoni-logo.svg" alt="LEONI" style={{ height: '52px', objectFit: 'contain' }} />
+        </div>
+        <div className="auth-split-card" style={{ maxWidth: '560px' }}>
+          <div className="auth-right" style={{ width: '100%', padding: '48px 40px', textAlign: 'center' }}>
+            <div style={{
+              width: 72,
+              height: 72,
+              borderRadius: '50%',
+              background: '#f0fdf4',
+              border: '3px solid #22c55e',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px',
+            }}>
+              <CheckCircle2 size={36} color="#22c55e" />
+            </div>
+            <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8, color: '#1e293b' }}>
+              Inscription reussie !
+            </h2>
+            <p style={{ fontSize: 14, color: '#64748b', marginBottom: 24, lineHeight: 1.6 }}>
+              {successData.message}
+            </p>
+
+            {successData.code && (
+              <div style={{
+                background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)',
+                border: '2px solid #ddd6fe',
+                borderRadius: 14,
+                padding: '24px 20px',
+                marginBottom: 24,
+              }}>
+                <div style={{ fontSize: 11, color: '#7c3aed', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 8 }}>
+                  Votre code superviseur
+                </div>
+                <div style={{
+                  fontFamily: 'monospace',
+                  fontSize: 28,
+                  fontWeight: 800,
+                  color: '#1e293b',
+                  letterSpacing: 3,
+                  marginBottom: 12,
+                  padding: '12px 20px',
+                  background: '#fff',
+                  borderRadius: 10,
+                  border: '1px solid #e9d5ff',
+                  display: 'inline-block',
+                }}>
+                  {successData.code}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
+                  <button
+                    onClick={copyCode}
+                    style={{
+                      background: '#7c3aed',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 8,
+                      padding: '10px 20px',
+                      cursor: 'pointer',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <Copy size={14} /> Copier le code
+                  </button>
+                </div>
+                <p style={{ fontSize: 12, color: '#64748b', marginTop: 12, lineHeight: 1.5 }}>
+                  Ce code est visible dans votre profil. Partagez-le avec vos agents pour qu'ils puissent s'inscrire dans votre equipe.
+                </p>
+              </div>
+            )}
+
+            <button
+              onClick={() => navigate('/login')}
+              style={{
+                background: '#1e293b',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 10,
+                padding: '14px 32px',
+                cursor: 'pointer',
+                fontSize: 14,
+                fontWeight: 600,
+                width: '100%',
+              }}
+            >
+              Se connecter
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="auth-split">

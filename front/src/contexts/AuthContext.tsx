@@ -7,6 +7,7 @@ interface AuthContextType {
   token: string | null;
   login: (identifier: string, password: string) => Promise<User>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
   isAuthenticated: boolean;
   isSuperAdmin: boolean;
   isSuperviseur: boolean;
@@ -21,12 +22,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const res = await authAPI.getProfile();
+      localStorage.setItem('user', JSON.stringify(res.data));
+      setUser(res.data);
+    } catch {
+      // If profile fetch fails, keep existing user data
+    }
+  }, []);
+
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
     if (storedToken && storedUser) {
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
+      // Refresh user data from API to get latest fields
+      authAPI.getProfile().then(res => {
+        localStorage.setItem('user', JSON.stringify(res.data));
+        setUser(res.data);
+      }).catch(() => {});
     }
     setLoading(false);
   }, []);
@@ -60,6 +76,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         token,
         login,
         logout,
+        refreshUser,
         isAuthenticated: !!token,
         isSuperAdmin: user?.role === UserRole.SUPER_ADMIN,
         isSuperviseur: user?.role === UserRole.SUPERVISEUR_QUALITE,

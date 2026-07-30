@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { authAPI } from '../../api';
@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 
 const ProfilePage: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'general' | 'security'>('general');
   const [firstName, setFirstName] = useState(user?.firstName || '');
@@ -32,6 +32,10 @@ const ProfilePage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    refreshUser();
+  }, []);
 
   const getRoleLabel = (role?: UserRole) => {
     switch (role) {

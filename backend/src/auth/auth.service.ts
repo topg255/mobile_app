@@ -280,9 +280,20 @@ export class AuthService {
       throw new NotFoundException('Utilisateur non trouve');
     }
 
-    const { password, resetToken, resetTokenExpires, ...userWithoutSensitiveData } = user;
+    const { password, resetToken, resetTokenExpires, superviseur, ...rest } = user;
 
-    return userWithoutSensitiveData;
+    const superviseurData = superviseur ? {
+      id: superviseur.id,
+      firstName: superviseur.firstName,
+      lastName: superviseur.lastName,
+      matricule: superviseur.matricule,
+      email: superviseur.email,
+    } : null;
+
+    return {
+      ...rest,
+      superviseur: superviseurData,
+    };
   }
 
   async uploadProfileImage(userId: string, file: Express.Multer.File) {
