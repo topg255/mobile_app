@@ -82,9 +82,9 @@ export class PdfService {
       const MR = 40;
       const CW = W - ML - MR;
 
-      const fiveSPath = join(process.cwd(), '..', 'front', 'public', '5s.jpeg');
-      const leoniSvgPath = join(process.cwd(), '..', 'front', 'public', 'leoni-logo.svg');
-      const leoniPngPath = join(process.cwd(), '..', 'front', 'public', 'leoni-logo.png');
+      const fiveSPath = join(process.cwd(), 'assets', '5s.jpeg');
+      const leoniSvgPath = join(process.cwd(), 'assets', 'leoni-logo.svg');
+      const leoniPngPath = join(process.cwd(), 'assets', 'leoni-logo.png');
 
       let y = this.drawHeader(doc, W, fiveSPath, leoniPngPath, leoniSvgPath);
       y = this.drawMetaBar(doc, W, ML, CW, y, params);
