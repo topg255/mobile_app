@@ -357,35 +357,31 @@ export class PdfService {
     const cardW = (CW - cardGap * 2) / 3;
 
     const kpiData = [
-      { label: 'Total controles', value: `${kpis.totalLignes}`, badge: `${kpis.agentsActifs} agent(s)`, accent: '#3b82f6', bg: '#eff6ff' },
-      { label: 'Conformite', value: `${kpis.vertPercent}%`, badge: `${kpis.vertCount} lignes`, accent: '#22c55e', bg: '#f0fdf4' },
-      { label: 'Arrets cumules', value: `${kpis.totalMinutes} min`, badge: `${kpis.rougeCount} rouge`, accent: '#f59e0b', bg: '#fffbeb' },
+      { label: 'Total controles', value: `${kpis.totalLignes}`, badge: `${kpis.agentsActifs} agent(s)`, accent: '#3b82f6', bg: '#dbeafe', textColor: '#1e40af' },
+      { label: 'Conformite', value: `${kpis.vertPercent}%`, badge: `${kpis.vertCount} lignes`, accent: '#22c55e', bg: '#dcfce7', textColor: '#166534' },
+      { label: 'Arrets cumules', value: `${kpis.totalMinutes} min`, badge: `${kpis.rougeCount} rouge`, accent: '#f59e0b', bg: '#fef3c7', textColor: '#92400e' },
     ];
 
     kpiData.forEach((kpi, i) => {
       const cx = ML + i * (cardW + cardGap);
 
-      // Card body
-      doc.roundedRect(cx, y, cardW, 34, 4).fill(C.white);
-      doc.roundedRect(cx, y, cardW, 34, 4).lineWidth(0.4).strokeColor(C.slateGhost);
+      // Card body — colored background for readability
+      doc.roundedRect(cx, y, cardW, 34, 5).fill(kpi.bg);
+      doc.roundedRect(cx, y, cardW, 34, 5).lineWidth(0.5).strokeColor(kpi.accent);
 
-      // Top accent stripe
-      doc.rect(cx + 1, y + 1, cardW - 2, 2.5).fill(kpi.accent);
+      // Label — dark, clear
+      doc.font('Helvetica-Bold').fontSize(7).fillColor(kpi.textColor);
+      doc.text(kpi.label.toUpperCase(), cx + 10, y + 6, { width: cardW - 70 });
 
-      // Label
-      doc.font('Helvetica').fontSize(6.5).fillColor(C.slateMuted);
-      doc.text(kpi.label.toUpperCase(), cx + 10, y + 7, { width: cardW - 70 });
+      // Value — large, bold, dark
+      doc.font('Helvetica-Bold').fontSize(18).fillColor(kpi.textColor);
+      doc.text(kpi.value, cx + 10, y + 16, { width: cardW * 0.55 });
 
-      // Value
-      doc.font('Helvetica-Bold').fontSize(16).fillColor(C.navyLight);
-      doc.text(kpi.value, cx + 10, y + 16, { width: cardW * 0.5 });
-
-      // Badge pill
-      const badgeW = 50;
-      doc.roundedRect(cx + cardW - badgeW - 8, y + 18, badgeW, 12, 6).fill(kpi.bg);
-      doc.roundedRect(cx + cardW - badgeW - 8, y + 18, badgeW, 12, 6).lineWidth(0.3).strokeColor(kpi.accent);
-      doc.font('Helvetica-Bold').fontSize(6).fillColor(kpi.accent);
-      doc.text(kpi.badge, cx + cardW - badgeW - 8, y + 21, { width: badgeW, align: 'center' });
+      // Badge pill — solid accent color with white text
+      const badgeW = 52;
+      doc.roundedRect(cx + cardW - badgeW - 8, y + 17, badgeW, 13, 6).fill(kpi.accent);
+      doc.font('Helvetica-Bold').fontSize(6.5).fillColor('#ffffff');
+      doc.text(kpi.badge, cx + cardW - badgeW - 8, y + 20, { width: badgeW, align: 'center' });
     });
     y += 42;
 
