@@ -288,6 +288,7 @@ export class AuthService {
       lastName: superviseur.lastName,
       matricule: superviseur.matricule,
       email: superviseur.email,
+      role: superviseur.role,
     } : null;
 
     return {
