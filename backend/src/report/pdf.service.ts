@@ -90,7 +90,7 @@ export class PdfService {
       y = this.drawMetaBar(doc, W, ML, CW, y, params);
       y = this.drawKpiCards(doc, ML, CW, y, params.kpis);
       y = this.drawDonutSection(doc, ML, CW, y, params.kpis);
-      y = this.drawBarChartSection(doc, ML, CW, y, params.kpis);
+      y = this.drawLineChartSection(doc, ML, CW, y, params.kpis);
       y = this.drawAnalysisSection(doc, ML, CW, y, params.aiAnalysis);
       y = this.drawRecommendationsSection(doc, ML, CW, y, params.recommendations);
       this.drawFooter(doc, W, H, params);
@@ -339,55 +339,123 @@ export class PdfService {
     });
   }
 
-  // ─── BAR CHART ─────────────────────────────────────────────────────────────
-  private drawBarChartSection(doc: PDFKit.PDFDocument, ML: number, CW: number, y: number, kpis: ReportKPIs): number {
+  // ─── LINE / AREA CHART ────────────────────────────────────────────────────
+  private drawLineChartSection(doc: PDFKit.PDFDocument, ML: number, CW: number, y: number, kpis: ReportKPIs): number {
     const C = this.C;
 
     if (kpis.hourlyBreakdown.length === 0) return y;
 
+    // Section header
     doc.font('Helvetica-Bold').fontSize(8).fillColor(C.slateLight);
-    doc.text('ACTIVITE HORAIRE', ML, y);
-    y += 14;
+    doc.text('SUIVI D\'ACTIVITE', ML, y);
+    y += 12;
 
-    const chartH = 65;
-    const chartW = CW;
-    const barGap = 3;
-    const maxCount = Math.max(...kpis.hourlyBreakdown.map((h) => h.count), 1);
-    const barW = Math.max((chartW - barGap * kpis.hourlyBreakdown.length) / kpis.hourlyBreakdown.length, 4);
+    // KPI mini-cards row
+    const miniCardW = (CW - 16) / 3;
+    const miniCards = [
+      { label: 'Controles effectues', value: `${kpis.totalLignes}`, delta: `${kpis.agentsActifs} agents`, color: C.blue, dot: C.blue },
+      { label: 'Conformite', value: `${kpis.vertPercent}%`, delta: `${kpis.vertCount} OK`, color: C.greenDark, dot: C.green },
+      { label: 'Arrets cumules', value: `${kpis.totalMinutes} min`, delta: `${kpis.rougeCount} critiques`, color: C.amberDark, dot: C.amber },
+    ];
 
-    // Background
-    doc.roundedRect(ML, y, chartW, chartH + 16, 4).fill(C.offWhite);
+    miniCards.forEach((card, i) => {
+      const cx = ML + i * (miniCardW + 8);
+      doc.roundedRect(cx, y, miniCardW, 32, 4).fill(C.white);
+      doc.roundedRect(cx, y, miniCardW, 32, 4).lineWidth(0.3).strokeColor(C.slateGhost);
+      // Top color line
+      doc.rect(cx, y, miniCardW, 2).fill(card.color);
+      // Dot + label
+      doc.circle(cx + 8, y + 12, 2.5).fill(card.dot);
+      doc.font('Helvetica').fontSize(6).fillColor(C.slateMuted);
+      doc.text(card.label, cx + 14, y + 8, { width: miniCardW - 20 });
+      // Value + delta
+      doc.font('Helvetica-Bold').fontSize(13).fillColor(C.navyLight);
+      doc.text(card.value, cx + 8, y + 18, { width: miniCardW * 0.5 });
+      doc.font('Helvetica').fontSize(6).fillColor(C.greenDark);
+      doc.text(card.delta, cx + 8 + miniCardW * 0.5, y + 23, { width: miniCardW * 0.45, align: 'right' });
+    });
+    y += 40;
 
-    // Y-axis reference lines
-    for (let i = 0; i <= 3; i++) {
-      const lineY = y + chartH - (chartH * i) / 3;
-      doc.moveTo(ML + 20, lineY).lineTo(ML + chartW - 5, lineY).lineWidth(0.3).strokeColor(C.slateGhost).stroke();
+    // Chart card
+    const chartH = 90;
+    const chartPadL = 28;
+    const chartPadR = 10;
+    const chartPadT = 10;
+    const chartPadB = 18;
+    const plotW = CW - chartPadL - chartPadR;
+    const plotH = chartH - chartPadT - chartPadB;
+
+    doc.roundedRect(ML, y, CW, chartH, 6).fill(C.white);
+    doc.roundedRect(ML, y, CW, chartH, 6).lineWidth(0.3).strokeColor(C.slateGhost);
+
+    const data = kpis.hourlyBreakdown;
+    const maxCount = Math.max(...data.map((d) => d.count), 1);
+    const stepX = plotW / Math.max(data.length - 1, 1);
+
+    // Grid lines + Y labels
+    for (let i = 0; i <= 4; i++) {
+      const gy = y + chartPadT + plotH - (plotH * i) / 4;
+      doc.moveTo(ML + chartPadL, gy).lineTo(ML + CW - chartPadR, gy).lineWidth(0.3).strokeColor(C.slateGhost).stroke();
       doc.font('Helvetica').fontSize(5).fillColor(C.slateFaint);
-      doc.text(String(Math.round((maxCount * i) / 3)), ML + 2, lineY - 3, { width: 16, align: 'right' });
+      doc.text(String(Math.round((maxCount * i) / 4)), ML + 2, gy - 3, { width: 22, align: 'right' });
     }
 
-    // Bars
-    kpis.hourlyBreakdown.forEach((entry, i) => {
-      const barH = Math.max((entry.count / maxCount) * chartH, 2);
-      const bx = ML + 22 + i * (barW + barGap);
-      const by = y + chartH - barH;
+    // Compute points
+    const points: { x: number; y: number }[] = data.map((d, i) => ({
+      x: ML + chartPadL + i * stepX,
+      y: y + chartPadT + plotH - (d.count / maxCount) * plotH,
+    }));
 
-      // Bar gradient effect — lighter bar + darker top
-      doc.roundedRect(bx, by, barW, barH, 2).fill(C.blueLight);
-      doc.roundedRect(bx, by, barW, Math.min(barH, 4), 2).fill(C.blue);
+    // Area fill (gradient from line to bottom)
+    if (points.length > 1) {
+      // Draw area path: move to first point, line to each, then down to baseline, back to start
+      doc.save();
+      doc.moveTo(points[0].x, y + chartPadT + plotH);
+      doc.lineTo(points[0].x, points[0].y);
 
-      // Count on top
-      if (entry.count > 0) {
-        doc.font('Helvetica-Bold').fontSize(5).fillColor(C.blueDark);
-        doc.text(String(entry.count), bx, by - 8, { width: barW, align: 'center' });
+      for (let i = 1; i < points.length; i++) {
+        const prev = points[i - 1];
+        const curr = points[i];
+        const cpx1 = prev.x + stepX * 0.4;
+        const cpx2 = curr.x - stepX * 0.4;
+        doc.bezierCurveTo(cpx1, prev.y, cpx2, curr.y, curr.x, curr.y);
       }
 
-      // Hour label
-      doc.font('Helvetica').fontSize(4.5).fillColor(C.slateMuted);
-      doc.text(entry.heure, bx, y + chartH + 3, { width: barW, align: 'center' });
+      doc.lineTo(points[points.length - 1].x, y + chartPadT + plotH);
+      doc.closePath();
+      doc.fill(C.blueBg);
+      doc.restore();
+    }
+
+    // Line
+    if (points.length > 1) {
+      doc.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        const prev = points[i - 1];
+        const curr = points[i];
+        const cpx1 = prev.x + stepX * 0.4;
+        const cpx2 = curr.x - stepX * 0.4;
+        doc.bezierCurveTo(cpx1, prev.y, cpx2, curr.y, curr.x, curr.y);
+      }
+      doc.lineWidth(1.5).strokeColor(C.blue);
+    }
+
+    // Dots on data points
+    points.forEach((pt, i) => {
+      doc.circle(pt.x, pt.y, 2.5).fill(C.white);
+      doc.circle(pt.x, pt.y, 1.8).fill(C.blue);
     });
 
-    return y + chartH + 22;
+    // X-axis labels (show every Nth)
+    const labelEvery = Math.max(Math.ceil(data.length / 8), 1);
+    data.forEach((d, i) => {
+      if (i % labelEvery === 0 || i === data.length - 1) {
+        doc.font('Helvetica').fontSize(5).fillColor(C.slateMuted);
+        doc.text(d.heure, points[i].x - 12, y + chartPadT + plotH + 4, { width: 24, align: 'center' });
+      }
+    });
+
+    return y + chartH + 12;
   }
 
   // ─── ANALYSIS ──────────────────────────────────────────────────────────────
