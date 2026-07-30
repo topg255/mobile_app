@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { authAPI } from '../../api';
 import { User, UserRole } from '../../types';
 import { toast } from 'react-hot-toast';
+import { copyToClipboard } from '../../utils/clipboard';
 import {
   ArrowLeft,
   Mail,
@@ -72,10 +73,10 @@ const ProfilePage: React.FC = () => {
     setSaving(false);
   };
 
-  const copyCode = () => {
+  const copyCode = async () => {
     if (user?.superviseurCode) {
-      navigator.clipboard.writeText(user.superviseurCode);
-      toast.success('Code copie dans le presse-papier');
+      const ok = await copyToClipboard(user.superviseurCode);
+      toast.success(ok ? 'Code copie dans le presse-papier' : 'Erreur de copie');
     }
   };
 

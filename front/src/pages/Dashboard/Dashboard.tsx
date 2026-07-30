@@ -5,6 +5,7 @@ import { reportAPI } from '../../api';
 import { LigneControle, NoteQualite, User } from '../../types';
 import RapportLibraries from '../../components/RapportLibraries';
 import { toast } from 'react-hot-toast';
+import { copyToClipboard } from '../../utils/clipboard';
 import Chat from '../../components/Chat';
 import NotificationBell from '../../components/NotificationBell';
 import UserProfileDrawer from '../../components/UserProfileDrawer';
@@ -1483,7 +1484,7 @@ const AgentsTab: React.FC = () => {
             <span className="ag-code-value">{user.superviseurCode}</span>
             <span className="ag-code-hint">Partagez ce code avec vos agents pour qu'ils puissent s'inscrire</span>
           </div>
-          <button className="ag-code-copy" onClick={() => { navigator.clipboard.writeText(user.superviseurCode!); toast.success('Code copie'); }}>
+          <button className="ag-code-copy" onClick={async () => { const ok = await copyToClipboard(user.superviseurCode!); toast.success(ok ? 'Code copie' : 'Erreur de copie'); }}>
             <Copy size={14} /> Copier
           </button>
         </div>

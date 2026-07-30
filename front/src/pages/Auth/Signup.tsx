@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authAPI } from '../../api';
 import { toast } from 'react-hot-toast';
+import { copyToClipboard } from '../../utils/clipboard';
 import { Mail, Lock, Eye, EyeOff, User, Hash, Briefcase, Camera, X, CheckCircle2, XCircle, Key, Copy } from 'lucide-react';
 
 const Signup: React.FC = () => {
@@ -63,10 +64,10 @@ const Signup: React.FC = () => {
     }
   };
 
-  const copyCode = () => {
+  const copyCode = async () => {
     if (successData?.code) {
-      navigator.clipboard.writeText(successData.code);
-      toast.success('Code copie');
+      const ok = await copyToClipboard(successData.code);
+      toast.success(ok ? 'Code copie' : 'Erreur de copie');
     }
   };
 
