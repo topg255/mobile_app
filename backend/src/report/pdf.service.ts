@@ -339,119 +339,129 @@ export class PdfService {
     });
   }
 
-  // ─── LINE / AREA CHART ────────────────────────────────────────────────────
+  // ─── BAR CHART (Power BI style) ────────────────────────────────────────────
   private drawLineChartSection(doc: PDFKit.PDFDocument, ML: number, CW: number, y: number, kpis: ReportKPIs): number {
     const C = this.C;
 
     if (kpis.hourlyBreakdown.length === 0) return y;
 
-    // Section header
+    // Section header with subtitle
     doc.font('Helvetica-Bold').fontSize(8).fillColor(C.slateLight);
     doc.text('SUIVI D\'ACTIVITE', ML, y);
+    doc.font('Helvetica').fontSize(6).fillColor(C.slateMuted);
+    doc.text('Nombre de controles par heure', ML + 90, y + 1);
     y += 12;
 
-    // KPI mini-cards row
+    // KPI mini-cards row — Power BI style
     const miniCardW = (CW - 16) / 3;
     const miniCards = [
-      { label: 'Controles effectues', value: `${kpis.totalLignes}`, delta: `${kpis.agentsActifs} agents`, color: C.blue, dot: C.blue },
-      { label: 'Conformite', value: `${kpis.vertPercent}%`, delta: `${kpis.vertCount} OK`, color: C.greenDark, dot: C.green },
-      { label: 'Arrets cumules', value: `${kpis.totalMinutes} min`, delta: `${kpis.rougeCount} critiques`, color: C.amberDark, dot: C.amber },
+      { label: 'Total controles', value: `${kpis.totalLignes}`, delta: `${kpis.agentsActifs} agents`, color: C.blue, bg: C.blueBg },
+      { label: 'Conformite', value: `${kpis.vertPercent}%`, delta: `${kpis.vertCount} lignes`, color: C.greenDark, bg: C.greenBg },
+      { label: 'Arrets cumules', value: `${kpis.totalMinutes} min`, delta: `${kpis.rougeCount} rouge`, color: C.amberDark, bg: C.amberBg },
     ];
 
     miniCards.forEach((card, i) => {
       const cx = ML + i * (miniCardW + 8);
-      doc.roundedRect(cx, y, miniCardW, 32, 4).fill(C.white);
-      doc.roundedRect(cx, y, miniCardW, 32, 4).lineWidth(0.3).strokeColor(C.slateGhost);
-      // Top color line
-      doc.rect(cx, y, miniCardW, 2).fill(card.color);
-      // Dot + label
-      doc.circle(cx + 8, y + 12, 2.5).fill(card.dot);
+      // Card with soft shadow simulation (double rect)
+      doc.roundedRect(cx + 1, y + 1, miniCardW, 30, 5).fill('#f0f0f0');
+      doc.roundedRect(cx, y, miniCardW, 30, 5).fill(C.white);
+      doc.roundedRect(cx, y, miniCardW, 30, 5).lineWidth(0.3).strokeColor(C.slateGhost);
+      // Left color accent
+      doc.roundedRect(cx, y, 3, 30, 1.5).fill(card.color);
+      // Label
       doc.font('Helvetica').fontSize(6).fillColor(C.slateMuted);
-      doc.text(card.label, cx + 14, y + 8, { width: miniCardW - 20 });
-      // Value + delta
-      doc.font('Helvetica-Bold').fontSize(13).fillColor(C.navyLight);
-      doc.text(card.value, cx + 8, y + 18, { width: miniCardW * 0.5 });
-      doc.font('Helvetica').fontSize(6).fillColor(C.greenDark);
-      doc.text(card.delta, cx + 8 + miniCardW * 0.5, y + 23, { width: miniCardW * 0.45, align: 'right' });
+      doc.text(card.label, cx + 10, y + 6, { width: miniCardW - 60 });
+      // Value
+      doc.font('Helvetica-Bold').fontSize(14).fillColor(C.navyLight);
+      doc.text(card.value, cx + 10, y + 15, { width: miniCardW * 0.55 });
+      // Delta badge
+      doc.roundedRect(cx + miniCardW - 52, y + 16, 44, 11, 3).fill(card.bg);
+      doc.font('Helvetica-Bold').fontSize(6).fillColor(card.color);
+      doc.text(card.delta, cx + miniCardW - 52, y + 19, { width: 44, align: 'center' });
     });
-    y += 40;
+    y += 38;
 
     // Chart card
-    const chartH = 90;
-    const chartPadL = 28;
-    const chartPadR = 10;
-    const chartPadT = 10;
-    const chartPadB = 18;
-    const plotW = CW - chartPadL - chartPadR;
-    const plotH = chartH - chartPadT - chartPadB;
+    const chartH = 100;
+    const padL = 30;
+    const padR = 10;
+    const padT = 12;
+    const padB = 20;
+    const plotW = CW - padL - padR;
+    const plotH = chartH - padT - padB;
 
+    // Card with shadow
+    doc.roundedRect(ML + 1, y + 1, CW, chartH, 6).fill('#f0f0f0');
     doc.roundedRect(ML, y, CW, chartH, 6).fill(C.white);
     doc.roundedRect(ML, y, CW, chartH, 6).lineWidth(0.3).strokeColor(C.slateGhost);
 
     const data = kpis.hourlyBreakdown;
     const maxCount = Math.max(...data.map((d) => d.count), 1);
-    const stepX = plotW / Math.max(data.length - 1, 1);
+    const barCount = data.length;
+    const totalGap = plotW * 0.3;
+    const barW = Math.min((plotW - totalGap) / barCount, 22);
+    const gap = barCount > 1 ? (plotW - barW * barCount) / (barCount - 1) : 0;
+    const startX = ML + padL;
 
-    // Grid lines + Y labels
+    // Grid lines (dashed effect with dots)
     for (let i = 0; i <= 4; i++) {
-      const gy = y + chartPadT + plotH - (plotH * i) / 4;
-      doc.moveTo(ML + chartPadL, gy).lineTo(ML + CW - chartPadR, gy).lineWidth(0.3).strokeColor(C.slateGhost).stroke();
+      const gy = y + padT + plotH - (plotH * i) / 4;
+      // Dotted line effect
+      for (let dx = 0; dx < plotW; dx += 6) {
+        doc.rect(startX + dx, gy, 3, 0.3).fill(C.slateGhost);
+      }
       doc.font('Helvetica').fontSize(5).fillColor(C.slateFaint);
-      doc.text(String(Math.round((maxCount * i) / 4)), ML + 2, gy - 3, { width: 22, align: 'right' });
+      doc.text(String(Math.round((maxCount * i) / 4)), ML + 2, gy - 3, { width: 24, align: 'right' });
     }
 
-    // Compute points
-    const points: { x: number; y: number }[] = data.map((d, i) => ({
-      x: ML + chartPadL + i * stepX,
-      y: y + chartPadT + plotH - (d.count / maxCount) * plotH,
-    }));
+    // Baseline
+    doc.rect(startX, y + padT + plotH, plotW, 0.5).fill(C.slateGhost);
 
-    // Area fill (gradient from line to bottom)
-    if (points.length > 1) {
-      // Draw area path: move to first point, line to each, then down to baseline, back to start
-      doc.save();
-      doc.moveTo(points[0].x, y + chartPadT + plotH);
-      doc.lineTo(points[0].x, points[0].y);
+    // Bars
+    data.forEach((entry, i) => {
+      const bx = startX + i * (barW + gap);
+      const barH = Math.max((entry.count / maxCount) * plotH, 2);
+      const by = y + padT + plotH - barH;
 
-      for (let i = 1; i < points.length; i++) {
-        const prev = points[i - 1];
-        const curr = points[i];
-        const cpx1 = prev.x + stepX * 0.4;
-        const cpx2 = curr.x - stepX * 0.4;
-        doc.bezierCurveTo(cpx1, prev.y, cpx2, curr.y, curr.x, curr.y);
+      // Color: gradient from soft to vivid based on value
+      const ratio = entry.count / maxCount;
+      let barColor: string;
+      let barBg: string;
+      if (ratio >= 0.7) {
+        barColor = C.blue;
+        barBg = C.blueBg;
+      } else if (ratio >= 0.3) {
+        barColor = C.accent;
+        barBg = C.accentBg;
+      } else {
+        barColor = C.blueLight;
+        barBg = C.slateWash;
       }
 
-      doc.lineTo(points[points.length - 1].x, y + chartPadT + plotH);
-      doc.closePath();
-      doc.fill(C.blueBg);
-      doc.restore();
-    }
+      // Shadow under bar
+      doc.roundedRect(bx + 1, by + 2, barW, barH, 3).fill('#e8e8e8');
 
-    // Line
-    if (points.length > 1) {
-      doc.moveTo(points[0].x, points[0].y);
-      for (let i = 1; i < points.length; i++) {
-        const prev = points[i - 1];
-        const curr = points[i];
-        const cpx1 = prev.x + stepX * 0.4;
-        const cpx2 = curr.x - stepX * 0.4;
-        doc.bezierCurveTo(cpx1, prev.y, cpx2, curr.y, curr.x, curr.y);
+      // Main bar with rounded top
+      doc.roundedRect(bx, by, barW, barH, 3).fill(barBg);
+      // Top color accent (rounded top only)
+      if (barH > 6) {
+        doc.roundedRect(bx, by, barW, 6, 3).fill(barColor);
       }
-      doc.lineWidth(1.5).strokeColor(C.blue);
-    }
 
-    // Dots on data points
-    points.forEach((pt, i) => {
-      doc.circle(pt.x, pt.y, 2.5).fill(C.white);
-      doc.circle(pt.x, pt.y, 1.8).fill(C.blue);
+      // Value on top
+      if (entry.count > 0) {
+        doc.font('Helvetica-Bold').fontSize(5.5).fillColor(C.navyLight);
+        doc.text(String(entry.count), bx, by - 8, { width: barW, align: 'center' });
+      }
     });
 
-    // X-axis labels (show every Nth)
-    const labelEvery = Math.max(Math.ceil(data.length / 8), 1);
+    // X-axis labels
+    const labelEvery = Math.max(Math.ceil(barCount / 10), 1);
     data.forEach((d, i) => {
       if (i % labelEvery === 0 || i === data.length - 1) {
-        doc.font('Helvetica').fontSize(5).fillColor(C.slateMuted);
-        doc.text(d.heure, points[i].x - 12, y + chartPadT + plotH + 4, { width: 24, align: 'center' });
+        const lx = startX + i * (barW + gap);
+        doc.font('Helvetica').fontSize(4.5).fillColor(C.slateMuted);
+        doc.text(d.heure, lx, y + padT + plotH + 4, { width: barW, align: 'center' });
       }
     });
 
