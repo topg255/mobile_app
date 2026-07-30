@@ -486,7 +486,7 @@ const UsersTab: React.FC<{
                 </span>
               </td>
               <td data-label="Actions" className="actions-cell">
-                {u.role !== 'super_admin' && (
+                {u.role === 'superviseur_qualite' && (
                   <>
                     {u.isApproved ? (
                       <button
@@ -503,13 +503,15 @@ const UsersTab: React.FC<{
                         <Check size={14} />
                       </button>
                     )}
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => onDelete(u.id)}
-                    >
-                      <Trash2 size={14} />
-                    </button>
                   </>
+                )}
+                {u.role !== 'super_admin' && (
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={() => onDelete(u.id)}
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 )}
               </td>
             </tr>
