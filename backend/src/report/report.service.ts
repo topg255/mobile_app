@@ -5,6 +5,7 @@ import { Cron } from '@nestjs/schedule';
 import { DailyReport, ReportStatus } from './entities/daily-report.entity';
 import { AiReportService } from './ai-report.service';
 import { EmailService } from './email.service';
+import { PdfService } from './pdf.service';
 import { buildReportEmailHtml } from './templates/report-email.template';
 import { NotificationService } from '../notification/notification.service';
 import { NotificationType } from '../notification/entities/notification.entity';
@@ -21,6 +22,7 @@ export class ReportService {
     private readonly userRepo: Repository<User>,
     private readonly aiReportService: AiReportService,
     private readonly emailService: EmailService,
+    private readonly pdfService: PdfService,
     private readonly notificationService: NotificationService,
   ) {}
 
@@ -174,14 +176,24 @@ export class ReportService {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
     });
 
-    return this.emailService.generatePdf({
+    const reference = this.generateReference(report);
+
+    return this.pdfService.generatePdf({
       superviseurName,
+      superviseurMatricule: report.superviseur.matricule,
       dateFormatted,
+      reference,
       kpis: report.kpis,
       aiAnalysis: report.aiAnalysis || '',
       recommendations: report.recommendations || '',
       summary: report.summary,
     });
+  }
+
+  private generateReference(report: DailyReport): string {
+    const date = report.reportDate.replace(/-/g, '');
+    const shortId = report.id.substring(0, 8).toUpperCase();
+    return `RPT-${date}-${shortId}`;
   }
 
   private async sendReportEmail(
@@ -205,9 +217,12 @@ export class ReportService {
 
     let pdfBuffer: Buffer | undefined;
     try {
-      pdfBuffer = await this.emailService.generatePdf({
+      const reference = this.generateReference(report);
+      pdfBuffer = await this.pdfService.generatePdf({
         superviseurName,
+        superviseurMatricule: superviseur.matricule,
         dateFormatted,
+        reference,
         kpis: report.kpis,
         aiAnalysis: report.aiAnalysis || '',
         recommendations: report.recommendations || '',

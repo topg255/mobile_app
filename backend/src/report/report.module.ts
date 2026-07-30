@@ -9,6 +9,7 @@ import { ReportService } from './report.service';
 import { ReportController } from './report.controller';
 import { AiReportService } from './ai-report.service';
 import { EmailService } from './email.service';
+import { PdfService } from './pdf.service';
 import { NotificationModule } from '../notification/notification.module';
 
 @Module({
@@ -18,7 +19,7 @@ import { NotificationModule } from '../notification/notification.module';
     NotificationModule,
   ],
   controllers: [ReportController],
-  providers: [ReportService, AiReportService, EmailService],
+  providers: [ReportService, AiReportService, EmailService, PdfService],
   exports: [ReportService],
 })
 export class ReportModule {}
