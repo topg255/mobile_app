@@ -56,6 +56,10 @@ import {
   Copy,
   Key,
   Folder,
+  Mail,
+  MailPlus,
+  MailX,
+  Loader2,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -2475,8 +2479,15 @@ const AiReportsTab: React.FC = () => {
   const [selectedReport, setSelectedReport] = useState<any>(null);
   const [page, setPage] = useState(1);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [recipients, setRecipients] = useState<import('../../types').ReportRecipient[]>([]);
+  const [recipientEmail, setRecipientEmail] = useState('');
+  const [recipientsLoading, setRecipientsLoading] = useState(true);
+  const [addingRecipient, setAddingRecipient] = useState(false);
+  const [removingRecipientId, setRemovingRecipientId] = useState<string | null>(null);
 
-  useEffect(() => { loadReports(); loadStats(); }, [page]);
+  const { user } = useAuth();
+
+  useEffect(() => { loadReports(); loadStats(); loadRecipients(); }, [page]);
 
   const loadReports = async () => {
     setLoading(true);
@@ -2492,6 +2503,50 @@ const AiReportsTab: React.FC = () => {
       const res = await reportAPI.getStats();
       setStats(res.data);
     } catch {}
+  };
+
+  const loadRecipients = async () => {
+    setRecipientsLoading(true);
+    try {
+      const res = await reportAPI.getRecipients();
+      setRecipients(res.data);
+    } catch { toast.error('Erreur chargement destinataires'); }
+    setRecipientsLoading(false);
+  };
+
+  const handleAddRecipient = async () => {
+    const email = recipientEmail.trim();
+    if (!email) return;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Adresse email invalide');
+      return;
+    }
+    if (user && email.toLowerCase() === user.email.toLowerCase()) {
+      toast.error('Vous recevez deja le rapport sur votre email principal');
+      return;
+    }
+    setAddingRecipient(true);
+    try {
+      await reportAPI.addRecipient(email);
+      toast.success('Destinataire ajoute avec succes');
+      setRecipientEmail('');
+      loadRecipients();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Erreur lors de l'ajout du destinataire");
+    } finally { setAddingRecipient(false); }
+  };
+
+  const handleRemoveRecipient = async (id: string) => {
+    if (!window.confirm('Supprimer ce destinataire ?')) return;
+    setRemovingRecipientId(id);
+    try {
+      await reportAPI.deleteRecipient(id);
+      toast.success('Destinataire supprime');
+      loadRecipients();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erreur lors de la suppression');
+    } finally { setRemovingRecipientId(null); }
   };
 
   const handleGenerate = async () => {
@@ -2564,11 +2619,101 @@ const AiReportsTab: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Rapports IA Quotidiens</h3>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b' }}>Generes automatiquement chaque minute (mode test)</p>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b' }}>Envoi automatique chaque jour a 18h00 avec PDF joint</p>
         </div>
         <button className="cd-create-btn" onClick={handleGenerate} disabled={generating}>
-          {generating ? <span className="rapport-btn-loading" /> : <><Zap size={16} /> Generer maintenant</>}
+          {generating ? <Loader2 size={16} className="rp-spin" /> : <><Zap size={16} /> Generer maintenant</>}
         </button>
+      </div>
+
+      {/* DESTINATAIRES DU RAPPORT */}
+      <div className="rp-card" style={{ marginBottom: 24 }}>
+        <div className="rp-card-header">
+          <div className="rp-card-title">
+            <div className="rp-card-icon">
+              <Mail size={18} />
+            </div>
+            <div>
+              <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#1e293b' }}>Destinataires du rapport IA</h4>
+              <p style={{ margin: '2px 0 0', fontSize: 12, color: '#64748b' }}>
+                Le rapport est envoye a votre email principal et a tous les destinataires ci-dessous.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rp-body">
+          {/* Email principal du superviseur */}
+          <div className="rp-primary-row">
+            <div className="rp-avatar rp-avatar-primary">
+              <Mail size={16} />
+            </div>
+            <div className="rp-primary-info">
+              <span className="rp-primary-email">{user?.email || '---'}</span>
+              <span className="rp-primary-badge">Email principal</span>
+            </div>
+            <span className="rp-primary-note">Toujours inclus</span>
+          </div>
+
+          {/* Formulaire d'ajout */}
+          <div className="rp-add-row">
+            <div className="rp-add-input-wrap">
+              <Mail size={16} className="rp-add-icon" />
+              <input
+                type="email"
+                className="rp-add-input"
+                placeholder="ex: manager@leoni.com"
+                value={recipientEmail}
+                onChange={e => setRecipientEmail(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddRecipient();
+                  }
+                }}
+                disabled={addingRecipient}
+              />
+            </div>
+            <button
+              className="rp-add-btn"
+              onClick={handleAddRecipient}
+              disabled={addingRecipient || !recipientEmail.trim()}
+            >
+              {addingRecipient ? <Loader2 size={15} className="rp-spin" /> : <><MailPlus size={15} /> Ajouter</>}
+            </button>
+          </div>
+
+          {/* Liste des destinataires */}
+          {recipientsLoading ? (
+            <div className="rp-loading-row">
+              <Loader2 size={16} className="rp-spin" /> Chargement des destinataires...
+            </div>
+          ) : recipients.length === 0 ? (
+            <div className="rp-empty">
+              <MailX size={20} />
+              <span>Aucun destinataire additionnel. Ajoutez des emails pour les inclure dans l'envoi.</span>
+            </div>
+          ) : (
+            <div className="rp-list">
+              {recipients.map(r => (
+                <div key={r.id} className="rp-item">
+                  <div className="rp-avatar">
+                    <Mail size={14} />
+                  </div>
+                  <span className="rp-item-email">{r.email}</span>
+                  <button
+                    className="rp-remove-btn"
+                    title="Supprimer ce destinataire"
+                    onClick={() => handleRemoveRecipient(r.id)}
+                    disabled={removingRecipientId === r.id}
+                  >
+                    {removingRecipientId === r.id ? <Loader2 size={14} className="rp-spin" /> : <Trash2 size={14} />}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {selectedReport && (
@@ -2668,7 +2813,11 @@ const AiReportsTab: React.FC = () => {
                   <td data-label="Jaune">{r.kpis.jauneCount} ({r.kpis.jaunePercent}%)</td>
                   <td data-label="Rouge">{r.kpis.rougeCount} ({r.kpis.rougePercent}%)</td>
                   <td data-label="Minutes">{r.kpis.totalMinutes} min</td>
-                  <td data-label="Envoye a">{r.emailRecipient || '---'}</td>
+                  <td data-label="Envoye a">
+                    {r.emailRecipient ? (
+                      <span className="rp-recipients-cell">{r.emailRecipient.split(',').map((e: string) => e.trim()).join(', ')}</span>
+                    ) : '---'}
+                  </td>
                   <td data-label="Actions">
                     <div className="actions-cell">
                       <button className="btn-icon-sm" onClick={() => setSelectedReport(r)} title="Voir le rapport">

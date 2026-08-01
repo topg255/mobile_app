@@ -57,7 +57,7 @@ export class DailyReport {
   @Column({ name: 'email_sent_at', type: 'timestamp', nullable: true })
   emailSentAt: Date | null;
 
-  @Column({ name: 'email_recipient', type: 'varchar', length: 255, nullable: true })
+  @Column({ name: 'email_recipient', type: 'text', nullable: true })
   emailRecipient: string;
 
   @Column({ name: 'error_message', type: 'text', nullable: true })

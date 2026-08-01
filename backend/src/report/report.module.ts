@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { DailyReport } from './entities/daily-report.entity';
+import { ReportRecipient } from './entities/report-recipient.entity';
 import { LigneControle } from '../quality/entities/ligne-controle.entity';
 import { ControleDate } from '../quality/entities/controle-date.entity';
 import { User } from '../auth/entities/user.entity';
@@ -14,7 +15,7 @@ import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([DailyReport, LigneControle, ControleDate, User]),
+    TypeOrmModule.forFeature([DailyReport, ReportRecipient, LigneControle, ControleDate, User]),
     ScheduleModule.forRoot(),
     NotificationModule,
   ],

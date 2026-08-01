@@ -1,8 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Cron } from '@nestjs/schedule';
 import { DailyReport, ReportStatus } from './entities/daily-report.entity';
+import { ReportRecipient } from './entities/report-recipient.entity';
 import { AiReportService } from './ai-report.service';
 import { EmailService } from './email.service';
 import { PdfService } from './pdf.service';
@@ -20,6 +21,8 @@ export class ReportService {
     private readonly reportRepo: Repository<DailyReport>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    @InjectRepository(ReportRecipient)
+    private readonly recipientRepo: Repository<ReportRecipient>,
     private readonly aiReportService: AiReportService,
     private readonly emailService: EmailService,
     private readonly pdfService: PdfService,
@@ -98,23 +101,30 @@ export class ReportService {
     await this.reportRepo.save(report);
     this.logger.log(`Report generated for ${superviseurName} — sending email with PDF...`);
 
-    const emailSent = await this.sendReportEmail(report, superviseur, superviseurName, targetDate);
+    const recipients = await this.recipientRepo.find({
+      where: { superviseurId: superviseur.id },
+      order: { createdAt: 'ASC' },
+    });
+    const extraEmails = recipients.map(r => r.email);
+    const allEmails = [superviseur.email, ...extraEmails];
+
+    const emailSent = await this.sendReportEmail(report, superviseur, superviseurName, targetDate, extraEmails);
 
     if (emailSent) {
       report.status = ReportStatus.SENT;
       report.emailSentAt = new Date();
-      report.emailRecipient = superviseur.email;
+      report.emailRecipient = allEmails.join(', ');
       await this.reportRepo.save(report);
 
       await this.notificationService.create(
         superviseur.id,
         NotificationType.REPORT_GENERATED,
-        `Rapport qualite du ${targetDate.toLocaleDateString('fr-FR')} genere et envoye a ${superviseur.email}`,
+        `Rapport qualite du ${targetDate.toLocaleDateString('fr-FR')} genere et envoye a ${allEmails.join(', ')}`,
         report.id,
       );
     } else {
       report.status = ReportStatus.GENERATED;
-      report.emailRecipient = superviseur.email;
+      report.emailRecipient = allEmails.join(', ');
       report.errorMessage = 'Email non envoye — SMTP non configure ou inaccessible';
       await this.reportRepo.save(report);
 
@@ -133,6 +143,62 @@ export class ReportService {
     const date = targetDate ? new Date(targetDate) : new Date();
     this.logger.log(`Manual report generation triggered for ${date.toISOString()}`);
     return this.generateAndSendReports(date);
+  }
+
+  async getRecipients(user: User) {
+    if (user.role === UserRole.SUPERVISEUR_QUALITE) {
+      return this.recipientRepo.find({
+        where: { superviseurId: user.id },
+        order: { createdAt: 'ASC' },
+      });
+    }
+    return this.recipientRepo.find({
+      relations: { superviseur: true },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async addRecipient(user: User, email: string, superviseurId?: string) {
+    const normalized = email.trim().toLowerCase();
+
+    if (user.role === UserRole.SUPERVISEUR_QUALITE && superviseurId && superviseurId !== user.id) {
+      throw new ForbiddenException('Non autorise');
+    }
+
+    const ownerId = superviseurId || user.id;
+    const owner = await this.userRepo.findOne({
+      where: { id: ownerId, role: UserRole.SUPERVISEUR_QUALITE },
+    });
+    if (!owner) throw new NotFoundException('Superviseur non trouve');
+
+    if (normalized === owner.email.toLowerCase()) {
+      throw new BadRequestException(
+        'Le superviseur recoit deja le rapport sur son adresse email principale',
+      );
+    }
+
+    const existing = await this.recipientRepo.findOne({
+      where: { superviseurId: ownerId, email: normalized },
+    });
+    if (existing) {
+      throw new ConflictException('Cet email est deja un destinataire du rapport');
+    }
+
+    const recipient = this.recipientRepo.create({
+      superviseurId: ownerId,
+      email: normalized,
+    });
+    return this.recipientRepo.save(recipient);
+  }
+
+  async removeRecipient(id: string, user: User) {
+    const recipient = await this.recipientRepo.findOne({ where: { id } });
+    if (!recipient) throw new NotFoundException('Destinataire non trouve');
+    if (user.role === UserRole.SUPERVISEUR_QUALITE && recipient.superviseurId !== user.id) {
+      throw new ForbiddenException('Non autorise');
+    }
+    await this.recipientRepo.remove(recipient);
+    return { message: 'Destinataire supprime avec succes' };
   }
 
   async deleteReport(id: string): Promise<void> {
@@ -230,6 +296,7 @@ export class ReportService {
     superviseur: User,
     superviseurName: string,
     targetDate: Date,
+    extraRecipients: string[] = [],
   ): Promise<boolean> {
     const dateFormatted = targetDate.toLocaleDateString('fr-FR', {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
@@ -266,6 +333,7 @@ export class ReportService {
 
     return this.sendEmailWithRetry({
       to: superviseur.email,
+      cc: extraRecipients.length > 0 ? extraRecipients : undefined,
       subject: `Rapport Qualite IA — ${dateFormatted}`,
       html,
       pdfBuffer,

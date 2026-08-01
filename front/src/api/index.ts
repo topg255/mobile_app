@@ -320,6 +320,15 @@ export const reportAPI = {
 
   downloadPdf: (id: string): Promise<Blob> =>
     api.get(`/reports/${id}/pdf`, { responseType: 'blob' }).then(r => r.data),
+
+  getRecipients: (): Promise<{ data: import('../types').ReportRecipient[] }> =>
+    api.get('/reports/recipients'),
+
+  addRecipient: (email: string): Promise<{ data: import('../types').ReportRecipient }> =>
+    api.post('/reports/recipients', { email }),
+
+  deleteRecipient: (id: string): Promise<{ data: { message: string } }> =>
+    api.delete(`/reports/recipients/${id}`),
 };
 
 export default api;

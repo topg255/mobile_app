@@ -184,3 +184,10 @@ export interface LibraryStats {
   trashCount: number;
   folderCount: number;
 }
+
+export interface ReportRecipient {
+  id: string;
+  superviseurId: string;
+  email: string;
+  createdAt: string;
+}

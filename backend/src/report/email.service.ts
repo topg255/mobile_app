@@ -4,6 +4,7 @@ import * as nodemailer from 'nodemailer';
 
 export interface EmailOptions {
   to: string;
+  cc?: string[];
   subject: string;
   html: string;
   pdfBuffer?: Buffer;
@@ -44,6 +45,10 @@ export class EmailService {
         html: options.html,
       };
 
+      if (options.cc && options.cc.length > 0) {
+        mailOptions.cc = options.cc;
+      }
+
       if (options.pdfBuffer) {
         mailOptions.attachments = [{
           filename: options.pdfFilename || 'rapport-qualite.pdf',
@@ -53,10 +58,18 @@ export class EmailService {
       }
 
       const info = await this.transporter.sendMail(mailOptions);
-      this.logger.log(`Email sent to ${options.to}: ${info.messageId}`);
+      const ccList = options.cc || [];
+      const recipientsLabel = ccList.length > 0
+        ? `${options.to}, ${ccList.join(', ')}`
+        : options.to;
+      this.logger.log(`Email sent to ${recipientsLabel}: ${info.messageId}`);
       return true;
     } catch (error) {
-      this.logger.warn(`Email to ${options.to} failed: ${error.message}`);
+      const ccList = options.cc || [];
+      const recipientsLabel = ccList.length > 0
+        ? `${options.to}, ${ccList.join(', ')}`
+        : options.to;
+      this.logger.warn(`Email to ${recipientsLabel} failed: ${error.message}`);
       return false;
     }
   }
