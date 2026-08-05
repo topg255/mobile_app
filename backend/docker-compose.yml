@@ -39,6 +39,7 @@ services:
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
       GMAIL_USER: ${GMAIL_USER:-}
       GMAIL_PASS: ${GMAIL_PASS:-}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
       PORT: 3000
     ports:
       - '3000:3000'
