@@ -18,11 +18,8 @@ interface RateLimitBucket {
 @Injectable()
 export class RateLimitGuard implements CanActivate {
   private readonly buckets = new Map<string, RateLimitBucket>();
-
-  constructor(
-    private readonly limit: number = 30,
-    private readonly windowMs: number = 60_000,
-  ) {}
+  private readonly limit = 30;
+  private readonly windowMs = 60_000;
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
