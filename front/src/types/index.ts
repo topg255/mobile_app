@@ -312,3 +312,126 @@ export interface ObjectivePrediction {
   daysRemaining: number;
   endDate: string;
 }
+
+// ------------------------------------------------------------------
+// Push Notifications
+// ------------------------------------------------------------------
+
+export enum PushCategory {
+  QUALITY_CRITICAL = 'quality_critical',
+  QUALITY_WARNING = 'quality_warning',
+  PRODUCTION_STOP = 'production_stop',
+  AI_REPORT = 'ai_report',
+  OBJECTIVE_RISK = 'objective_risk',
+  OBJECTIVE_COMPLETED = 'objective_completed',
+  CHAT_MESSAGE = 'chat_message',
+  AGENT_REGISTRATION = 'agent_registration',
+  AGENT_APPROVED = 'agent_approved',
+  BENCHMARK = 'benchmark',
+  AI_RISK = 'ai_risk',
+  CAPA = 'capa',
+  SYSTEM = 'system',
+}
+
+export enum PushPriority {
+  CRITICAL = 'critical',
+  HIGH = 'high',
+  MEDIUM = 'medium',
+  LOW = 'low',
+}
+
+export enum PushDeliveryStatus {
+  SENT = 'sent',
+  DELIVERED = 'delivered',
+  OPENED = 'opened',
+  CLICKED = 'clicked',
+  DISMISSED = 'dismissed',
+  FAILED = 'failed',
+}
+
+export interface PushSubscriptionInfo {
+  id: string;
+  endpoint: string;
+  browser: string;
+  device: string;
+  platform: string;
+  isActive: boolean;
+  lastActivityAt: string | null;
+  createdAt: string;
+}
+
+export interface NotificationPreferences {
+  id: string;
+  criticalAlerts: boolean;
+  aiReports: boolean;
+  objectives: boolean;
+  messages: boolean;
+  benchmarkAlerts: boolean;
+  weeklyReports: boolean;
+  systemNotifications: boolean;
+  capaAlerts: boolean;
+  soundEnabled: boolean;
+  vibrationEnabled: boolean;
+  dndEnabled: boolean;
+  dndStart: string;
+  dndEnd: string;
+  lastBenchmarkRank: number | null;
+}
+
+export interface PushNotificationHistoryRow {
+  id: string;
+  title: string;
+  body: string;
+  category: PushCategory;
+  priority: PushPriority;
+  data: Record<string, any> | null;
+  deliveryStatus: PushDeliveryStatus;
+  groupKey: string | null;
+  groupCount: number;
+  sentAt: string;
+  deliveredAt: string | null;
+  openedAt: string | null;
+  clickedAt: string | null;
+  dismissedAt: string | null;
+  escalatedAt: string | null;
+  escalationLevel: number;
+  devicePlatform: string | null;
+  createdAt: string;
+}
+
+export interface PushAnalytics {
+  totals: {
+    sent: number;
+    delivered: number;
+    opened: number;
+    clicked: number;
+    dismissed: number;
+    failed: number;
+    avgResponseMs: number;
+    criticalResponseMs: number;
+  };
+  daily: {
+    date: string;
+    sent: number;
+    delivered: number;
+    opened: number;
+    clicked: number;
+    dismissed: number;
+  }[];
+  topSupervisors: {
+    userId: string;
+    name: string;
+    sent: number;
+    opened: number;
+    clicked: number;
+  }[];
+}
+
+export interface PushEscalationConfig {
+  id: number;
+  criticalEscalationMin: number;
+  highEscalationMin: number;
+  mediumEscalationMin: number;
+  groupingWindowMin: number;
+  enabled: boolean;
+}

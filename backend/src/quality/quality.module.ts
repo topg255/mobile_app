@@ -7,12 +7,14 @@ import { LigneControle } from './entities/ligne-controle.entity';
 import { User } from '../auth/entities/user.entity';
 import { NotificationModule } from '../notification/notification.module';
 import { LibraryModule } from '../library/library.module';
+import { PushNotificationModule } from '../push-notification/push-notification.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([ControleDate, LigneControle, User]),
     NotificationModule,
     LibraryModule,
+    PushNotificationModule,
   ],
   controllers: [QualityController],
   providers: [QualityService],

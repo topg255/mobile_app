@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 import { NotificationService } from '../notification/notification.service';
 import { NotificationType } from '../notification/entities/notification.entity';
 import { User, UserRole } from '../auth/entities/user.entity';
+import { PushNotifierService } from '../push-notification/push-notifier.service';
 import { LigneControle } from '../quality/entities/ligne-controle.entity';
 import {
   ObjectiveCategory,
@@ -18,10 +19,7 @@ import {
   QualityObjective,
   RiskLevel,
 } from './entities/quality-objective.entity';
-import {
-  BadgeCode,
-  ObjectiveBadge,
-} from './entities/objective-badge.entity';
+import { BadgeCode, ObjectiveBadge } from './entities/objective-badge.entity';
 import { ObjectiveHistory } from './entities/objective-history.entity';
 import {
   ObjectiveMetricsService,
@@ -73,21 +71,29 @@ export class QualityObjectivesService {
     private readonly metricsService: ObjectiveMetricsService,
     private readonly predictionService: ObjectivePredictionService,
     private readonly notificationService: NotificationService,
+    private readonly pushNotifier: PushNotifierService,
   ) {}
 
   // ------------------------------------------------------------------
   // CRUD
   // ------------------------------------------------------------------
 
-  async create(user: User, dto: CreateQualityObjectiveDto): Promise<QualityObjective> {
+  async create(
+    user: User,
+    dto: CreateQualityObjectiveDto,
+  ): Promise<QualityObjective> {
     const start = this.parseDate(dto.startDate);
     const end = this.parseDate(dto.endDate);
     if (end <= start) {
-      throw new BadRequestException('La date de fin doit etre posterieure a la date de debut');
+      throw new BadRequestException(
+        'La date de fin doit etre posterieure a la date de debut',
+      );
     }
 
     const ownerId =
-      user.role === UserRole.SUPER_ADMIN && dto.superviseurId ? dto.superviseurId : user.id;
+      user.role === UserRole.SUPER_ADMIN && dto.superviseurId
+        ? dto.superviseurId
+        : user.id;
     const owner = await this.userRepo.findOne({ where: { id: ownerId } });
     if (!owner) {
       throw new BadRequestException('Superviseur introuvable');
@@ -104,8 +110,12 @@ export class QualityObjectivesService {
       description: dto.description ?? null,
       category,
       targetValue: dto.targetValue,
-      currentValue: category === ObjectiveCategory.CUSTOM ? (dto.currentValue ?? 0) : 0,
-      unit: dto.unit && dto.unit.length > 0 ? dto.unit : this.metricsService.getDefaultUnit(category),
+      currentValue:
+        category === ObjectiveCategory.CUSTOM ? (dto.currentValue ?? 0) : 0,
+      unit:
+        dto.unit && dto.unit.length > 0
+          ? dto.unit
+          : this.metricsService.getDefaultUnit(category),
       higherIsBetter,
       priority: dto.priority ?? ObjectivePriority.MEDIUM,
       startDate: dto.startDate,
@@ -142,7 +152,11 @@ export class QualityObjectivesService {
     if (scope) {
       await Promise.all(
         objectives
-          .filter((o) => o.status === ObjectiveStatus.ACTIVE || o.status === ObjectiveStatus.AT_RISK)
+          .filter(
+            (o) =>
+              o.status === ObjectiveStatus.ACTIVE ||
+              o.status === ObjectiveStatus.AT_RISK,
+          )
           .map((o) => this.recompute(o)),
       );
     }
@@ -153,7 +167,10 @@ export class QualityObjectivesService {
     const objective = await this.objectiveRepo.findOne({ where: { id } });
     if (!objective) throw new NotFoundException('Objectif introuvable');
     this.assertVisible(user, objective);
-    if (objective.status === ObjectiveStatus.ACTIVE || objective.status === ObjectiveStatus.AT_RISK) {
+    if (
+      objective.status === ObjectiveStatus.ACTIVE ||
+      objective.status === ObjectiveStatus.AT_RISK
+    ) {
       const scope = this.scopeFor(user, objective);
       if (scope) await this.recompute(objective);
     }
@@ -173,28 +190,41 @@ export class QualityObjectivesService {
       const start = this.parseDate(dto.startDate);
       const end = this.parseDate(dto.endDate);
       if (end <= start) {
-        throw new BadRequestException('La date de fin doit etre posterieure a la date de debut');
+        throw new BadRequestException(
+          'La date de fin doit etre posterieure a la date de debut',
+        );
       }
     }
     if (dto.endDate) {
       const start = this.parseDate(dto.startDate ?? objective.startDate);
       const end = this.parseDate(dto.endDate);
       if (end <= start) {
-        throw new BadRequestException('La date de fin doit etre posterieure a la date de debut');
+        throw new BadRequestException(
+          'La date de fin doit etre posterieure a la date de debut',
+        );
       }
     }
 
     Object.assign(objective, {
       ...(dto.title !== undefined ? { title: dto.title } : {}),
-      ...(dto.description !== undefined ? { description: dto.description } : {}),
+      ...(dto.description !== undefined
+        ? { description: dto.description }
+        : {}),
       ...(dto.category !== undefined ? { category: dto.category } : {}),
-      ...(dto.targetValue !== undefined ? { targetValue: dto.targetValue } : {}),
-      ...(dto.unit !== undefined && dto.unit.length > 0 ? { unit: dto.unit } : {}),
+      ...(dto.targetValue !== undefined
+        ? { targetValue: dto.targetValue }
+        : {}),
+      ...(dto.unit !== undefined && dto.unit.length > 0
+        ? { unit: dto.unit }
+        : {}),
       ...(dto.priority !== undefined ? { priority: dto.priority } : {}),
       ...(dto.startDate !== undefined ? { startDate: dto.startDate } : {}),
       ...(dto.endDate !== undefined ? { endDate: dto.endDate } : {}),
-      ...(dto.higherIsBetter !== undefined ? { higherIsBetter: dto.higherIsBetter } : {}),
-      ...(dto.currentValue !== undefined && objective.category === ObjectiveCategory.CUSTOM
+      ...(dto.higherIsBetter !== undefined
+        ? { higherIsBetter: dto.higherIsBetter }
+        : {}),
+      ...(dto.currentValue !== undefined &&
+      objective.category === ObjectiveCategory.CUSTOM
         ? { currentValue: dto.currentValue }
         : {}),
     });
@@ -226,20 +256,32 @@ export class QualityObjectivesService {
     });
 
     for (const o of objectives) {
-      if (o.status === ObjectiveStatus.ACTIVE || o.status === ObjectiveStatus.AT_RISK) {
+      if (
+        o.status === ObjectiveStatus.ACTIVE ||
+        o.status === ObjectiveStatus.AT_RISK
+      ) {
         await this.recompute(o);
       }
     }
-    const refreshed = await this.objectiveRepo.find({ where, order: { createdAt: 'DESC' } });
+    const refreshed = await this.objectiveRepo.find({
+      where,
+      order: { createdAt: 'DESC' },
+    });
 
     const active = refreshed.filter((o) => o.status === ObjectiveStatus.ACTIVE);
-    const atRisk = refreshed.filter((o) => o.status === ObjectiveStatus.AT_RISK);
-    const completed = refreshed.filter((o) => o.status === ObjectiveStatus.COMPLETED);
+    const atRisk = refreshed.filter(
+      (o) => o.status === ObjectiveStatus.AT_RISK,
+    );
+    const completed = refreshed.filter(
+      (o) => o.status === ObjectiveStatus.COMPLETED,
+    );
     const failed = refreshed.filter((o) => o.status === ObjectiveStatus.FAILED);
     const withProb = refreshed.filter((o) => o.predictionProbability !== null);
     const avgProbability = withProb.length
       ? Math.round(
-          (withProb.reduce((s, o) => s + (o.predictionProbability ?? 0), 0) / withProb.length) * 10,
+          (withProb.reduce((s, o) => s + (o.predictionProbability ?? 0), 0) /
+            withProb.length) *
+            10,
         ) / 10
       : 0;
 
@@ -247,7 +289,8 @@ export class QualityObjectivesService {
       low: refreshed.filter((o) => o.riskLevel === RiskLevel.LOW).length,
       medium: refreshed.filter((o) => o.riskLevel === RiskLevel.MEDIUM).length,
       high: refreshed.filter((o) => o.riskLevel === RiskLevel.HIGH).length,
-      critical: refreshed.filter((o) => o.riskLevel === RiskLevel.CRITICAL).length,
+      critical: refreshed.filter((o) => o.riskLevel === RiskLevel.CRITICAL)
+        .length,
     };
 
     const badges = await this.getBadges(user, scope);
@@ -276,7 +319,10 @@ export class QualityObjectivesService {
     });
 
     for (const o of objectives) {
-      if (o.status === ObjectiveStatus.ACTIVE || o.status === ObjectiveStatus.AT_RISK) {
+      if (
+        o.status === ObjectiveStatus.ACTIVE ||
+        o.status === ObjectiveStatus.AT_RISK
+      ) {
         await this.recompute(o);
       }
     }
@@ -309,7 +355,9 @@ export class QualityObjectivesService {
 
   async getHistory(user: User, objectiveId?: string) {
     if (objectiveId) {
-      const objective = await this.objectiveRepo.findOne({ where: { id: objectiveId } });
+      const objective = await this.objectiveRepo.findOne({
+        where: { id: objectiveId },
+      });
       if (!objective) throw new NotFoundException('Objectif introuvable');
       this.assertVisible(user, objective);
       const rows = await this.historyRepo.find({
@@ -345,7 +393,10 @@ export class QualityObjectivesService {
     }));
   }
 
-  async getBadges(user: User, scopeOverride?: string | null): Promise<ObjectiveBadge[]> {
+  async getBadges(
+    user: User,
+    scopeOverride?: string | null,
+  ): Promise<ObjectiveBadge[]> {
     const scope = scopeOverride ?? this.resolveScope(user);
     if (!scope) return [];
     const badges = await this.badgeRepo.find({
@@ -364,7 +415,10 @@ export class QualityObjectivesService {
     if (!scope) return;
 
     const series = await this.metricsService.buildDailySeries(objective, scope);
-    const metric = await this.metricsService.computeCurrentValue(objective, scope);
+    const metric = await this.metricsService.computeCurrentValue(
+      objective,
+      scope,
+    );
 
     const start = this.parseDate(objective.startDate);
     const end = this.parseDate(objective.endDate);
@@ -373,10 +427,7 @@ export class QualityObjectivesService {
     const totalDays = ObjectivePredictionService.daysBetween(start, end);
     const elapsedDays = Math.max(
       1,
-      Math.min(
-        totalDays,
-        ObjectivePredictionService.daysBetween(start, today),
-      ),
+      Math.min(totalDays, ObjectivePredictionService.daysBetween(start, today)),
     );
 
     const currentValue = metric.value;
@@ -388,9 +439,14 @@ export class QualityObjectivesService {
 
     let prediction: PredictionResult;
     let status = objective.status;
-    const periodOver = this.parseDate(objective.endDate).getTime() < today.getTime();
+    const periodOver =
+      this.parseDate(objective.endDate).getTime() < today.getTime();
 
-    if (periodOver || objective.status === ObjectiveStatus.COMPLETED || objective.status === ObjectiveStatus.FAILED) {
+    if (
+      periodOver ||
+      objective.status === ObjectiveStatus.COMPLETED ||
+      objective.status === ObjectiveStatus.FAILED
+    ) {
       prediction = this.predictionService.predict(
         series,
         objective.higherIsBetter,
@@ -398,8 +454,12 @@ export class QualityObjectivesService {
         totalDays,
         totalDays,
       );
-      if (objective.status === ObjectiveStatus.ACTIVE || objective.status === ObjectiveStatus.AT_RISK) {
-        status = progress >= 100 ? ObjectiveStatus.COMPLETED : ObjectiveStatus.FAILED;
+      if (
+        objective.status === ObjectiveStatus.ACTIVE ||
+        objective.status === ObjectiveStatus.AT_RISK
+      ) {
+        status =
+          progress >= 100 ? ObjectiveStatus.COMPLETED : ObjectiveStatus.FAILED;
       }
     } else {
       prediction = this.predictionService.predict(
@@ -409,7 +469,10 @@ export class QualityObjectivesService {
         elapsedDays,
         totalDays,
       );
-      status = prediction.predictionProbability < 60 ? ObjectiveStatus.AT_RISK : ObjectiveStatus.ACTIVE;
+      status =
+        prediction.predictionProbability < 60
+          ? ObjectiveStatus.AT_RISK
+          : ObjectiveStatus.ACTIVE;
     }
 
     const previousStatus = objective.status;
@@ -489,10 +552,13 @@ export class QualityObjectivesService {
     const ownerId = objective.createdBy?.id;
     if (!ownerId) return;
 
+    let unlockedBadgeName: string | null = null;
+
     // Retablissement rapide : l'objectif etait a risque et redevient sain
     if (
       previousStatus === ObjectiveStatus.AT_RISK &&
-      (objective.status === ObjectiveStatus.ACTIVE || objective.status === ObjectiveStatus.COMPLETED)
+      (objective.status === ObjectiveStatus.ACTIVE ||
+        objective.status === ObjectiveStatus.COMPLETED)
     ) {
       const existing = await this.badgeRepo.findOne({
         where: { user: { id: ownerId }, code: BadgeCode.FAST_RECOVERY },
@@ -507,47 +573,76 @@ export class QualityObjectivesService {
             objective: { id: objective.id } as QualityObjective,
           }),
         );
+        unlockedBadgeName = BadgeInfo[BadgeCode.FAST_RECOVERY].name;
         this.logger.log(`Badge "fast_recovery" unlocked for user ${ownerId}`);
       }
     }
 
-    if (objective.status === ObjectiveStatus.AT_RISK && previousStatus !== ObjectiveStatus.AT_RISK) {
+    if (
+      objective.status === ObjectiveStatus.AT_RISK &&
+      previousStatus !== ObjectiveStatus.AT_RISK
+    ) {
       await this.notificationService.create(
         ownerId,
         NotificationType.OBJECTIVE_AT_RISK,
         this.buildRiskMessage(objective),
         objective.id,
       );
+      await this.pushNotifier.notifyObjectiveRisk(
+        ownerId,
+        objective,
+        objective.predictionProbability ?? 0,
+      );
       return;
     }
 
-    if (objective.status === ObjectiveStatus.AT_RISK && RISK_ORDER[objective.riskLevel] > RISK_ORDER[previousRisk]) {
+    if (
+      objective.status === ObjectiveStatus.AT_RISK &&
+      RISK_ORDER[objective.riskLevel] > RISK_ORDER[previousRisk]
+    ) {
       await this.notificationService.create(
         ownerId,
         NotificationType.OBJECTIVE_AT_RISK,
         this.buildRiskMessage(objective),
         objective.id,
       );
+      await this.pushNotifier.notifyObjectiveRisk(
+        ownerId,
+        objective,
+        objective.predictionProbability ?? 0,
+      );
       return;
     }
 
-    if (objective.status === ObjectiveStatus.COMPLETED && previousStatus !== ObjectiveStatus.COMPLETED) {
+    if (
+      objective.status === ObjectiveStatus.COMPLETED &&
+      previousStatus !== ObjectiveStatus.COMPLETED
+    ) {
       await this.notificationService.create(
         ownerId,
         NotificationType.OBJECTIVE_COMPLETED,
         `Objectif "${objective.title}" atteint avec succes (progression ${objective.progress}%). Felicitations !`,
         objective.id,
       );
+      await this.pushNotifier.notifyObjectiveCompleted(
+        ownerId,
+        objective,
+        unlockedBadgeName ?? undefined,
+      );
       return;
     }
 
-    if (objective.status === ObjectiveStatus.FAILED && previousStatus !== ObjectiveStatus.FAILED) {
+    if (
+      objective.status === ObjectiveStatus.FAILED &&
+      previousStatus !== ObjectiveStatus.FAILED
+    ) {
       await this.notificationService.create(
         ownerId,
         NotificationType.OBJECTIVE_FAILED,
         `Objectif "${objective.title}" non atteint (progression ${objective.progress}%). Analysez les causes racines et redéfinissez des cibles realistes.`,
         objective.id,
       );
+      await this.pushNotifier.notifyObjectiveFailed(ownerId, objective);
     }
   }
 
@@ -579,7 +674,10 @@ export class QualityObjectivesService {
 
     switch (objective.category) {
       case ObjectiveCategory.COMPLIANCE:
-        if (prediction.riskLevel === RiskLevel.HIGH || prediction.riskLevel === RiskLevel.CRITICAL) {
+        if (
+          prediction.riskLevel === RiskLevel.HIGH ||
+          prediction.riskLevel === RiskLevel.CRITICAL
+        ) {
           return 'Probabilite de non-atteinte elevee. Lancez des audits cibles sur les lignes rouges et organisez des actions de sensibilisation rapides.';
         }
         if (prediction.riskLevel === RiskLevel.MEDIUM) {
@@ -587,17 +685,26 @@ export class QualityObjectivesService {
         }
         return 'Excellente dynamique de conformite. Maintenez le rythme des controles actuels.';
       case ObjectiveCategory.CRITICAL_INCIDENTS:
-        if (prediction.riskLevel === RiskLevel.HIGH || prediction.riskLevel === RiskLevel.CRITICAL) {
-          return 'Le nombre d\'incidents critiques progresse. Identifiez les lignes recurrentes et appliquez des actions correctives immediates.';
+        if (
+          prediction.riskLevel === RiskLevel.HIGH ||
+          prediction.riskLevel === RiskLevel.CRITICAL
+        ) {
+          return "Le nombre d'incidents critiques progresse. Identifiez les lignes recurrentes et appliquez des actions correctives immediates.";
         }
         return 'Les incidents critiques restent maitrises. Poursuivez la surveillance quotidienne.';
       case ObjectiveCategory.DOWNTIME:
-        if (prediction.riskLevel === RiskLevel.HIGH || prediction.riskLevel === RiskLevel.CRITICAL) {
-          return 'Les minutes d\'arret cumulees sont trop elevees. Priorisez les actions de maintenance sur les lignes a fort delais.';
+        if (
+          prediction.riskLevel === RiskLevel.HIGH ||
+          prediction.riskLevel === RiskLevel.CRITICAL
+        ) {
+          return "Les minutes d'arret cumulees sont trop elevees. Priorisez les actions de maintenance sur les lignes a fort delais.";
         }
         return 'Les arrets sont sous controle. Continuez a traiter les delais des lignes rouges en priorite.';
       default:
-        if (prediction.riskLevel === RiskLevel.HIGH || prediction.riskLevel === RiskLevel.CRITICAL) {
+        if (
+          prediction.riskLevel === RiskLevel.HIGH ||
+          prediction.riskLevel === RiskLevel.CRITICAL
+        ) {
           return `Progression actuelle ${progress}%. Le rythme actuel est insuffisant pour atteindre la cible : intensifiez les actions.`;
         }
         if (prediction.riskLevel === RiskLevel.MEDIUM) {
@@ -611,7 +718,10 @@ export class QualityObjectivesService {
   // Badges
   // ------------------------------------------------------------------
 
-  private async unlockBadges(objective: QualityObjective, scope: string): Promise<void> {
+  private async unlockBadges(
+    objective: QualityObjective,
+    scope: string,
+  ): Promise<void> {
     const code = await this.checkBadge(objective, scope);
     if (!code) return;
 
@@ -631,7 +741,10 @@ export class QualityObjectivesService {
     this.logger.log(`Badge "${code}" unlocked for user ${scope}`);
   }
 
-  private async checkBadge(objective: QualityObjective, scope: string): Promise<BadgeCode | null> {
+  private async checkBadge(
+    objective: QualityObjective,
+    scope: string,
+  ): Promise<BadgeCode | null> {
     if (objective.status !== ObjectiveStatus.COMPLETED) {
       return null;
     }
@@ -675,7 +788,13 @@ export class QualityObjectivesService {
   // ------------------------------------------------------------------
 
   private async buildMonthlyEvolution(scope: string | null): Promise<
-    { month: string; label: string; avgProgress: number | null; avgProbability: number | null; objectives: number }[]
+    {
+      month: string;
+      label: string;
+      avgProgress: number | null;
+      avgProbability: number | null;
+      objectives: number;
+    }[]
   > {
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
@@ -690,13 +809,22 @@ export class QualityObjectivesService {
     }
     const rows = await query.getMany();
 
-    const months: { month: string; label: string; avgProgress: number | null; avgProbability: number | null; objectives: number }[] = [];
+    const months: {
+      month: string;
+      label: string;
+      avgProgress: number | null;
+      avgProbability: number | null;
+      objectives: number;
+    }[] = [];
     const now = new Date();
     for (let i = 5; i >= 0; i--) {
       const m = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const next = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
       const key = `${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, '0')}`;
-      const label = m.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+      const label = m.toLocaleDateString('fr-FR', {
+        month: 'short',
+        year: 'numeric',
+      });
       const monthRows = rows.filter(
         (r) => r.recordedAt >= m && r.recordedAt < next,
       );
@@ -704,10 +832,18 @@ export class QualityObjectivesService {
         month: key,
         label,
         avgProgress: monthRows.length
-          ? Math.round((monthRows.reduce((s, r) => s + r.progress, 0) / monthRows.length) * 10) / 10
+          ? Math.round(
+              (monthRows.reduce((s, r) => s + r.progress, 0) /
+                monthRows.length) *
+                10,
+            ) / 10
           : null,
         avgProbability: monthRows.length
-          ? Math.round((monthRows.reduce((s, r) => s + (r.probability ?? 0), 0) / monthRows.length) * 10) / 10
+          ? Math.round(
+              (monthRows.reduce((s, r) => s + (r.probability ?? 0), 0) /
+                monthRows.length) *
+                10,
+            ) / 10
           : null,
         objectives: new Set(monthRows.map((r) => r.objective.id)).size,
       });
@@ -740,10 +876,7 @@ export class QualityObjectivesService {
     if (user.role === UserRole.SUPER_ADMIN) return;
     const owner = objective.createdBy?.id;
     if (user.role === UserRole.SUPERVISEUR_QUALITE && owner === user.id) return;
-    if (
-      user.role === UserRole.AGENT_QUALITE &&
-      owner === user.superviseurId
-    ) {
+    if (user.role === UserRole.AGENT_QUALITE && owner === user.superviseurId) {
       return;
     }
     throw new ForbiddenException('Acces refuse a cet objectif');
@@ -757,14 +890,19 @@ export class QualityObjectivesService {
     ) {
       return;
     }
-    throw new ForbiddenException('Vous ne pouvez gerer que vos propres objectifs');
+    throw new ForbiddenException(
+      'Vous ne pouvez gerer que vos propres objectifs',
+    );
   }
 
   private daysRemaining(endDate: string): number {
     const end = this.parseDate(endDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return Math.max(0, Math.round((end.getTime() - today.getTime()) / MS_PER_DAY));
+    return Math.max(
+      0,
+      Math.round((end.getTime() - today.getTime()) / MS_PER_DAY),
+    );
   }
 
   private parseDate(value: string): Date {

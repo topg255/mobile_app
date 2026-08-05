@@ -1,4 +1,11 @@
-import { Injectable, Logger, NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Cron } from '@nestjs/schedule';
@@ -11,6 +18,7 @@ import { buildReportEmailHtml } from './templates/report-email.template';
 import { NotificationService } from '../notification/notification.service';
 import { NotificationType } from '../notification/entities/notification.entity';
 import { User, UserRole } from '../auth/entities/user.entity';
+import { PushNotifierService } from '../push-notification/push-notifier.service';
 
 @Injectable()
 export class ReportService {
@@ -27,6 +35,7 @@ export class ReportService {
     private readonly emailService: EmailService,
     private readonly pdfService: PdfService,
     private readonly notificationService: NotificationService,
+    private readonly pushNotifier: PushNotifierService,
   ) {}
 
   @Cron('0 18 * * *')
@@ -49,7 +58,9 @@ export class ReportService {
     });
 
     if (superviseurs.length === 0) {
-      this.logger.warn('No approved superviseurs found — skipping report generation');
+      this.logger.warn(
+        'No approved superviseurs found — skipping report generation',
+      );
       return [];
     }
 
@@ -57,10 +68,16 @@ export class ReportService {
 
     for (const superviseur of superviseurs) {
       try {
-        const report = await this.generateSingleReport(superviseur, date, dateStr);
+        const report = await this.generateSingleReport(
+          superviseur,
+          date,
+          dateStr,
+        );
         reports.push(report);
       } catch (error) {
-        this.logger.error(`Failed to generate report for ${superviseur.email}: ${error.message}`);
+        this.logger.error(
+          `Failed to generate report for ${superviseur.email}: ${error.message}`,
+        );
       }
     }
 
@@ -68,11 +85,18 @@ export class ReportService {
     return reports;
   }
 
-  async generateSingleReport(superviseur: User, targetDate: Date, dateStr: string): Promise<DailyReport> {
+  async generateSingleReport(
+    superviseur: User,
+    targetDate: Date,
+    dateStr: string,
+  ): Promise<DailyReport> {
     const superviseurName = `${superviseur.firstName} ${superviseur.lastName}`;
     this.logger.log(`Generating report for ${superviseurName}...`);
 
-    const generated = await this.aiReportService.generateReport(targetDate, superviseurName);
+    const generated = await this.aiReportService.generateReport(
+      targetDate,
+      superviseurName,
+    );
 
     let report = await this.reportRepo.findOne({
       where: { superviseur: { id: superviseur.id }, reportDate: dateStr },
@@ -99,16 +123,24 @@ export class ReportService {
     }
 
     await this.reportRepo.save(report);
-    this.logger.log(`Report generated for ${superviseurName} — sending email with PDF...`);
+    this.logger.log(
+      `Report generated for ${superviseurName} — sending email with PDF...`,
+    );
 
     const recipients = await this.recipientRepo.find({
       where: { superviseurId: superviseur.id },
       order: { createdAt: 'ASC' },
     });
-    const extraEmails = recipients.map(r => r.email);
+    const extraEmails = recipients.map((r) => r.email);
     const allEmails = [superviseur.email, ...extraEmails];
 
-    const emailSent = await this.sendReportEmail(report, superviseur, superviseurName, targetDate, extraEmails);
+    const emailSent = await this.sendReportEmail(
+      report,
+      superviseur,
+      superviseurName,
+      targetDate,
+      extraEmails,
+    );
 
     if (emailSent) {
       report.status = ReportStatus.SENT;
@@ -125,7 +157,8 @@ export class ReportService {
     } else {
       report.status = ReportStatus.GENERATED;
       report.emailRecipient = allEmails.join(', ');
-      report.errorMessage = 'Email non envoye — SMTP non configure ou inaccessible';
+      report.errorMessage =
+        'Email non envoye — SMTP non configure ou inaccessible';
       await this.reportRepo.save(report);
 
       await this.notificationService.create(
@@ -136,12 +169,26 @@ export class ReportService {
       );
     }
 
+    await this.pushNotifier.notifyAiReport(
+      superviseur.id,
+      superviseurName,
+      {
+        totalLignes: generated.kpis.totalLignes,
+        rougeCount: generated.kpis.rougeCount,
+        rougePercent: generated.kpis.rougePercent,
+        vertPercent: generated.kpis.vertPercent,
+      },
+      report.id,
+    );
+
     return report;
   }
 
   async manualGenerate(targetDate?: string): Promise<DailyReport[]> {
     const date = targetDate ? new Date(targetDate) : new Date();
-    this.logger.log(`Manual report generation triggered for ${date.toISOString()}`);
+    this.logger.log(
+      `Manual report generation triggered for ${date.toISOString()}`,
+    );
     return this.generateAndSendReports(date);
   }
 
@@ -161,7 +208,11 @@ export class ReportService {
   async addRecipient(user: User, email: string, superviseurId?: string) {
     const normalized = email.trim().toLowerCase();
 
-    if (user.role === UserRole.SUPERVISEUR_QUALITE && superviseurId && superviseurId !== user.id) {
+    if (
+      user.role === UserRole.SUPERVISEUR_QUALITE &&
+      superviseurId &&
+      superviseurId !== user.id
+    ) {
       throw new ForbiddenException('Non autorise');
     }
 
@@ -181,7 +232,9 @@ export class ReportService {
       where: { superviseurId: ownerId, email: normalized },
     });
     if (existing) {
-      throw new ConflictException('Cet email est deja un destinataire du rapport');
+      throw new ConflictException(
+        'Cet email est deja un destinataire du rapport',
+      );
     }
 
     const recipient = this.recipientRepo.create({
@@ -194,7 +247,10 @@ export class ReportService {
   async removeRecipient(id: string, user: User) {
     const recipient = await this.recipientRepo.findOne({ where: { id } });
     if (!recipient) throw new NotFoundException('Destinataire non trouve');
-    if (user.role === UserRole.SUPERVISEUR_QUALITE && recipient.superviseurId !== user.id) {
+    if (
+      user.role === UserRole.SUPERVISEUR_QUALITE &&
+      recipient.superviseurId !== user.id
+    ) {
       throw new ForbiddenException('Non autorise');
     }
     await this.recipientRepo.remove(recipient);
@@ -208,7 +264,8 @@ export class ReportService {
   }
 
   async getReports(superviseurId?: string, page = 1, limit = 20) {
-    const qb = this.reportRepo.createQueryBuilder('report')
+    const qb = this.reportRepo
+      .createQueryBuilder('report')
       .leftJoinAndSelect('report.superviseur', 'superviseur')
       .orderBy('report.reportDate', 'DESC')
       .addOrderBy('report.created_at', 'DESC');
@@ -231,19 +288,29 @@ export class ReportService {
 
   async getReportStats() {
     const total = await this.reportRepo.count();
-    const sent = await this.reportRepo.count({ where: { status: ReportStatus.SENT } });
-    const failed = await this.reportRepo.count({ where: { status: ReportStatus.FAILED } });
+    const sent = await this.reportRepo.count({
+      where: { status: ReportStatus.SENT },
+    });
+    const failed = await this.reportRepo.count({
+      where: { status: ReportStatus.FAILED },
+    });
     return { total, sent, failed };
   }
 
   async downloadReportPdf(id: string): Promise<Buffer> {
-    const report = await this.reportRepo.findOne({ where: { id }, relations: { superviseur: true } });
+    const report = await this.reportRepo.findOne({
+      where: { id },
+      relations: { superviseur: true },
+    });
     if (!report) throw new NotFoundException('Rapport non trouve');
 
     const superviseurName = `${report.superviseur.firstName} ${report.superviseur.lastName}`;
     const targetDate = new Date(report.reportDate);
     const dateFormatted = targetDate.toLocaleDateString('fr-FR', {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
     });
 
     const refParts = this.buildReferenceParts(report);
@@ -263,7 +330,11 @@ export class ReportService {
     });
   }
 
-  private buildReferenceParts(report: DailyReport): { ligne: string; agent: string; number: number } {
+  private buildReferenceParts(report: DailyReport): {
+    ligne: string;
+    agent: string;
+    number: number;
+  } {
     const kpis = report.kpis as any;
     let ligne = 'GEN';
     let agent = 'GEN';
@@ -283,11 +354,21 @@ export class ReportService {
     return { ligne, agent, number };
   }
 
-  private async generateReference(refParts: { ligne: string; agent: string; number: number }): Promise<string> {
+  private async generateReference(refParts: {
+    ligne: string;
+    agent: string;
+    number: number;
+  }): Promise<string> {
     const count = await this.reportRepo.count();
     const num = String(count + 1).padStart(3, '0');
-    const ligneClean = refParts.ligne.replace(/[^a-zA-Z0-9]/g, '').substring(0, 10).toUpperCase();
-    const agentClean = refParts.agent.replace(/[^a-zA-Z0-9]/g, '').substring(0, 10).toUpperCase();
+    const ligneClean = refParts.ligne
+      .replace(/[^a-zA-Z0-9]/g, '')
+      .substring(0, 10)
+      .toUpperCase();
+    const agentClean = refParts.agent
+      .replace(/[^a-zA-Z0-9]/g, '')
+      .substring(0, 10)
+      .toUpperCase();
     return `REF-LEONI-${ligneClean}-${agentClean}-${num}`;
   }
 
@@ -299,7 +380,10 @@ export class ReportService {
     extraRecipients: string[] = [],
   ): Promise<boolean> {
     const dateFormatted = targetDate.toLocaleDateString('fr-FR', {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
     });
 
     const html = buildReportEmailHtml({
@@ -328,34 +412,48 @@ export class ReportService {
         summary: report.summary,
       });
     } catch (e) {
-      this.logger.warn(`PDF generation failed: ${e.message} — sending email without attachment`);
+      this.logger.warn(
+        `PDF generation failed: ${e.message} — sending email without attachment`,
+      );
     }
 
-    return this.sendEmailWithRetry({
-      to: superviseur.email,
-      cc: extraRecipients.length > 0 ? extraRecipients : undefined,
-      subject: `Rapport Qualite IA — ${dateFormatted}`,
-      html,
-      pdfBuffer,
-      pdfFilename: `rapport-qualite-${report.reportDate}.pdf`,
-    }, 3);
+    return this.sendEmailWithRetry(
+      {
+        to: superviseur.email,
+        cc: extraRecipients.length > 0 ? extraRecipients : undefined,
+        subject: `Rapport Qualite IA — ${dateFormatted}`,
+        html,
+        pdfBuffer,
+        pdfFilename: `rapport-qualite-${report.reportDate}.pdf`,
+      },
+      3,
+    );
   }
 
-  private async sendEmailWithRetry(options: any, retries: number): Promise<boolean> {
+  private async sendEmailWithRetry(
+    options: any,
+    retries: number,
+  ): Promise<boolean> {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         const sent = await this.emailService.sendEmail(options);
         if (sent) return true;
-        this.logger.warn(`Email attempt ${attempt}/${retries} failed — retrying in ${attempt * 5}s...`);
-        await new Promise(resolve => setTimeout(resolve, attempt * 5000));
+        this.logger.warn(
+          `Email attempt ${attempt}/${retries} failed — retrying in ${attempt * 5}s...`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, attempt * 5000));
       } catch (error) {
-        this.logger.warn(`Email attempt ${attempt}/${retries} error: ${error.message}`);
+        this.logger.warn(
+          `Email attempt ${attempt}/${retries} error: ${error.message}`,
+        );
         if (attempt < retries) {
-          await new Promise(resolve => setTimeout(resolve, attempt * 5000));
+          await new Promise((resolve) => setTimeout(resolve, attempt * 5000));
         }
       }
     }
-    this.logger.error(`Email to ${options.to} failed after ${retries} attempts`);
+    this.logger.error(
+      `Email to ${options.to} failed after ${retries} attempts`,
+    );
     return false;
   }
 }

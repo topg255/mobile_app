@@ -12,12 +12,20 @@ import { AiReportService } from './ai-report.service';
 import { EmailService } from './email.service';
 import { PdfService } from './pdf.service';
 import { NotificationModule } from '../notification/notification.module';
+import { PushNotificationModule } from '../push-notification/push-notification.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([DailyReport, ReportRecipient, LigneControle, ControleDate, User]),
+    TypeOrmModule.forFeature([
+      DailyReport,
+      ReportRecipient,
+      LigneControle,
+      ControleDate,
+      User,
+    ]),
     ScheduleModule.forRoot(),
     NotificationModule,
+    PushNotificationModule,
   ],
   controllers: [ReportController],
   providers: [ReportService, AiReportService, EmailService, PdfService],

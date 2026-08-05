@@ -21,6 +21,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { MailService } from '../mail/mail.service';
 import { join } from 'path';
 import { unlink } from 'fs/promises';
+import { PushNotifierService } from '../push-notification/push-notifier.service';
 
 @Injectable()
 export class AuthService {
@@ -32,6 +33,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly mailService: MailService,
+    private readonly pushNotifier: PushNotifierService,
   ) {}
 
   private async generateSuperviseurCode(): Promise<string> {
@@ -44,14 +46,21 @@ export class AuthService {
         suffix += chars.charAt(Math.floor(Math.random() * chars.length));
       }
       code = `SUPERV-QLT-${suffix}`;
-      const existing = await this.userRepository.findOne({ where: { superviseurCode: code } });
+      const existing = await this.userRepository.findOne({
+        where: { superviseurCode: code },
+      });
       exists = !!existing;
     }
     return code!;
   }
 
-  async signup(signupDto: SignupDto, role: UserRole, file?: Express.Multer.File) {
-    const { firstName, lastName, matricule, email, password, superviseurCode } = signupDto;
+  async signup(
+    signupDto: SignupDto,
+    role: UserRole,
+    file?: Express.Multer.File,
+  ) {
+    const { firstName, lastName, matricule, email, password, superviseurCode } =
+      signupDto;
 
     const existingUser = await this.userRepository.findOne({
       where: [{ matricule }, { email }],
@@ -68,13 +77,17 @@ export class AuthService {
 
     if (role === UserRole.AGENT_QUALITE) {
       if (!superviseurCode) {
-        throw new BadRequestException('Le code superviseur est requis pour inscrire un agent');
+        throw new BadRequestException(
+          'Le code superviseur est requis pour inscrire un agent',
+        );
       }
       superviseur = await this.userRepository.findOne({
         where: { superviseurCode, role: UserRole.SUPERVISEUR_QUALITE },
       });
       if (!superviseur) {
-        throw new BadRequestException('Code superviseur invalide ou superviseur non trouve');
+        throw new BadRequestException(
+          'Code superviseur invalide ou superviseur non trouve',
+        );
       }
     }
 
@@ -100,10 +113,15 @@ export class AuthService {
 
     await this.userRepository.save(user);
 
+    if (role === UserRole.AGENT_QUALITE && superviseur?.isApproved) {
+      await this.pushNotifier.notifyAgentRegistration(superviseur.id, user);
+    }
+
     const response: any = {
-      message: role === UserRole.SUPERVISEUR_QUALITE
-        ? `Inscription reussie. Votre code superviseur est : ${user.superviseurCode}. Vous le trouverez dans votre profil. En attente d'approbation par le Super Admin.`
-        : 'Inscription reussie. Vous pouvez vous connecter. En attente de l\'approbation de votre superviseur pour acceder au tableau de bord.',
+      message:
+        role === UserRole.SUPERVISEUR_QUALITE
+          ? `Inscription reussie. Votre code superviseur est : ${user.superviseurCode}. Vous le trouverez dans votre profil. En attente d'approbation par le Super Admin.`
+          : "Inscription reussie. Vous pouvez vous connecter. En attente de l'approbation de votre superviseur pour acceder au tableau de bord.",
       user: {
         id: user.id,
         firstName: user.firstName,
@@ -144,7 +162,7 @@ export class AuthService {
 
     if (user.role !== UserRole.SUPER_ADMIN && !user.isApproved) {
       throw new ForbiddenException(
-        'Votre compte n\'a pas encore ete approuve par le Super Admin. Veuillez patienter.',
+        "Votre compte n'a pas encore ete approuve par le Super Admin. Veuillez patienter.",
       );
     }
 
@@ -231,7 +249,11 @@ export class AuthService {
 
     const resetLink = `${this.configService.get<string>('FRONTEND_URL')}/reset-password?token=${resetToken}`;
 
-    await this.mailService.sendResetPasswordEmail(user.email, user.firstName, resetLink);
+    await this.mailService.sendResetPasswordEmail(
+      user.email,
+      user.firstName,
+      resetLink,
+    );
 
     return {
       message: 'Un email de reinitialisation a ete envoye',
@@ -280,16 +302,19 @@ export class AuthService {
       throw new NotFoundException('Utilisateur non trouve');
     }
 
-    const { password, resetToken, resetTokenExpires, superviseur, ...rest } = user;
+    const { password, resetToken, resetTokenExpires, superviseur, ...rest } =
+      user;
 
-    const superviseurData = superviseur ? {
-      id: superviseur.id,
-      firstName: superviseur.firstName,
-      lastName: superviseur.lastName,
-      matricule: superviseur.matricule,
-      email: superviseur.email,
-      role: superviseur.role,
-    } : null;
+    const superviseurData = superviseur
+      ? {
+          id: superviseur.id,
+          firstName: superviseur.firstName,
+          lastName: superviseur.lastName,
+          matricule: superviseur.matricule,
+          email: superviseur.email,
+          role: superviseur.role,
+        }
+      : null;
 
     return {
       ...rest,
@@ -308,7 +333,9 @@ export class AuthService {
     if (user.profileImage) {
       const filename = user.profileImage.split('/').pop();
       if (filename) {
-        try { await unlink(join(process.cwd(), 'uploads', filename)); } catch {}
+        try {
+          await unlink(join(process.cwd(), 'uploads', filename));
+        } catch {}
       }
     }
     user.profileImage = `/uploads/${file.filename}`;
@@ -320,7 +347,9 @@ export class AuthService {
   }
 
   async approveAgentBySuperviseur(superviseurId: string, agentId: string) {
-    const superviseur = await this.userRepository.findOne({ where: { id: superviseurId } });
+    const superviseur = await this.userRepository.findOne({
+      where: { id: superviseurId },
+    });
     if (!superviseur || superviseur.role !== UserRole.SUPERVISEUR_QUALITE) {
       throw new ForbiddenException('Action reservee aux superviseurs');
     }
@@ -331,11 +360,16 @@ export class AuthService {
     }
 
     if (agent.superviseurId !== superviseurId) {
-      throw new ForbiddenException('Cet agent n\'appartient pas a votre equipe');
+      throw new ForbiddenException("Cet agent n'appartient pas a votre equipe");
     }
 
     agent.isApprovedBySuperviseur = true;
     await this.userRepository.save(agent);
+
+    await this.pushNotifier.notifyAgentApproved(
+      agent.id,
+      `${superviseur.firstName} ${superviseur.lastName}`,
+    );
 
     return {
       message: `Agent ${agent.firstName} ${agent.lastName} approuve`,
@@ -353,7 +387,9 @@ export class AuthService {
   }
 
   async rejectAgentBySuperviseur(superviseurId: string, agentId: string) {
-    const superviseur = await this.userRepository.findOne({ where: { id: superviseurId } });
+    const superviseur = await this.userRepository.findOne({
+      where: { id: superviseurId },
+    });
     if (!superviseur || superviseur.role !== UserRole.SUPERVISEUR_QUALITE) {
       throw new ForbiddenException('Action reservee aux superviseurs');
     }
@@ -364,7 +400,7 @@ export class AuthService {
     }
 
     if (agent.superviseurId !== superviseurId) {
-      throw new ForbiddenException('Cet agent n\'appartient pas a votre equipe');
+      throw new ForbiddenException("Cet agent n'appartient pas a votre equipe");
     }
 
     agent.isApprovedBySuperviseur = false;
@@ -386,7 +422,9 @@ export class AuthService {
   }
 
   async getAgentsBySuperviseur(superviseurId: string) {
-    const superviseur = await this.userRepository.findOne({ where: { id: superviseurId } });
+    const superviseur = await this.userRepository.findOne({
+      where: { id: superviseurId },
+    });
     if (!superviseur || superviseur.role !== UserRole.SUPERVISEUR_QUALITE) {
       throw new ForbiddenException('Action reservee aux superviseurs');
     }
@@ -396,6 +434,8 @@ export class AuthService {
       order: { createdAt: 'DESC' },
     });
 
-    return agents.map(({ password, resetToken, resetTokenExpires, ...agent }) => agent);
+    return agents.map(
+      ({ password, resetToken, resetTokenExpires, ...agent }) => agent,
+    );
   }
 }

@@ -388,3 +388,52 @@ export const objectivesAPI = {
 };
 
 export default api;
+
+export const pushAPI = {
+  getVapidPublicKey: (): Promise<{ data: { publicKey: string | null } }> =>
+    api.get('/push/vapid-public-key'),
+
+  subscribe: (data: {
+    endpoint: string;
+    p256dh: string;
+    auth: string;
+    browser?: string;
+    device?: string;
+    platform?: string;
+  }): Promise<{ data: import('../types').PushSubscriptionInfo }> =>
+    api.post('/push/subscribe', data),
+
+  unsubscribe: (endpoint?: string): Promise<{ data: { message: string } }> =>
+    api.post('/push/unsubscribe', endpoint ? { endpoint } : {}),
+
+  sendTest: (): Promise<{ data: { message: string } }> =>
+    api.post('/push/test'),
+
+  getHistory: (page = 1, limit = 25): Promise<{
+    data: { items: import('../types').PushNotificationHistoryRow[]; total: number; page: number; limit: number };
+  }> => api.get('/push/history', { params: { page, limit } }),
+
+  getSettings: (): Promise<{
+    data: {
+      preferences: import('../types').NotificationPreferences;
+      subscriptions: import('../types').PushSubscriptionInfo[];
+    };
+  }> => api.get('/push/settings'),
+
+  updateSettings: (data: Partial<import('../types').NotificationPreferences>): Promise<{
+    data: import('../types').NotificationPreferences;
+  }> => api.patch('/push/settings', data),
+
+  getAnalytics: (days = 14): Promise<{ data: import('../types').PushAnalytics }> =>
+    api.get('/push/analytics', { params: { days } }),
+
+  getEscalationConfig: (): Promise<{ data: import('../types').PushEscalationConfig }> =>
+    api.get('/push/escalation'),
+
+  updateEscalationConfig: (data: Partial<import('../types').PushEscalationConfig>): Promise<{
+    data: import('../types').PushEscalationConfig;
+  }> => api.patch('/push/escalation', data),
+
+  runEscalation: (): Promise<{ data: { escalated: number } }> =>
+    api.post('/push/escalation/run'),
+};

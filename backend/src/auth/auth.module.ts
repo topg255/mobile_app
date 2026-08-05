@@ -9,6 +9,7 @@ import { User } from './entities/user.entity';
 import { LoginLog } from './entities/login-log.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { MailModule } from '../mail/mail.module';
+import { PushNotificationModule } from '../push-notification/push-notification.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { MailModule } from '../mail/mail.module';
       }),
     }),
     MailModule,
+    PushNotificationModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

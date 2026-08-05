@@ -15,6 +15,7 @@ import { User } from '../auth/entities/user.entity';
 import { Message } from './entities/message.entity';
 import { NotificationService } from '../notification/notification.service';
 import { NotificationType } from '../notification/entities/notification.entity';
+import { PushNotifierService } from '../push-notification/push-notifier.service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -28,11 +29,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @InjectRepository(User) private userRepo: Repository<User>,
     @InjectRepository(Message) private messageRepo: Repository<Message>,
     private notificationService: NotificationService,
+    private readonly pushNotifier: PushNotifierService,
   ) {}
 
   async handleConnection(client: Socket) {
     try {
-      const token = client.handshake.auth?.token || client.handshake.query?.token;
+      const token =
+        client.handshake.auth?.token || client.handshake.query?.token;
       if (!token) {
         client.disconnect();
         return;
@@ -47,7 +50,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.data.userId = userId;
       client.data.user = user;
       this.userSockets.set(userId, client.id);
-      console.log(`[WS] ${user.firstName} ${user.lastName} connected (${client.id})`);
+      console.log(
+        `[WS] ${user.firstName} ${user.lastName} connected (${client.id})`,
+      );
     } catch {
       client.disconnect();
     }
@@ -70,7 +75,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (!senderId || !data.receiverId || !data.content?.trim()) return;
 
     const sender = await this.userRepo.findOne({ where: { id: senderId } });
-    const receiver = await this.userRepo.findOne({ where: { id: data.receiverId } });
+    const receiver = await this.userRepo.findOne({
+      where: { id: data.receiverId },
+    });
     if (!sender || !receiver) return;
 
     const message = this.messageRepo.create({
@@ -101,6 +108,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       NotificationType.MESSAGE,
       `${sender.firstName} ${sender.lastName} vous a envoyé un message`,
       savedMessage?.id,
+    );
+    await this.pushNotifier.notifyChatMessage(
+      data.receiverId,
+      sender,
+      data.content.trim(),
     );
   }
 
@@ -157,12 +169,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const senderSocketId = this.userSockets.get(userId);
     if (senderSocketId) {
-      this.server.to(senderSocketId).emit('messageDeleted', { messageId: data.messageId });
+      this.server
+        .to(senderSocketId)
+        .emit('messageDeleted', { messageId: data.messageId });
     }
 
     const receiverSocketId = this.userSockets.get(message.receiver.id);
     if (receiverSocketId) {
-      this.server.to(receiverSocketId).emit('messageDeleted', { messageId: data.messageId });
+      this.server
+        .to(receiverSocketId)
+        .emit('messageDeleted', { messageId: data.messageId });
     }
   }
 
@@ -175,13 +191,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (!receiverId || !data.senderId) return;
 
     await this.messageRepo.update(
-      { sender: { id: data.senderId }, receiver: { id: receiverId }, isRead: false, isDeleted: false },
+      {
+        sender: { id: data.senderId },
+        receiver: { id: receiverId },
+        isRead: false,
+        isDeleted: false,
+      },
       { isRead: true },
     );
 
     const senderSocketId = this.userSockets.get(data.senderId);
     if (senderSocketId) {
-      this.server.to(senderSocketId).emit('messagesRead', { readerId: receiverId });
+      this.server
+        .to(senderSocketId)
+        .emit('messagesRead', { readerId: receiverId });
     }
 
     const unreadCount = await this.messageRepo.count({

@@ -7,6 +7,7 @@ import NotificationBell from '../../components/NotificationBell';
 import UserProfileDrawer from '../../components/UserProfileDrawer';
 import CopilotButton from '../../components/Copilot/CopilotButton';
 import QualityObjectivesTab from '../QualityObjectives/QualityObjectivesTab';
+import PushSettings from '../../components/PushSettings';
 import {
   Shield,
   Users,
@@ -34,6 +35,7 @@ import {
   ShieldCheck,
   BarChart2,
   Target,
+  Bell,
 } from 'lucide-react';
 
 const SuperAdminDashboard: React.FC = () => {
@@ -174,6 +176,12 @@ const SuperAdminDashboard: React.FC = () => {
             onClick={() => handleTabChange('quality-objectives')}
           >
             <Target size={18} /> Objectifs Qualité
+          </button>
+          <button
+            className={`nav-item ${activeTab === 'push-settings' ? 'active' : ''}`}
+            onClick={() => handleTabChange('push-settings')}
+          >
+            <Bell size={18} /> Notifications
           </button>
         </nav>
         <div className="sidebar-footer">
@@ -391,6 +399,10 @@ const SuperAdminDashboard: React.FC = () => {
 
           {activeTab === 'quality-objectives' && (
             <QualityObjectivesTab userRole="super_admin" />
+          )}
+
+          {activeTab === 'push-settings' && (
+            <PushSettings isSuperAdmin={true} />
           )}
         </div>
       </main>

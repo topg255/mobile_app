@@ -8,11 +8,13 @@ import { ChatGateway } from './chat.gateway';
 import { ChatService } from './chat.service';
 import { ChatController } from './chat.controller';
 import { NotificationModule } from '../notification/notification.module';
+import { PushNotificationModule } from '../push-notification/push-notification.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Message, User]),
     NotificationModule,
+    PushNotificationModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

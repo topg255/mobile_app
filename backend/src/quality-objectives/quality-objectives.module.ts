@@ -10,6 +10,7 @@ import { QualityObjectivesController } from './quality-objectives.controller';
 import { ObjectiveMetricsService } from './objective.metrics.service';
 import { ObjectivePredictionService } from './objective.prediction.service';
 import { NotificationModule } from '../notification/notification.module';
+import { PushNotificationModule } from '../push-notification/push-notification.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { NotificationModule } from '../notification/notification.module';
       User,
     ]),
     NotificationModule,
+    PushNotificationModule,
   ],
   controllers: [QualityObjectivesController],
   providers: [

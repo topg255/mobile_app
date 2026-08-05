@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { ControleDate } from './entities/controle-date.entity';
@@ -12,6 +17,7 @@ import { join } from 'path';
 import { NotificationService } from '../notification/notification.service';
 import { NotificationType } from '../notification/entities/notification.entity';
 import { LibraryService } from '../library/library.service';
+import { PushNotifierService } from '../push-notification/push-notifier.service';
 
 @Injectable()
 export class QualityService {
@@ -24,6 +30,7 @@ export class QualityService {
     private readonly userRepo: Repository<User>,
     private readonly notificationService: NotificationService,
     private readonly libraryService: LibraryService,
+    private readonly pushNotifier: PushNotifierService,
   ) {}
 
   async createControleDate(dto: CreateControleDateDto, user: User) {
@@ -35,7 +42,7 @@ export class QualityService {
 
     if (requestedDate < today) {
       throw new BadRequestException(
-        'Vous ne pouvez pas ajouter une date passee. Seules les dates d\'aujourd\'hui ou futures sont acceptees.',
+        "Vous ne pouvez pas ajouter une date passee. Seules les dates d'aujourd'hui ou futures sont acceptees.",
       );
     }
 
@@ -104,6 +111,11 @@ export class QualityService {
           `${user.firstName} ${user.lastName} a ajoute la ligne "${ligne.nomLigne}"`,
           ligne.id,
         );
+        await this.pushNotifier.notifyQualityIncident(
+          superviseur.id,
+          ligne,
+          user,
+        );
       }
     }
 
@@ -113,7 +125,11 @@ export class QualityService {
     };
   }
 
-  async updateLigneControle(id: string, dto: Partial<CreateLigneControleDto>, user: User) {
+  async updateLigneControle(
+    id: string,
+    dto: Partial<CreateLigneControleDto>,
+    user: User,
+  ) {
     const ligne = await this.ligneControleRepo.findOne({
       where: { id },
       relations: { agent: true },
@@ -124,7 +140,9 @@ export class QualityService {
     }
 
     if (ligne.agent.id !== user.id) {
-      throw new ForbiddenException('Vous ne pouvez modifier que vos propres lignes');
+      throw new ForbiddenException(
+        'Vous ne pouvez modifier que vos propres lignes',
+      );
     }
 
     if (dto.nomLigne !== undefined) ligne.nomLigne = dto.nomLigne;
@@ -148,6 +166,11 @@ export class QualityService {
           `${user.firstName} ${user.lastName} a modifie la ligne "${ligne.nomLigne}"`,
           ligne.id,
         );
+        await this.pushNotifier.notifyQualityIncident(
+          superviseur.id,
+          ligne,
+          user,
+        );
       }
     }
 
@@ -164,20 +187,28 @@ export class QualityService {
     });
     if (!ligne) throw new NotFoundException('Ligne de controle non trouvee');
     if (user.role === UserRole.AGENT_QUALITE && ligne.agent.id !== user.id) {
-      throw new ForbiddenException('Vous ne pouvez supprimer que vos propres lignes');
+      throw new ForbiddenException(
+        'Vous ne pouvez supprimer que vos propres lignes',
+      );
     }
     if (user.role === UserRole.SUPERVISEUR_QUALITE) {
       // Superviseur can only delete lines from their own agents
-      const agent = await this.userRepo.findOne({ where: { id: ligne.agent.id } });
+      const agent = await this.userRepo.findOne({
+        where: { id: ligne.agent.id },
+      });
       if (!agent || agent.superviseurId !== user.id) {
-        throw new ForbiddenException('Vous ne pouvez supprimer que les lignes de vos agents');
+        throw new ForbiddenException(
+          'Vous ne pouvez supprimer que les lignes de vos agents',
+        );
       }
     }
     if (ligne.image) {
       const filename = ligne.image.split('/').pop();
       if (filename) {
         const oldPath = join(process.cwd(), 'uploads', filename);
-        try { await unlink(oldPath); } catch {}
+        try {
+          await unlink(oldPath);
+        } catch {}
       }
     }
     await this.ligneControleRepo.remove(ligne);
@@ -187,12 +218,16 @@ export class QualityService {
   async deleteControleDate(id: string) {
     const date = await this.controleDateRepo.findOne({ where: { id } });
     if (!date) throw new NotFoundException('Date de controle non trouvee');
-    const lignes = await this.ligneControleRepo.find({ where: { controleDate: { id } } });
+    const lignes = await this.ligneControleRepo.find({
+      where: { controleDate: { id } },
+    });
     for (const l of lignes) {
       if (l.image) {
         const filename = l.image.split('/').pop();
         if (filename) {
-          try { await unlink(join(process.cwd(), 'uploads', filename)); } catch {}
+          try {
+            await unlink(join(process.cwd(), 'uploads', filename));
+          } catch {}
         }
       }
     }
@@ -212,7 +247,9 @@ export class QualityService {
     }
 
     if (user.role === UserRole.AGENT_QUALITE && ligne.agent.id !== user.id) {
-      throw new ForbiddenException('Vous ne pouvez modifier que vos propres lignes');
+      throw new ForbiddenException(
+        'Vous ne pouvez modifier que vos propres lignes',
+      );
     }
 
     if (!file) {
@@ -223,7 +260,9 @@ export class QualityService {
       const filename = ligne.image.split('/').pop();
       if (filename) {
         const oldPath = join(process.cwd(), 'uploads', filename);
-        try { await unlink(oldPath); } catch {}
+        try {
+          await unlink(oldPath);
+        } catch {}
       }
     }
 
@@ -231,16 +270,32 @@ export class QualityService {
     await this.ligneControleRepo.save(ligne);
 
     const libraryUser = ligne.agent;
-    const libraryDest = join(process.cwd(), 'uploads', 'library', file.filename);
+    const libraryDest = join(
+      process.cwd(),
+      'uploads',
+      'library',
+      file.filename,
+    );
     try {
-      await copyFile(join(process.cwd(), 'uploads', file.filename), libraryDest);
+      await copyFile(
+        join(process.cwd(), 'uploads', file.filename),
+        libraryDest,
+      );
       await this.libraryService.saveLigneImage(
-        { ...file, filename: file.filename, originalname: file.originalname, mimetype: file.mimetype, size: file.size } as any,
+        {
+          ...file,
+          filename: file.filename,
+          originalname: file.originalname,
+          mimetype: file.mimetype,
+          size: file.size,
+        },
         libraryUser,
         ligne.nomLigne,
         `Image ligne "${ligne.nomLigne}"`,
       );
-    } catch (e) { console.error('Library save error:', e); }
+    } catch (e) {
+      console.error('Library save error:', e);
+    }
 
     return {
       message: 'Image uploadée avec succes',
@@ -259,7 +314,7 @@ export class QualityService {
   async getLignesAgent(agentId: string, requestor: User) {
     if (requestor.role !== UserRole.SUPERVISEUR_QUALITE) {
       throw new ForbiddenException(
-        'Seuls les superviseurs qualite peuvent consulter les lignes d\'un agent.',
+        "Seuls les superviseurs qualite peuvent consulter les lignes d'un agent.",
       );
     }
 
@@ -269,7 +324,7 @@ export class QualityService {
     }
 
     if (agent.superviseurId !== requestor.id) {
-      throw new ForbiddenException('Cet agent n\'appartient pas a votre equipe');
+      throw new ForbiddenException("Cet agent n'appartient pas a votre equipe");
     }
 
     return this.ligneControleRepo.find({
@@ -290,7 +345,7 @@ export class QualityService {
     const agents = await this.userRepo.find({
       where: { superviseurId: requestor.id, role: UserRole.AGENT_QUALITE },
     });
-    const agentIds = agents.map(a => a.id);
+    const agentIds = agents.map((a) => a.id);
     agentIds.push(requestor.id); // Also include superviseur's own lines
 
     return this.ligneControleRepo.find({
@@ -303,7 +358,7 @@ export class QualityService {
   async getHistoriqueAgents(requestor: User) {
     if (requestor.role !== UserRole.SUPERVISEUR_QUALITE) {
       throw new ForbiddenException(
-        'Seuls les superviseurs qualite peuvent voir l\'historique des agents.',
+        "Seuls les superviseurs qualite peuvent voir l'historique des agents.",
       );
     }
 
@@ -351,9 +406,7 @@ export class QualityService {
 
     const controleDates = await this.controleDateRepo.find({
       where: {
-        dateControle: In(
-          this.getDatesBetween(dto.debutDate, dto.endDate),
-        ),
+        dateControle: In(this.getDatesBetween(dto.debutDate, dto.endDate)),
       },
     });
 
@@ -384,13 +437,15 @@ export class QualityService {
       const agents = await this.userRepo.find({
         where: { superviseurId: user.id, role: UserRole.AGENT_QUALITE },
       });
-      const agentIds = agents.map(a => a.id);
+      const agentIds = agents.map((a) => a.id);
       agentIds.push(user.id); // Also include superviseur's own lines
 
       if (dto.agentId) {
         // Verify the requested agent belongs to this superviseur (or is the superviseur themselves)
         if (!agentIds.includes(dto.agentId)) {
-          throw new ForbiddenException('Cet agent n\'appartient pas a votre equipe');
+          throw new ForbiddenException(
+            "Cet agent n'appartient pas a votre equipe",
+          );
         }
         whereCondition.agent = { id: dto.agentId };
       } else {
@@ -420,8 +475,12 @@ export class QualityService {
     }
 
     const vertCount = lignes.filter((l) => l.note === NoteQualite.VERT).length;
-    const jauneCount = lignes.filter((l) => l.note === NoteQualite.JAUNE).length;
-    const rougeCount = lignes.filter((l) => l.note === NoteQualite.ROUGE).length;
+    const jauneCount = lignes.filter(
+      (l) => l.note === NoteQualite.JAUNE,
+    ).length;
+    const rougeCount = lignes.filter(
+      (l) => l.note === NoteQualite.ROUGE,
+    ).length;
 
     let totalMinutesArret = 0;
     lignes.forEach((l) => {

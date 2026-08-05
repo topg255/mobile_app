@@ -12,6 +12,7 @@ import { LibraryModule } from './library/library.module';
 import { ReportModule } from './report/report.module';
 import { CopilotModule } from './copilot/copilot.module';
 import { QualityObjectivesModule } from './quality-objectives/quality-objectives.module';
+import { PushNotificationModule } from './push-notification/push-notification.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { QualityObjectivesModule } from './quality-objectives/quality-objectives
     ReportModule,
     CopilotModule,
     QualityObjectivesModule,
+    PushNotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

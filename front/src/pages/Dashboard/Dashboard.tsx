@@ -12,6 +12,7 @@ import UserProfileDrawer from '../../components/UserProfileDrawer';
 import ImageLibrary from '../../components/ImageLibrary';
 import CopilotButton from '../../components/Copilot/CopilotButton';
 import QualityObjectivesTab from '../QualityObjectives/QualityObjectivesTab';
+import PushSettings from '../../components/PushSettings';
 import { chatAPI } from '../../api';
 import {
   LayoutDashboard,
@@ -34,6 +35,7 @@ import {
   Camera,
   MessageSquare,
   Menu,
+  Bell,
   TrendingUp,
   Target,
   Activity,
@@ -275,6 +277,12 @@ const Dashboard: React.FC = () => {
             onClick={() => handleTab('quality-objectives')}
           >
             <Target size={18} /> <span>Objectifs Qualité</span>
+          </button>
+          <button
+            className={`nav-item ${activeTab === 'push-settings' ? 'active' : ''}`}
+            onClick={() => handleTab('push-settings')}
+          >
+            <Bell size={18} /> <span>Notifications</span>
           </button>
         </nav>
       </aside>
@@ -785,6 +793,9 @@ const Dashboard: React.FC = () => {
           {activeTab === 'images' && <ImageLibrary userRole={user?.role || ''} />}
 {activeTab === 'quality-objectives' && (
   <QualityObjectivesTab userRole={user?.role || ''} />
+)}
+{activeTab === 'push-settings' && (
+  <PushSettings isSuperAdmin={false} />
 )}
         </div>
       </main>

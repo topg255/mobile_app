@@ -16,6 +16,7 @@ export enum NotificationType {
   OBJECTIVE_AT_RISK = 'objective_at_risk',
   OBJECTIVE_COMPLETED = 'objective_completed',
   OBJECTIVE_FAILED = 'objective_failed',
+  SYSTEM = 'system',
 }
 
 @Entity('notifications')

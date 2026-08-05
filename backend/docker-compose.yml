@@ -40,6 +40,9 @@ services:
       GMAIL_USER: ${GMAIL_USER:-}
       GMAIL_PASS: ${GMAIL_PASS:-}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:admin@leoni.local}
       PORT: 3000
     ports:
       - '3000:3000'
