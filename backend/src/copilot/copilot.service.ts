@@ -2,7 +2,8 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import Groq from 'groq-sdk';
+import { Mistral } from '@mistralai/mistralai';
+import type { ChatCompletionRequestMessage } from '@mistralai/mistralai/models/components';
 import { LigneControle, NoteQualite } from '../quality/entities/ligne-controle.entity';
 import { User, UserRole } from '../auth/entities/user.entity';
 import { DailyReport } from '../report/entities/daily-report.entity';
@@ -27,14 +28,14 @@ interface StatsResult {
   txConformite: number;
 }
 
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
-const GROQ_MAX_TOKENS = 1000;
+const MISTRAL_MODEL = 'mistral-large-latest';
+const MISTRAL_MAX_TOKENS = 1000;
 const SUGGESTIONS_PATTERN = /\|\|\|SUGGESTIONS:(\[.*?\])\|\|\|/s;
 
 @Injectable()
 export class CopilotService {
   private readonly logger = new Logger(CopilotService.name);
-  private readonly groq: Groq;
+  private readonly mistral: Mistral;
 
   constructor(
     @InjectRepository(LigneControle)
@@ -45,8 +46,8 @@ export class CopilotService {
     private readonly reportRepo: Repository<DailyReport>,
     private readonly configService: ConfigService,
   ) {
-    this.groq = new Groq({
-      apiKey: this.configService.get<string>('GROQ_API_KEY') || '',
+    this.mistral = new Mistral({
+      apiKey: this.configService.get<string>('MISTRAL_API_KEY') || '',
     });
   }
 
@@ -280,7 +281,7 @@ export class CopilotService {
       `- Les 3 questions suggerees doivent etre pertinentes par rapport au sujet traite.`,
     ].join('\n');
 
-    const groqMessages: Groq.Chat.ChatCompletionMessageParam[] = [
+    const mistralMessages: ChatCompletionRequestMessage[] = [
       { role: 'system', content: systemPrompt },
       ...messages.slice(-20).map((m) => ({
         role: m.role as 'user' | 'assistant',
@@ -290,15 +291,21 @@ export class CopilotService {
 
     let raw = '';
     try {
-      const completion = await this.groq.chat.completions.create({
-        model: GROQ_MODEL,
-        messages: groqMessages,
-        max_tokens: GROQ_MAX_TOKENS,
+      const completion = await this.mistral.chat.complete({
+        model: MISTRAL_MODEL,
+        messages: mistralMessages,
+        maxTokens: MISTRAL_MAX_TOKENS,
+        temperature: 0.3,
       });
-      raw = completion.choices?.[0]?.message?.content || '';
-      this.logger.log(`Groq response received (${raw.length} chars)`);
+      const content = completion.choices?.[0]?.message?.content;
+      raw = Array.isArray(content)
+        ? content
+            .map((chunk) => ('text' in chunk ? chunk.text : ''))
+            .join('')
+        : (content ?? '');
+      this.logger.log(`Mistral response received (${raw.length} chars)`);
     } catch (error) {
-      this.logger.error(`Groq API error: ${error.message}`);
+      this.logger.error(`Mistral API error: ${error.message}`);
       throw new BadRequestException(
         'Le service IA est temporairement indisponible. Veuillez reessayer dans quelques instants.',
       );
