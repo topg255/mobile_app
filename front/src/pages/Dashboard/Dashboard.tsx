@@ -10,6 +10,7 @@ import Chat from '../../components/Chat';
 import NotificationBell from '../../components/NotificationBell';
 import UserProfileDrawer from '../../components/UserProfileDrawer';
 import ImageLibrary from '../../components/ImageLibrary';
+import CopilotButton from '../../components/Copilot/CopilotButton';
 import { chatAPI } from '../../api';
 import {
   LayoutDashboard,
@@ -874,6 +875,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       )}
+      <CopilotButton />
     </div>
   );
 };

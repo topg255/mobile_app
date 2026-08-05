@@ -5,6 +5,7 @@ import { User, LoginLog, SuperAdminStats } from '../../types';
 import { toast } from 'react-hot-toast';
 import NotificationBell from '../../components/NotificationBell';
 import UserProfileDrawer from '../../components/UserProfileDrawer';
+import CopilotButton from '../../components/Copilot/CopilotButton';
 import {
   Shield,
   Users,
@@ -382,6 +383,7 @@ const SuperAdminDashboard: React.FC = () => {
         </div>
       </main>
       <UserProfileDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <CopilotButton />
     </div>
   );
 };

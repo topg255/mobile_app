@@ -10,6 +10,7 @@ import { ChatModule } from './chat/chat.module';
 import { NotificationModule } from './notification/notification.module';
 import { LibraryModule } from './library/library.module';
 import { ReportModule } from './report/report.module';
+import { CopilotModule } from './copilot/copilot.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { ReportModule } from './report/report.module';
     NotificationModule,
     LibraryModule,
     ReportModule,
+    CopilotModule,
   ],
   controllers: [AppController],
   providers: [AppService],
