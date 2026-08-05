@@ -45,7 +45,8 @@ export class PushEscalationService {
   // ------------------------------------------------------------------
 
   async getOrCreateConfig(): Promise<PushSystemConfig> {
-    let config = await this.configRepo.findOne({ order: { id: 'ASC' } });
+    const rows = await this.configRepo.find({ order: { id: 'ASC' }, take: 1 });
+    let config = rows[0] ?? null;
     if (!config) {
       config = this.configRepo.create();
       config = await this.configRepo.save(config);
