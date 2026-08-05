@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast';
 import NotificationBell from '../../components/NotificationBell';
 import UserProfileDrawer from '../../components/UserProfileDrawer';
 import CopilotButton from '../../components/Copilot/CopilotButton';
+import QualityObjectivesTab from '../QualityObjectives/QualityObjectivesTab';
 import {
   Shield,
   Users,
@@ -32,6 +33,7 @@ import {
   AlertCircle,
   ShieldCheck,
   BarChart2,
+  Target,
 } from 'lucide-react';
 
 const SuperAdminDashboard: React.FC = () => {
@@ -166,6 +168,12 @@ const SuperAdminDashboard: React.FC = () => {
             onClick={() => handleTabChange('logs')}
           >
             <History size={18} /> Logs connexion
+          </button>
+          <button
+            className={`nav-item ${activeTab === 'quality-objectives' ? 'active' : ''}`}
+            onClick={() => handleTabChange('quality-objectives')}
+          >
+            <Target size={18} /> Objectifs Qualité
           </button>
         </nav>
         <div className="sidebar-footer">
@@ -379,6 +387,10 @@ const SuperAdminDashboard: React.FC = () => {
 
           {activeTab === 'logs' && (
             <LogsTab logs={logs} loading={loading} />
+          )}
+
+          {activeTab === 'quality-objectives' && (
+            <QualityObjectivesTab userRole="super_admin" />
           )}
         </div>
       </main>

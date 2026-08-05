@@ -11,6 +11,7 @@ import NotificationBell from '../../components/NotificationBell';
 import UserProfileDrawer from '../../components/UserProfileDrawer';
 import ImageLibrary from '../../components/ImageLibrary';
 import CopilotButton from '../../components/Copilot/CopilotButton';
+import QualityObjectivesTab from '../QualityObjectives/QualityObjectivesTab';
 import { chatAPI } from '../../api';
 import {
   LayoutDashboard,
@@ -268,6 +269,12 @@ const Dashboard: React.FC = () => {
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
             <span>Images & Dossiers</span>
+          </button>
+          <button
+            className={`nav-item ${activeTab === 'quality-objectives' ? 'active' : ''}`}
+            onClick={() => handleTab('quality-objectives')}
+          >
+            <Target size={18} /> <span>Objectifs Qualité</span>
           </button>
         </nav>
       </aside>
@@ -776,6 +783,9 @@ const Dashboard: React.FC = () => {
           {activeTab === 'rapport-libraries' && <RapportLibraries />}
           {activeTab === 'messages' && <Chat onUnreadCountChange={setUnreadCount} />}
           {activeTab === 'images' && <ImageLibrary userRole={user?.role || ''} />}
+{activeTab === 'quality-objectives' && (
+  <QualityObjectivesTab userRole={user?.role || ''} />
+)}
         </div>
       </main>
 

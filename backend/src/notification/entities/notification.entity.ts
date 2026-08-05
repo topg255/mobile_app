@@ -13,6 +13,9 @@ export enum NotificationType {
   LIGNE_ADDED = 'ligne_added',
   LIGNE_UPDATED = 'ligne_updated',
   REPORT_GENERATED = 'report_generated',
+  OBJECTIVE_AT_RISK = 'objective_at_risk',
+  OBJECTIVE_COMPLETED = 'objective_completed',
+  OBJECTIVE_FAILED = 'objective_failed',
 }
 
 @Entity('notifications')

@@ -331,4 +331,60 @@ export const reportAPI = {
     api.delete(`/reports/recipients/${id}`),
 };
 
+export const objectivesAPI = {
+  create: (data: {
+    title: string;
+    description?: string;
+    category: string;
+    targetValue: number;
+    unit?: string;
+    priority?: string;
+    startDate: string;
+    endDate: string;
+    higherIsBetter?: boolean;
+    currentValue?: number;
+    superviseurId?: string;
+  }): Promise<{ data: import('../types').QualityObjective }> =>
+    api.post('/quality-objectives', data),
+
+  getAll: (params?: {
+    status?: string;
+    category?: string;
+    superviseurId?: string;
+  }): Promise<{ data: import('../types').QualityObjective[] }> =>
+    api.get('/quality-objectives', { params }),
+
+  getById: (id: string): Promise<{ data: import('../types').QualityObjective }> =>
+    api.get(`/quality-objectives/${id}`),
+
+  update: (id: string, data: {
+    title?: string;
+    description?: string;
+    category?: string;
+    targetValue?: number;
+    unit?: string;
+    priority?: string;
+    startDate?: string;
+    endDate?: string;
+    higherIsBetter?: boolean;
+    currentValue?: number;
+  }): Promise<{ data: import('../types').QualityObjective }> =>
+    api.patch(`/quality-objectives/${id}`, data),
+
+  remove: (id: string): Promise<{ data: { message: string } }> =>
+    api.delete(`/quality-objectives/${id}`),
+
+  getDashboard: (superviseurId?: string): Promise<{ data: import('../types').ObjectivesDashboard }> =>
+    api.get('/quality-objectives/dashboard', { params: superviseurId ? { superviseurId } : {} }),
+
+  getPredictions: (superviseurId?: string): Promise<{ data: import('../types').ObjectivePrediction[] }> =>
+    api.get('/quality-objectives/predictions', { params: superviseurId ? { superviseurId } : {} }),
+
+  getHistory: (objectiveId?: string): Promise<{ data: import('../types').ObjectiveHistoryRow[] }> =>
+    api.get('/quality-objectives/history', { params: objectiveId ? { objectiveId } : {} }),
+
+  getBadges: (superviseurId?: string): Promise<{ data: import('../types').ObjectiveBadge[] }> =>
+    api.get('/quality-objectives/badges', { params: superviseurId ? { superviseurId } : {} }),
+};
+
 export default api;

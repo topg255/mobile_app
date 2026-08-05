@@ -146,6 +146,9 @@ export enum NotificationType {
   LIGNE_ADDED = 'ligne_added',
   LIGNE_UPDATED = 'ligne_updated',
   REPORT_GENERATED = 'report_generated',
+  OBJECTIVE_AT_RISK = 'objective_at_risk',
+  OBJECTIVE_COMPLETED = 'objective_completed',
+  OBJECTIVE_FAILED = 'objective_failed',
 }
 
 export interface Notification {
@@ -190,4 +193,122 @@ export interface ReportRecipient {
   superviseurId: string;
   email: string;
   createdAt: string;
+}
+
+export enum ObjectiveCategory {
+  COMPLIANCE = 'compliance',
+  CRITICAL_INCIDENTS = 'critical_incidents',
+  DOWNTIME = 'downtime',
+  RESOLUTION_TIME = 'resolution_time',
+  INSPECTIONS = 'inspections',
+  PRODUCTIVITY = 'productivity',
+  PHOTOS = 'photos',
+  TRAINING = 'training',
+  CUSTOM = 'custom',
+}
+
+export enum ObjectiveStatus {
+  ACTIVE = 'active',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+  AT_RISK = 'at_risk',
+}
+
+export enum ObjectivePriority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  CRITICAL = 'critical',
+}
+
+export enum RiskLevel {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  CRITICAL = 'critical',
+}
+
+export interface QualityObjective {
+  id: string;
+  title: string;
+  description: string | null;
+  category: ObjectiveCategory;
+  targetValue: number;
+  currentValue: number;
+  unit: string;
+  higherIsBetter: boolean;
+  progress: number;
+  status: ObjectiveStatus;
+  priority: ObjectivePriority;
+  startDate: string;
+  endDate: string;
+  predictionProbability: number | null;
+  predictedValue: number | null;
+  riskLevel: RiskLevel;
+  recommendation: string | null;
+  createdBy: User;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ObjectiveBadge {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  unlockedAt: string;
+}
+
+export interface ObjectiveHistoryRow {
+  id: string;
+  objectiveId: string;
+  value: number;
+  progress: number;
+  probability: number | null;
+  recordedAt: string;
+}
+
+export interface ObjectiveKpis {
+  total: number;
+  active: number;
+  atRisk: number;
+  completed: number;
+  failed: number;
+  avgProbability: number;
+}
+
+export interface ObjectivesDashboard {
+  kpis: ObjectiveKpis;
+  objectives: QualityObjective[];
+  monthlyEvolution: {
+    month: string;
+    label: string;
+    avgProgress: number | null;
+    avgProbability: number | null;
+    objectives: number;
+  }[];
+  riskDistribution: {
+    low: number;
+    medium: number;
+    high: number;
+    critical: number;
+  };
+  badges: ObjectiveBadge[];
+}
+
+export interface ObjectivePrediction {
+  id: string;
+  title: string;
+  category: ObjectiveCategory;
+  currentValue: number;
+  targetValue: number;
+  unit: string;
+  progress: number;
+  status: ObjectiveStatus;
+  priority: ObjectivePriority;
+  predictedValue: number | null;
+  predictionProbability: number | null;
+  riskLevel: RiskLevel;
+  daysRemaining: number;
+  endDate: string;
 }

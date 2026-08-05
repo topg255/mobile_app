@@ -11,6 +11,7 @@ import { NotificationModule } from './notification/notification.module';
 import { LibraryModule } from './library/library.module';
 import { ReportModule } from './report/report.module';
 import { CopilotModule } from './copilot/copilot.module';
+import { QualityObjectivesModule } from './quality-objectives/quality-objectives.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { CopilotModule } from './copilot/copilot.module';
     LibraryModule,
     ReportModule,
     CopilotModule,
+    QualityObjectivesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
