@@ -4,7 +4,7 @@ import {
   Trash2,
   AlertTriangle,
   Info,
-  CheckCircle2,
+  CheckCircle,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -19,7 +19,6 @@ interface ConfirmModalProps {
   confirmLabel?: string;
   cancelLabel?: string;
   variant?: ConfirmVariant;
-  icon?: React.ReactNode;
 }
 
 const VARIANT_STYLES: Record<
@@ -28,23 +27,23 @@ const VARIANT_STYLES: Record<
 > = {
   danger: {
     icon: Trash2,
-    iconWrap: 'bg-red-100 text-red-600',
-    confirmBtn: 'bg-red-600 hover:bg-red-700',
+    iconWrap: 'bg-red-50 text-red-600',
+    confirmBtn: 'bg-red-600 text-white hover:bg-red-700',
   },
   warning: {
     icon: AlertTriangle,
-    iconWrap: 'bg-amber-100 text-amber-600',
-    confirmBtn: 'bg-orange-500 hover:bg-orange-600',
+    iconWrap: 'bg-amber-50 text-amber-600',
+    confirmBtn: 'bg-amber-500 text-white hover:bg-amber-600',
   },
   info: {
     icon: Info,
-    iconWrap: 'bg-blue-100 text-blue-600',
-    confirmBtn: 'bg-blue-700 hover:bg-blue-800',
+    iconWrap: 'bg-blue-50 text-blue-600',
+    confirmBtn: 'bg-blue-600 text-white hover:bg-blue-700',
   },
   success: {
-    icon: CheckCircle2,
-    iconWrap: 'bg-green-100 text-green-600',
-    confirmBtn: 'bg-green-600 hover:bg-green-700',
+    icon: CheckCircle,
+    iconWrap: 'bg-green-50 text-green-600',
+    confirmBtn: 'bg-green-600 text-white hover:bg-green-700',
   },
 };
 
@@ -57,11 +56,10 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   confirmLabel = 'Confirmer',
   cancelLabel = 'Annuler',
   variant = 'danger',
-  icon,
 }) => {
   const [show, setShow] = useState(false);
   const styles = VARIANT_STYLES[variant];
-  const Icon = icon ?? <styles.icon size={24} />;
+  const Icon = <styles.icon size={26} />;
 
   useEffect(() => {
     if (open) {
@@ -93,7 +91,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
       }}
     >
       <div
-        className={`w-full max-w-[420px] rounded-2xl bg-[#FAFAFA] p-8 shadow-2xl transition-all duration-200 ease-out ${
+        className={`flex w-full max-w-[400px] flex-col items-center rounded-[20px] border-[0.5px] border-gray-200 bg-white px-7 pb-6 pt-8 shadow-2xl transition-all duration-200 ease-out ${
           show ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
         }`}
         role="dialog"
@@ -101,28 +99,29 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
         aria-label={title}
       >
         <div
-          className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full ${styles.iconWrap}`}
+          className={`flex h-[60px] w-[60px] items-center justify-center rounded-full ${styles.iconWrap}`}
         >
           {Icon}
         </div>
-        <h2 className="mt-4 text-center text-[18px] font-bold text-[#111827]">
+        <h2 className="mt-4 text-center text-[17px] font-medium text-[#111827]">
           {title}
         </h2>
-        <p className="mt-2 text-center text-sm leading-relaxed text-[#6B7280]">
+        <p className="mb-7 mt-2 text-center text-[13.5px] leading-[1.6] text-[#6B7280]">
           {message}
         </p>
-        <div className="mt-6 flex gap-3">
+        <hr className="mb-5 w-full border-[0.5px] border-gray-200" />
+        <div className="flex w-full gap-2.5">
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
+            className="flex-1 rounded-[12px] border-[0.5px] border-gray-300 bg-gray-100 py-[11px] text-sm font-medium text-[#6B7280] transition-colors hover:text-[#111827]"
           >
             {cancelLabel}
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-colors ${styles.confirmBtn}`}
+            className={`flex-1 rounded-[12px] py-[11px] text-sm font-medium transition-colors ${styles.confirmBtn}`}
           >
             {confirmLabel}
           </button>

@@ -4,7 +4,7 @@ import {
   Trash2,
   AlertTriangle,
   Info,
-  CheckCircle2,
+  CheckCircle,
   type LucideIcon,
 } from 'lucide-react';
 import type { ConfirmVariant } from './ConfirmModal';
@@ -21,10 +21,10 @@ const VARIANT_STYLES: Record<
   ConfirmVariant,
   { icon: LucideIcon; iconWrap: string }
 > = {
-  danger: { icon: Trash2, iconWrap: 'bg-red-100 text-red-600' },
-  warning: { icon: AlertTriangle, iconWrap: 'bg-amber-100 text-amber-600' },
-  info: { icon: Info, iconWrap: 'bg-blue-100 text-blue-600' },
-  success: { icon: CheckCircle2, iconWrap: 'bg-green-100 text-green-600' },
+  danger: { icon: Trash2, iconWrap: 'bg-red-50 text-red-600' },
+  warning: { icon: AlertTriangle, iconWrap: 'bg-amber-50 text-amber-600' },
+  info: { icon: Info, iconWrap: 'bg-blue-50 text-blue-600' },
+  success: { icon: CheckCircle, iconWrap: 'bg-green-50 text-green-600' },
 };
 
 const AlertModal: React.FC<AlertModalProps> = ({
@@ -36,7 +36,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
 }) => {
   const [show, setShow] = useState(false);
   const styles = VARIANT_STYLES[variant];
-  const Icon = <styles.icon size={24} />;
+  const Icon = <styles.icon size={26} />;
 
   useEffect(() => {
     if (open) {
@@ -68,7 +68,7 @@ const AlertModal: React.FC<AlertModalProps> = ({
       }}
     >
       <div
-        className={`w-full max-w-[420px] rounded-2xl bg-[#FAFAFA] p-8 shadow-2xl transition-all duration-200 ease-out ${
+        className={`flex w-full max-w-[400px] flex-col items-center rounded-[20px] border-[0.5px] border-gray-200 bg-white px-7 pb-6 pt-8 shadow-2xl transition-all duration-200 ease-out ${
           show ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
         }`}
         role="dialog"
@@ -76,21 +76,22 @@ const AlertModal: React.FC<AlertModalProps> = ({
         aria-label={title}
       >
         <div
-          className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full ${styles.iconWrap}`}
+          className={`flex h-[60px] w-[60px] items-center justify-center rounded-full ${styles.iconWrap}`}
         >
           {Icon}
         </div>
-        <h2 className="mt-4 text-center text-[18px] font-bold text-[#111827]">
+        <h2 className="mt-4 text-center text-[17px] font-medium text-[#111827]">
           {title}
         </h2>
-        <p className="mt-2 text-center text-sm leading-relaxed text-[#6B7280]">
+        <p className="mb-7 mt-2 text-center text-[13.5px] leading-[1.6] text-[#6B7280]">
           {message}
         </p>
-        <div className="mt-6 flex justify-center">
+        <hr className="mb-5 w-full border-[0.5px] border-gray-200" />
+        <div className="flex w-full justify-center">
           <button
             type="button"
             onClick={onClose}
-            className="min-w-[140px] rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-800"
+            className="min-w-[140px] rounded-[12px] bg-blue-600 py-[11px] text-sm font-medium text-white transition-colors hover:bg-blue-700"
           >
             Compris
           </button>
