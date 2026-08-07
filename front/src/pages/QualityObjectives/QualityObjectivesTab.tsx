@@ -57,6 +57,7 @@ import {
   Flag,
 } from 'lucide-react';
 import './QualityObjectives.css';
+import { useConfirm } from '../../hooks/useConfirm';
 
 type IconComponent = React.ComponentType<{ size?: number | string; className?: string; color?: string }>;
 
@@ -157,6 +158,7 @@ interface Props {
 
 const QualityObjectivesTab: React.FC<Props> = ({ userRole }) => {
   const canManage = userRole === 'superviseur_qualite' || userRole === 'super_admin';
+  const confirm = useConfirm();
 
   const [dashboard, setDashboard] = useState<ObjectivesDashboard | null>(null);
   const [loading, setLoading] = useState(true);
@@ -324,7 +326,13 @@ const QualityObjectivesTab: React.FC<Props> = ({ userRole }) => {
   };
 
   const handleDelete = async (objective: QualityObjective) => {
-    if (!window.confirm(`Supprimer l'objectif "${objective.title}" ?`)) return;
+    const ok = await confirm({
+      title: "Supprimer l'objectif ?",
+      message: `L'objectif "${objective.title}" sera definitivement supprime, ainsi que son historique de progression.`,
+      variant: 'danger',
+      confirmLabel: 'Oui, supprimer',
+    });
+    if (!ok) return;
     setDeletingId(objective.id);
     try {
       await objectivesAPI.remove(objective.id);

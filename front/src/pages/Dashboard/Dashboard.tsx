@@ -10,6 +10,7 @@ import Chat from '../../components/Chat';
 import NotificationBell from '../../components/NotificationBell';
 import UserProfileDrawer from '../../components/UserProfileDrawer';
 import ImageLibrary from '../../components/ImageLibrary';
+import { useConfirm } from '../../hooks/useConfirm';
 import CopilotButton from '../../components/Copilot/CopilotButton';
 import QualityObjectivesTab from '../QualityObjectives/QualityObjectivesTab';
 import PushSettings from '../../components/PushSettings';
@@ -905,6 +906,7 @@ const ControleDatesTab: React.FC = () => {
   const [dates, setDates] = useState<any[]>([]);
   const [newDate, setNewDate] = useState('');
   const [loading, setLoading] = useState(false);
+  const confirm = useConfirm();
 
   useEffect(() => {
     fetchDates();
@@ -935,7 +937,13 @@ const ControleDatesTab: React.FC = () => {
   };
 
   const handleDeleteDate = async (id: string) => {
-    if (!window.confirm('Supprimer cette date et toutes ses lignes ?')) return;
+    const ok = await confirm({
+      title: 'Supprimer cette date ?',
+      message: "La date de contrôle et toutes ses lignes seront définitivement supprimées. Cette action est irréversible.",
+      variant: 'danger',
+      confirmLabel: 'Oui, supprimer',
+    });
+    if (!ok) return;
     try {
       await qualityAPI.deleteControleDate(id);
       toast.success('Date supprimée');
@@ -1052,6 +1060,7 @@ const LignesSuperviseurTab: React.FC<{
   const [viewLigne, setViewLigne] = useState<LigneControle | null>(null);
   const [search, setSearch] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const confirm = useConfirm();
 
   const mesLignes = lignes.filter((l) => l.agent?.id === user?.id);
   const agentLignes = lignes.filter((l) => l.agent?.id !== user?.id);
@@ -1110,7 +1119,13 @@ const LignesSuperviseurTab: React.FC<{
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Supprimer cette ligne ?')) return;
+    const ok = await confirm({
+      title: 'Supprimer cette ligne ?',
+      message: 'La ligne de contrôle sera retirée du rapport du jour. Cette action est irréversible.',
+      variant: 'danger',
+      confirmLabel: 'Oui, supprimer',
+    });
+    if (!ok) return;
     setDeletingId(id);
     try {
       await qualityAPI.deleteLigneControle(id);
@@ -1236,12 +1251,19 @@ const LignesTab: React.FC<{ lignes: LigneControle[]; loading: boolean; onEdit?: 
   const [search, setSearch] = useState('');
   const [viewLigne, setViewLigne] = useState<LigneControle | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const confirm = useConfirm();
   const filtered = lignes.filter(
     (l) => l.nomLigne?.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Supprimer cette ligne ?')) return;
+    const ok = await confirm({
+      title: 'Supprimer cette ligne ?',
+      message: 'La ligne de contrôle sera retirée du rapport du jour. Cette action est irréversible.',
+      variant: 'danger',
+      confirmLabel: 'Oui, supprimer',
+    });
+    if (!ok) return;
     setDeletingId(id);
     try {
       await qualityAPI.deleteLigneControle(id);
@@ -2507,6 +2529,7 @@ const AiReportsTab: React.FC = () => {
   const [recipientsLoading, setRecipientsLoading] = useState(true);
   const [addingRecipient, setAddingRecipient] = useState(false);
   const [removingRecipientId, setRemovingRecipientId] = useState<string | null>(null);
+  const confirm = useConfirm();
 
   const { user } = useAuth();
 
@@ -2561,7 +2584,13 @@ const AiReportsTab: React.FC = () => {
   };
 
   const handleRemoveRecipient = async (id: string) => {
-    if (!window.confirm('Supprimer ce destinataire ?')) return;
+    const ok = await confirm({
+      title: 'Supprimer ce destinataire ?',
+      message: "Ce destinataire ne recevra plus le rapport qualité par email.",
+      variant: 'warning',
+      confirmLabel: 'Oui, supprimer',
+    });
+    if (!ok) return;
     setRemovingRecipientId(id);
     try {
       await reportAPI.deleteRecipient(id);
@@ -2584,7 +2613,13 @@ const AiReportsTab: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Supprimer ce rapport ?')) return;
+    const ok = await confirm({
+      title: 'Supprimer ce rapport ?',
+      message: "Le rapport qualité sera définitivement supprimé, ainsi que son historique et ses statistiques.",
+      variant: 'danger',
+      confirmLabel: 'Oui, supprimer',
+    });
+    if (!ok) return;
     setDeletingId(id);
     try {
       await reportAPI.deleteReport(id);

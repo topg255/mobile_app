@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { reportAPI } from '../api';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '../hooks/useConfirm';
 import {
   Folder,
   FolderOpen,
@@ -54,6 +55,7 @@ const RapportLibraries: React.FC = () => {
   const [pdfLoading, setPdfLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [view, setView] = useState<'grid' | 'detail'>('grid');
+  const confirm = useConfirm();
 
   useEffect(() => {
     loadReports();
@@ -101,7 +103,13 @@ const RapportLibraries: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Supprimer ce rapport ?')) return;
+    const ok = await confirm({
+      title: 'Supprimer ce rapport ?',
+      message: 'Le rapport qualité sera definitivement supprime. Cette action est irreversible.',
+      variant: 'danger',
+      confirmLabel: 'Oui, supprimer',
+    });
+    if (!ok) return;
     setDeletingId(id);
     try {
       await reportAPI.deleteReport(id);

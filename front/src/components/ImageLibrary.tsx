@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { LibraryImage, ImageFolder, LibraryStats, HistoriqueAgent } from '../types';
 import { libraryAPI, qualityAPI } from '../api';
+import { useConfirm } from '../hooks/useConfirm';
 
 interface Props {
   userRole: string;
@@ -35,6 +36,7 @@ export default function ImageLibrary({ userRole }: Props) {
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [showAgentDossiers, setShowAgentDossiers] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const confirm = useConfirm();
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -247,7 +249,13 @@ export default function ImageLibrary({ userRole }: Props) {
   };
 
   const handleDeleteFolder = async (id: string, name: string) => {
-    if (!window.confirm(`Supprimer le dossier "${name}" ? Les images ne seront pas supprimées.`)) return;
+    const ok = await confirm({
+      title: 'Supprimer le dossier ?',
+      message: `Le dossier « ${name} » sera supprimé. Les images qu'il contient ne seront pas supprimées.`,
+      variant: 'warning',
+      confirmLabel: 'Oui, supprimer',
+    });
+    if (!ok) return;
     try {
       await libraryAPI.deleteFolder(id);
       showToast('Dossier supprimé');
