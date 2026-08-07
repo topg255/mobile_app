@@ -1,14 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
-import {
-  Trash2,
-  AlertTriangle,
-  Info,
-  CheckCircle,
-  type LucideIcon,
-} from 'lucide-react';
-
-export type ConfirmVariant = 'danger' | 'warning' | 'info' | 'success';
+import { useEffect } from 'react';
+import ReactDOM from 'react-dom';
+import { Trash2, AlertTriangle, Info, CheckCircle } from 'lucide-react';
 
 interface ConfirmModalProps {
   open: boolean;
@@ -18,36 +10,45 @@ interface ConfirmModalProps {
   message: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  variant?: ConfirmVariant;
+  variant?: 'danger' | 'warning' | 'info' | 'success';
 }
 
-const VARIANT_STYLES: Record<
-  ConfirmVariant,
-  { icon: LucideIcon; iconWrap: string; confirmBtn: string }
-> = {
+const VARIANT_CONFIG = {
   danger: {
-    icon: Trash2,
-    iconWrap: 'bg-red-50 text-red-600',
-    confirmBtn: 'bg-red-600 text-white hover:bg-red-700',
+    Icon: Trash2,
+    iconBg: '#FEE2E2',
+    iconColor: '#DC2626',
+    confirmBg: '#DC2626',
+    confirmHover: '#B91C1C',
+    confirmText: '#FFFFFF',
   },
   warning: {
-    icon: AlertTriangle,
-    iconWrap: 'bg-amber-50 text-amber-600',
-    confirmBtn: 'bg-amber-500 text-white hover:bg-amber-600',
+    Icon: AlertTriangle,
+    iconBg: '#FEF3C7',
+    iconColor: '#D97706',
+    confirmBg: '#D97706',
+    confirmHover: '#B45309',
+    confirmText: '#FFFFFF',
   },
   info: {
-    icon: Info,
-    iconWrap: 'bg-blue-50 text-blue-600',
-    confirmBtn: 'bg-blue-600 text-white hover:bg-blue-700',
+    Icon: Info,
+    iconBg: '#DBEAFE',
+    iconColor: '#2563EB',
+    confirmBg: '#2563EB',
+    confirmHover: '#1D4ED8',
+    confirmText: '#FFFFFF',
   },
   success: {
-    icon: CheckCircle,
-    iconWrap: 'bg-green-50 text-green-600',
-    confirmBtn: 'bg-green-600 text-white hover:bg-green-700',
+    Icon: CheckCircle,
+    iconBg: '#DCFCE7',
+    iconColor: '#16A34A',
+    confirmBg: '#16A34A',
+    confirmHover: '#15803D',
+    confirmText: '#FFFFFF',
   },
 };
 
-const ConfirmModal: React.FC<ConfirmModalProps> = ({
+export function ConfirmModal({
   open,
   onConfirm,
   onCancel,
@@ -56,72 +57,175 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   confirmLabel = 'Confirmer',
   cancelLabel = 'Annuler',
   variant = 'danger',
-}) => {
-  const [show, setShow] = useState(false);
-  const styles = VARIANT_STYLES[variant];
-  const Icon = <styles.icon size={26} />;
-
-  useEffect(() => {
-    if (open) {
-      setShow(false);
-      const raf = requestAnimationFrame(() => setShow(true));
-      return () => cancelAnimationFrame(raf);
-    }
-    setShow(false);
-  }, [open]);
+}: ConfirmModalProps) {
+  const cfg = VARIANT_CONFIG[variant];
+  const { Icon } = cfg;
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
+    const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCancel();
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
   }, [open, onCancel]);
 
   if (!open) return null;
 
-  return createPortal(
+  return ReactDOM.createPortal(
     <div
-      className={`fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 transition-opacity duration-200 ease-out ${
-        show ? 'opacity-100' : 'opacity-0'
-      }`}
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onCancel();
+      onClick={onCancel}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        backgroundColor: 'rgba(0, 0, 0, 0.55)',
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+        animation: 'fadeIn 0.15s ease-out',
       }}
     >
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.94); }
+          to   { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
+
       <div
-        className={`flex w-full max-w-[400px] flex-col items-center rounded-[20px] border-[0.5px] border-gray-200 bg-white px-7 pb-6 pt-8 shadow-2xl transition-all duration-200 ease-out ${
-          show ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-        }`}
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: '#FFFFFF',
+          borderRadius: '20px',
+          padding: '36px 28px 28px',
+          width: '100%',
+          maxWidth: '420px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          boxShadow: '0 24px 60px rgba(0,0,0,0.20), 0 4px 16px rgba(0,0,0,0.10)',
+          animation: 'scaleIn 0.2s ease-out',
+        }}
       >
+        {/* Icône */}
         <div
-          className={`flex h-[60px] w-[60px] items-center justify-center rounded-full ${styles.iconWrap}`}
+          style={{
+            width: '68px',
+            height: '68px',
+            borderRadius: '50%',
+            backgroundColor: cfg.iconBg,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: '22px',
+            flexShrink: 0,
+          }}
         >
-          {Icon}
+          <Icon size={28} color={cfg.iconColor} strokeWidth={1.8} />
         </div>
-        <h2 className="mt-4 text-center text-[17px] font-medium text-[#111827]">
+
+        {/* Titre — couleur forcée #111827, jamais grise */}
+        <h2
+          style={{
+            fontSize: '18px',
+            fontWeight: '600',
+            color: '#111827',
+            textAlign: 'center',
+            margin: '0 0 10px 0',
+            lineHeight: '1.3',
+          }}
+        >
           {title}
         </h2>
-        <p className="mb-7 mt-2 text-center text-[13.5px] leading-[1.6] text-[#6B7280]">
+
+        {/* Message */}
+        <p
+          style={{
+            fontSize: '14px',
+            color: '#6B7280',
+            textAlign: 'center',
+            lineHeight: '1.65',
+            margin: '0 0 28px 0',
+            maxWidth: '340px',
+          }}
+        >
           {message}
         </p>
-        <hr className="mb-5 w-full border-[0.5px] border-gray-200" />
-        <div className="flex w-full gap-2.5">
+
+        {/* Séparateur */}
+        <div
+          style={{
+            width: '100%',
+            height: '1px',
+            backgroundColor: '#F3F4F6',
+            marginBottom: '20px',
+          }}
+        />
+
+        {/* Boutons */}
+        <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
           <button
-            type="button"
             onClick={onCancel}
-            className="flex-1 rounded-[12px] border-[0.5px] border-gray-300 bg-gray-100 py-[11px] text-sm font-medium text-[#6B7280] transition-colors hover:text-[#111827]"
+            style={{
+              flex: 1,
+              padding: '12px 0',
+              borderRadius: '12px',
+              border: '1.5px solid #E5E7EB',
+              backgroundColor: '#F9FAFB',
+              color: '#374151',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              transition: 'background 0.15s, border-color 0.15s',
+              fontFamily: 'inherit',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#F3F4F6';
+              (e.currentTarget as HTMLButtonElement).style.borderColor = '#D1D5DB';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#F9FAFB';
+              (e.currentTarget as HTMLButtonElement).style.borderColor = '#E5E7EB';
+            }}
           >
             {cancelLabel}
           </button>
+
           <button
-            type="button"
             onClick={onConfirm}
-            className={`flex-1 rounded-[12px] py-[11px] text-sm font-medium transition-colors ${styles.confirmBtn}`}
+            style={{
+              flex: 1,
+              padding: '12px 0',
+              borderRadius: '12px',
+              border: 'none',
+              backgroundColor: cfg.confirmBg,
+              color: cfg.confirmText,
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'background 0.15s, transform 0.1s',
+              fontFamily: 'inherit',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor = cfg.confirmHover;
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor = cfg.confirmBg;
+            }}
+            onMouseDown={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.97)';
+            }}
+            onMouseUp={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)';
+            }}
           >
             {confirmLabel}
           </button>
@@ -130,6 +234,4 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
     </div>,
     document.body,
   );
-};
-
-export default ConfirmModal;
+}

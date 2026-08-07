@@ -1,8 +1,8 @@
 import { useCallback, useRef } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import ConfirmModal, {
-  type ConfirmVariant,
-} from '../components/UI/ConfirmModal';
+import { ConfirmModal } from '../components/UI/ConfirmModal';
+
+export type ConfirmVariant = 'danger' | 'warning' | 'info' | 'success';
 
 export interface ConfirmOptions {
   title: string;

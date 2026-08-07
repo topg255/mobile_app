@@ -1,13 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import {
-  Trash2,
-  AlertTriangle,
-  Info,
-  CheckCircle,
-  type LucideIcon,
-} from 'lucide-react';
-import type { ConfirmVariant } from './ConfirmModal';
+import { Trash2, AlertTriangle, Info, CheckCircle } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+
+type ConfirmVariant = 'danger' | 'warning' | 'info' | 'success';
 
 interface AlertModalProps {
   open: boolean;

@@ -1,7 +1,8 @@
 import { useCallback, useRef } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import AlertModal from '../components/UI/AlertModal';
-import type { ConfirmVariant } from '../components/UI/ConfirmModal';
+
+type ConfirmVariant = 'danger' | 'warning' | 'info' | 'success';
 
 export interface AlertOptions {
   title: string;
