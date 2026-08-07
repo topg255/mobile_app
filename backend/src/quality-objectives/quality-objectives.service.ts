@@ -385,7 +385,7 @@ export class QualityObjectivesService {
       .getMany();
     return rows.map((r) => ({
       id: r.id,
-      objectiveId: r.objective.id,
+      objectiveId: r.objective?.id ?? null,
       value: r.value,
       progress: r.progress,
       probability: r.probability,
@@ -845,7 +845,9 @@ export class QualityObjectivesService {
                 10,
             ) / 10
           : null,
-        objectives: new Set(monthRows.map((r) => r.objective.id)).size,
+        objectives: new Set(
+          monthRows.map((r) => r.objective?.id ?? null).filter(Boolean),
+        ).size,
       });
     }
     return months;

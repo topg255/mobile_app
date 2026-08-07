@@ -26,3 +26,6 @@ dist-ssr
 # Environment
 backend/.env
 
+# VS Code Local History (may contain secret snapshots of .env)
+.history/
+
