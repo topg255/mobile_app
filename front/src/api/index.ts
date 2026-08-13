@@ -204,8 +204,27 @@ export const superAdminAPI = {
   getAllLoginLogs: (page?: number, limit?: number): Promise<{ data: { logs: LoginLog[]; pagination: any } }> =>
     api.get('/super-admin/logs', { params: { page, limit } }),
 
-  getLoginLogsByUser: (userId: string): Promise<{ data: { user: any; logs: any[] } }> =>
+getLoginLogsByUser: (userId: string): Promise<{ data: { user: any; logs: any[] } }> =>
     api.get(`/super-admin/logs/user/${userId}`),
+};
+
+export const signatureAPI = {
+  sign: (
+    reportId: string,
+  ): Promise<{ data: Blob; headers: Record<string, string> }> =>
+    api.post(`/signature/sign/${reportId}`, null, { responseType: 'blob' }),
+
+  verify: (pdf: Blob, reportId?: string): Promise<{ data: any }> => {
+    const formData = new FormData();
+    formData.append('pdf', pdf);
+    if (reportId) formData.append('reportId', reportId);
+    return api.post('/signature/verify', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
+  getAuditTrail: (reportId: string): Promise<{ data: { count: number; items: any[] } }> =>
+    api.get(`/signature/audit/${reportId}`),
 };
 
 export const chatAPI = {

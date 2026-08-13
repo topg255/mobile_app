@@ -26,6 +26,9 @@ dist-ssr
 # Environment
 backend/.env
 
+# PKI (signature numerique) - ne jamais committer les cles privees
+backend/keys/
+
 # VS Code Local History (may contain secret snapshots of .env)
 .history/
 

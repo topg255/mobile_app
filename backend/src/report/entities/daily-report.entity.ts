@@ -65,4 +65,21 @@ export class DailyReport {
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
+
+  @Column({ name: 'is_signed', type: 'boolean', default: false })
+  isSigned: boolean;
+
+  @Column({ name: 'signed_at', type: 'timestamp', nullable: true })
+  signedAt: Date | null;
+
+  @Column({
+    name: 'signature_hash',
+    type: 'varchar',
+    length: 64,
+    nullable: true,
+  })
+  signatureHash: string | null;
+
+  @Column({ name: 'signer_name', type: 'varchar', length: 255, nullable: true })
+  signerName: string | null;
 }

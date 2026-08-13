@@ -13,6 +13,7 @@ import { ReportModule } from './report/report.module';
 import { CopilotModule } from './copilot/copilot.module';
 import { QualityObjectivesModule } from './quality-objectives/quality-objectives.module';
 import { PushNotificationModule } from './push-notification/push-notification.module';
+import { SignatureModule } from './signature/signature.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { PushNotificationModule } from './push-notification/push-notification.mo
     CopilotModule,
     QualityObjectivesModule,
     PushNotificationModule,
+    SignatureModule,
   ],
   controllers: [AppController],
   providers: [AppService],

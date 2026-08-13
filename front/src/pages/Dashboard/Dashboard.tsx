@@ -11,6 +11,8 @@ import NotificationBell from '../../components/NotificationBell';
 import UserProfileDrawer from '../../components/UserProfileDrawer';
 import ImageLibrary from '../../components/ImageLibrary';
 import { useConfirm } from '../../hooks/useConfirm';
+import { SignatureBadge } from '../../components/Signature/SignatureBadge';
+import '../../components/Signature/Signature.css';
 import CopilotButton from '../../components/Copilot/CopilotButton';
 import QualityObjectivesTab from '../QualityObjectives/QualityObjectivesTab';
 import PushSettings from '../../components/PushSettings';
@@ -65,6 +67,7 @@ import {
   MailPlus,
   MailX,
   Loader2,
+  ShieldCheck,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -2781,10 +2784,20 @@ const AiReportsTab: React.FC = () => {
               <Calendar size={14} />
               <span>Rapport du {formatDate(selectedReport.reportDate)}</span>
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <button className="rapport-export-btn" onClick={() => handleDownloadPdf(selectedReport.id)}>
                 <Download size={14} /> PDF
               </button>
+              <SignatureBadge
+                reportId={selectedReport.id}
+                isSigned={!!selectedReport.isSigned}
+                signedAt={selectedReport.signedAt}
+                signerName={selectedReport.signerName}
+                onSign={() => {
+                  loadReports();
+                  setSelectedReport((prev: any) => (prev ? { ...prev, isSigned: true, signedAt: new Date().toISOString() } : prev));
+                }}
+              />
               <button className="rapport-export-btn" style={{ background: '#fef2f2', color: '#dc2626', borderColor: '#fecaca' }} onClick={() => handleDelete(selectedReport.id)}>
                 <Trash2 size={14} /> Supprimer
               </button>
@@ -2865,6 +2878,11 @@ const AiReportsTab: React.FC = () => {
                     <span className={`note-badge ${r.status === 'sent' ? 'vert' : r.status === 'failed' ? 'rouge' : 'jaune'}`}>
                       {r.status === 'sent' ? 'Envoye' : r.status === 'failed' ? 'Echoue' : 'Genere'}
                     </span>
+                    {r.isSigned && (
+                      <span className="sign-row-flag" title={`Signé par ${r.signerName || ''} le ${new Date(r.signedAt).toLocaleString('fr-FR')}`}>
+                        <ShieldCheck size={13} /> Signé
+                      </span>
+                    )}
                   </td>
                   <td data-label="Lignes">{r.kpis.totalLignes}</td>
                   <td data-label="Vert">{r.kpis.vertCount} ({r.kpis.vertPercent}%)</td>

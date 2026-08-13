@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { reportAPI } from '../api';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '../hooks/useConfirm';
+import { SignatureBadge } from './Signature/SignatureBadge';
+import './Signature/Signature.css';
 import {
   Folder,
   FolderOpen,
@@ -32,6 +34,9 @@ interface Report {
   emailSentAt: string | null;
   createdAt: string;
   superviseur: { id: string; firstName: string; lastName: string; matricule: string };
+  isSigned?: boolean;
+  signedAt?: string | null;
+  signerName?: string | null;
 }
 
 interface ReportStats {
@@ -210,6 +215,16 @@ const RapportLibraries: React.FC = () => {
             <button className="rl-btn rl-btn-primary" onClick={() => handleViewPdf(selectedReport)} disabled={pdfLoading}>
               {pdfLoading ? <Loader2 size={16} className="rl-spin" /> : <Eye size={16} />} Voir PDF
             </button>
+            <SignatureBadge
+              reportId={selectedReport.id}
+              isSigned={!!selectedReport.isSigned}
+              signedAt={selectedReport.signedAt || undefined}
+              signerName={selectedReport.signerName || undefined}
+              onSign={() => {
+                loadReports();
+                setSelectedReport((prev) => (prev ? { ...prev, isSigned: true, signedAt: new Date().toISOString() } : prev));
+              }}
+            />
             <button className="rl-btn rl-btn-danger" onClick={() => handleDelete(selectedReport.id)} disabled={deletingId === selectedReport.id}>
               <Trash2 size={16} /> Supprimer
             </button>

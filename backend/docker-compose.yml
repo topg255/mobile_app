@@ -43,6 +43,11 @@ services:
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:admin@leoni.local}
+      SIGNATURE_PRIVATE_KEY_PATH: ./keys/private.pem
+      SIGNATURE_CERT_PATH: ./keys/certificate.pem
+      SIGNATURE_CA_CERT_PATH: ./keys/ca.pem
+      TSA_URL: ${TSA_URL:-https://freetsa.org/tsr}
+      DEV_HMAC_SECRET: ${DEV_HMAC_SECRET:-leoni-dev-hmac-secret-2024}
       PORT: 3000
     ports:
       - '3000:3000'
