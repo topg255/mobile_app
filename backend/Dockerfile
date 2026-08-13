@@ -7,6 +7,7 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
+RUN if [ ! -f keys/private.pem ]; then node -r ts-node/register scripts/generate-keys.ts; fi
 RUN npm run build
 
 # --- Stage 2: Production ---
