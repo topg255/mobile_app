@@ -57,7 +57,7 @@ const ACTION_STATUS_COLORS: Record<ActionStatusValue, { bg: string; color: strin
 };
 
 export default function CapaDetailDrawer({ capaId, open, onClose, onUpdated }: Props) {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const confirm = useConfirm();
   const [capa, setCapa] = useState<Capa | null>(null);
   const [loading, setLoading] = useState(true);
@@ -524,14 +524,28 @@ export default function CapaDetailDrawer({ capaId, open, onClose, onUpdated }: P
 
             {/* Footer actions */}
             <div style={{ padding: '16px 24px', borderTop: '1px solid #f1f5f9', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <a
-                href={capaAPI.getPdfUrl(capa.id)}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#475569', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, textDecoration: 'none' }}
+                <button
+                onClick={async () => {
+                  try {
+                    const res = await fetch(capaAPI.getPdfUrl(capa.id), {
+                      headers: { Authorization: `Bearer ${token}` },
+                    });
+                    if (!res.ok) throw new Error('Erreur PDF');
+                    const blob = await res.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `CAPA-${capa.reference || capa.id}.pdf`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  } catch {
+                    toast.error('Erreur lors du téléchargement du PDF');
+                  }
+                }}
+                style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#475569', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
               >
                 <FileText size={14} /> PDF
-              </a>
+              </button>
               {capa.status !== 'annule' && capa.status !== 'cloture' && (
                 <button onClick={handleCancel} style={{
                   padding: '8px 14px', borderRadius: 8, border: '1px solid #FECACA', background: '#FEF2F2',
