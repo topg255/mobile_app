@@ -1,8 +1,25 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Notification, NotificationType } from '../types';
-import { notificationAPI } from '../api';
+import { Notification, NotificationType, EventNotification, EventNotifType } from '../types';
+import { notificationAPI, calendarAPI } from '../api';
 import { useNotificationSocket } from '../hooks/useNotificationSocket';
 import { toast } from 'react-hot-toast';
+import { User, Clock, Pencil, X, CheckCircle2 } from 'lucide-react';
+
+const CAL_ICONS: Record<EventNotifType, { icon: typeof User; color: string; bg: string }> = {
+  [EventNotifType.ASSIGNED]: { icon: User, color: '#1d4ed8', bg: '#dbeafe' },
+  [EventNotifType.REMINDER]: { icon: Clock, color: '#d97706', bg: '#fef3c7' },
+  [EventNotifType.UPDATED]: { icon: Pencil, color: '#7c3aed', bg: '#ede9fe' },
+  [EventNotifType.CANCELLED]: { icon: X, color: '#dc2626', bg: '#fee2e2' },
+  [EventNotifType.COMPLETED]: { icon: CheckCircle2, color: '#16a34a', bg: '#dcfce7' },
+};
+
+const CAL_LABELS: Record<EventNotifType, string> = {
+  [EventNotifType.ASSIGNED]: 'Assigné',
+  [EventNotifType.REMINDER]: 'Rappel',
+  [EventNotifType.UPDATED]: 'Mis à jour',
+  [EventNotifType.CANCELLED]: 'Annulé',
+  [EventNotifType.COMPLETED]: 'Terminé',
+};
 
 interface NotificationBellProps {
   token: string | null;
@@ -13,8 +30,10 @@ export default function NotificationBell({ token, onNotificationClick }: Notific
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'calendar'>('all');
   const [loading, setLoading] = useState(false);
+  const [calNotifications, setCalNotifications] = useState<EventNotification[]>([]);
+  const [calUnread, setCalUnread] = useState(0);
   const panelRef = useRef<HTMLDivElement>(null);
   const bellRef = useRef<HTMLButtonElement>(null);
 
@@ -30,8 +49,19 @@ export default function NotificationBell({ token, onNotificationClick }: Notific
 
   useNotificationSocket(token, handleNewNotification, handleUnreadCountUpdate);
 
+  const loadCalNotifications = useCallback(async () => {
+    try {
+      const res = await calendarAPI.getNotifications();
+      setCalNotifications(res.data);
+      setCalUnread(res.data.filter((n) => !n.isRead).length);
+    } catch {}
+  }, []);
+
   useEffect(() => {
     loadUnreadCount();
+    void loadCalNotifications();
+    const interval = setInterval(() => void loadCalNotifications(), 30000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -95,6 +125,22 @@ export default function NotificationBell({ token, onNotificationClick }: Notific
     } catch {}
   };
 
+  const handleCalRead = async (id: number) => {
+    try {
+      await calendarAPI.markNotificationsRead([id]);
+      setCalNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+      setCalUnread(prev => Math.max(0, prev - 1));
+    } catch {}
+  };
+
+  const handleCalAllRead = async () => {
+    try {
+      await calendarAPI.markNotificationsRead();
+      setCalNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setCalUnread(0);
+    } catch {}
+  };
+
   const getTypeLabel = (type: NotificationType) => {
     switch (type) {
       case NotificationType.MESSAGE: return 'Message';
@@ -137,6 +183,7 @@ export default function NotificationBell({ token, onNotificationClick }: Notific
   };
 
   const filtered = activeTab === 'unread' ? notifications.filter(n => !n.isRead) : notifications;
+  const totalUnread = unreadCount + calUnread;
 
   return (
     <div className="notif-bell-wrapper">
@@ -145,8 +192,8 @@ export default function NotificationBell({ token, onNotificationClick }: Notific
           <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
           <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
         </svg>
-        {unreadCount > 0 && (
-          <span className="notif-bell-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+        {totalUnread > 0 && (
+          <span className="notif-bell-badge">{totalUnread > 99 ? '99+' : totalUnread}</span>
         )}
       </button>
 
@@ -187,10 +234,51 @@ export default function NotificationBell({ token, onNotificationClick }: Notific
             >
               Non lues <span className="notif-tab-count">{unreadCount}</span>
             </button>
+            <button
+              className={`notif-tab ${activeTab === 'calendar' ? 'notif-tab-active' : ''}`}
+              onClick={() => setActiveTab('calendar')}
+            >
+              Calendrier <span className="notif-tab-count">{calNotifications.length}</span>
+            </button>
           </div>
 
           <div className="notif-panel-body">
-            {loading ? (
+            {activeTab === 'calendar' ? (
+              calNotifications.length === 0 ? (
+                <div className="notif-empty">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="1.5">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                  </svg>
+                  <p>Aucune notification calendrier</p>
+                </div>
+              ) : (
+                calNotifications.slice(0, 20).map(n => {
+                  const meta = CAL_ICONS[n.type] ?? CAL_ICONS[EventNotifType.REMINDER];
+                  const Icon = meta.icon;
+                  return (
+                    <div
+                      key={`c-${n.id}`}
+                      className={`notif-card ${!n.isRead ? 'notif-card-unread' : ''}`}
+                      onClick={() => {
+                        if (!n.isRead) void handleCalRead(n.id);
+                      }}
+                    >
+                      <div className="notif-card-avatar" style={{ background: meta.bg, color: meta.color }}>
+                        <Icon size={15} />
+                      </div>
+                      <div className="notif-card-body">
+                        <div className="notif-card-top">
+                          <span className="notif-card-title">{n.message}</span>
+                        </div>
+                        <span className="notif-card-meta">{getTimeAgo(n.sentAt)} · {CAL_LABELS[n.type] ?? n.type}</span>
+                      </div>
+                      {!n.isRead && <div className="notif-card-dot" />}
+                    </div>
+                  );
+                })
+              )
+            ) : loading ? (
               <div className="notif-empty">
                 <div className="notif-loading-spinner" />
               </div>
