@@ -53,7 +53,7 @@ export class QualityController {
     description:
       'Ajoute une nouvelle date de contrôle.\n\n' +
       '**Règles :**\n' +
-      '- Seules les dates d\'aujourd\'hui ou futures sont acceptées\n' +
+      "- Seules les dates d'aujourd'hui ou futures sont acceptées\n" +
       '- Les dates passées sont bloquées\n' +
       '- Chaque date doit être unique',
   })
@@ -84,10 +84,7 @@ export class QualityController {
       },
     },
   })
-  async createControleDate(
-    @Body() dto: CreateControleDateDto,
-    @Request() req,
-  ) {
+  async createControleDate(@Body() dto: CreateControleDateDto, @Request() req) {
     return this.qualityService.createControleDate(dto, req.user);
   }
 
@@ -95,7 +92,8 @@ export class QualityController {
   @Roles(UserRole.SUPERVISEUR_QUALITE, UserRole.AGENT_QUALITE)
   @ApiOperation({
     summary: 'Lister toutes les dates de contrôle',
-    description: 'Retourne la liste de toutes les dates de contrôle triées par date décroissante.',
+    description:
+      'Retourne la liste de toutes les dates de contrôle triées par date décroissante.',
   })
   @ApiResponse({
     status: 200,
@@ -154,16 +152,20 @@ export class QualityController {
   @Roles(UserRole.AGENT_QUALITE)
   @ApiOperation({
     summary: 'Modifier une ligne de contrôle',
-    description: 'Permet à l\'agent qualité de modifier une de ses lignes.',
+    description: "Permet à l'agent qualité de modifier une de ses lignes.",
   })
-  @ApiBody({ schema: { properties: {
-    nomLigne: { type: 'string' },
-    heure: { type: 'string' },
-    note: { type: 'string', enum: ['vert', 'jaune', 'rouge'] },
-    delais: { type: 'string' },
-    responsable: { type: 'string' },
-    details: { type: 'string' },
-  }}})
+  @ApiBody({
+    schema: {
+      properties: {
+        nomLigne: { type: 'string' },
+        heure: { type: 'string' },
+        note: { type: 'string', enum: ['vert', 'jaune', 'rouge'] },
+        delais: { type: 'string' },
+        responsable: { type: 'string' },
+        details: { type: 'string' },
+      },
+    },
+  })
   @ApiResponse({ status: 200, description: 'Ligne modifiée avec succès' })
   @ApiResponse({ status: 404, description: 'Ligne non trouvée' })
   async updateLigneControle(
@@ -193,9 +195,7 @@ export class QualityController {
   @ApiOperation({ summary: 'Supprimer une date de contrôle' })
   @ApiResponse({ status: 200, description: 'Date supprimée' })
   @ApiResponse({ status: 404, description: 'Date non trouvée' })
-  async deleteControleDate(
-    @Param('id', ParseUUIDPipe) id: string,
-  ) {
+  async deleteControleDate(@Param('id', ParseUUIDPipe) id: string) {
     return this.qualityService.deleteControleDate(id);
   }
 
@@ -206,7 +206,8 @@ export class QualityController {
       storage: diskStorage({
         destination: './uploads',
         filename: (req, file, cb) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
           cb(null, uniqueSuffix + extname(file.originalname));
         },
       }),
@@ -222,7 +223,8 @@ export class QualityController {
   )
   @ApiOperation({
     summary: 'Uploader une image pour une ligne de contrôle',
-    description: 'Upload optionnel d\'une image (jpg, png, gif, webp). Max 5 Mo.',
+    description:
+      "Upload optionnel d'une image (jpg, png, gif, webp). Max 5 Mo.",
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -247,12 +249,12 @@ export class QualityController {
   @ApiOperation({
     summary: 'Voir mes lignes de contrôle',
     description:
-      'Retourne les lignes de contrôle de l\'agent connecté.\n\n' +
+      "Retourne les lignes de contrôle de l'agent connecté.\n\n" +
       '**Agent Qualité** : ne peut voir que ses propres lignes.',
   })
   @ApiResponse({
     status: 200,
-    description: 'Liste des lignes de l\'agent',
+    description: "Liste des lignes de l'agent",
   })
   async getMesLignes(@Request() req) {
     return this.qualityService.getMesLignes(req.user);
@@ -261,14 +263,14 @@ export class QualityController {
   @Get('lignes/agent/:agentId')
   @Roles(UserRole.SUPERVISEUR_QUALITE)
   @ApiOperation({
-    summary: 'Voir les lignes d\'un agent qualité',
+    summary: "Voir les lignes d'un agent qualité",
     description:
-      'Retourne les lignes de contrôle d\'un agent spécifique.\n\n' +
-      '**Superviseur Qualité uniquement** : accès à l\'historique de chaque agent.',
+      "Retourne les lignes de contrôle d'un agent spécifique.\n\n" +
+      "**Superviseur Qualité uniquement** : accès à l'historique de chaque agent.",
   })
   @ApiResponse({
     status: 200,
-    description: 'Liste des lignes de l\'agent',
+    description: "Liste des lignes de l'agent",
   })
   @ApiResponse({
     status: 403,
@@ -306,7 +308,7 @@ export class QualityController {
   @ApiOperation({
     summary: 'Historique complet de tous les agents',
     description:
-      'Retourne l\'historique de chaque agent qualité avec le nombre total de lignes et les détails.\n\n' +
+      "Retourne l'historique de chaque agent qualité avec le nombre total de lignes et les détails.\n\n" +
       '**Superviseur Qualité uniquement**.',
   })
   @ApiResponse({
@@ -341,9 +343,9 @@ export class QualityController {
     description:
       'Génère un rapport pour une période donnée avec :\n\n' +
       '- **Répartition en pourcentage** : vert, jaune, rouge\n' +
-      '- **Minutes d\'arrêt cumulées**\n' +
+      "- **Minutes d'arrêt cumulées**\n" +
       '- **Détails de chaque ligne**\n\n' +
-      '**Conditions d\'accès :**\n' +
+      "**Conditions d'accès :**\n" +
       '- **Agent Qualité** : voit uniquement ses propres données\n' +
       '- **Superviseur Qualité** : voit toutes les données ou peut filtrer par agent',
   })

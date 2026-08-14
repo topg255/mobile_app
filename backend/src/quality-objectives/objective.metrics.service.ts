@@ -1,9 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { LigneControle, NoteQualite } from '../quality/entities/ligne-controle.entity';
+import {
+  LigneControle,
+  NoteQualite,
+} from '../quality/entities/ligne-controle.entity';
 import { User, UserRole } from '../auth/entities/user.entity';
-import { ObjectiveCategory, QualityObjective } from './entities/quality-objective.entity';
+import {
+  ObjectiveCategory,
+  QualityObjective,
+} from './entities/quality-objective.entity';
 
 export interface ObjectiveMetric {
   value: number;
@@ -72,7 +78,10 @@ export class ObjectiveMetricsService {
   /**
    * Metrique cumulative sur un sous-ensemble de lignes.
    */
-  computeFromLignes(category: ObjectiveCategory, lignes: LigneControle[]): number {
+  computeFromLignes(
+    category: ObjectiveCategory,
+    lignes: LigneControle[],
+  ): number {
     const total = lignes.length;
     if (total === 0) {
       if (category === ObjectiveCategory.CRITICAL_INCIDENTS) return 0;
@@ -93,7 +102,10 @@ export class ObjectiveMetricsService {
       case ObjectiveCategory.DOWNTIME:
         return lignes.reduce((sum, l) => sum + this.parseMinutes(l.delais), 0);
       case ObjectiveCategory.RESOLUTION_TIME: {
-        const minutes = lignes.reduce((sum, l) => sum + this.parseMinutes(l.delais), 0);
+        const minutes = lignes.reduce(
+          (sum, l) => sum + this.parseMinutes(l.delais),
+          0,
+        );
         return Math.round((minutes / total) * 10) / 10;
       }
       case ObjectiveCategory.INSPECTIONS:
@@ -130,13 +142,20 @@ export class ObjectiveMetricsService {
       });
       const approved = agents.filter((a) => a.isApprovedBySuperviseur).length;
       const value =
-        agents.length > 0 ? Math.round((approved / agents.length) * 1000) / 10 : 0;
+        agents.length > 0
+          ? Math.round((approved / agents.length) * 1000) / 10
+          : 0;
       return { value, unit: '%', higherIsBetter: true };
     }
 
-    const lignes = lignesCache ?? (await this.fetchLignes(superviseurId, objective));
+    const lignes =
+      lignesCache ?? (await this.fetchLignes(superviseurId, objective));
     const value = this.computeFromLignes(category, lignes);
-    return { value, unit: objective.unit, higherIsBetter: objective.higherIsBetter };
+    return {
+      value,
+      unit: objective.unit,
+      higherIsBetter: objective.higherIsBetter,
+    };
   }
 
   /**
@@ -150,12 +169,20 @@ export class ObjectiveMetricsService {
     const category = objective.category;
 
     if (category === ObjectiveCategory.CUSTOM) {
-      return [{ date: new Date(), cumulativeValue: objective.currentValue, dailyValue: 0 }];
+      return [
+        {
+          date: new Date(),
+          cumulativeValue: objective.currentValue,
+          dailyValue: 0,
+        },
+      ];
     }
 
     if (category === ObjectiveCategory.TRAINING) {
       const metric = await this.computeCurrentValue(objective, superviseurId);
-      return [{ date: new Date(), cumulativeValue: metric.value, dailyValue: 0 }];
+      return [
+        { date: new Date(), cumulativeValue: metric.value, dailyValue: 0 },
+      ];
     }
 
     const start = this.parseDate(objective.startDate);

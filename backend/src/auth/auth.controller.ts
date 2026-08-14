@@ -55,9 +55,15 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('signup/agent-qualite')
-  @UseInterceptors(FileInterceptor('image', { storage: imageStorage, fileFilter: imageFileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: imageStorage,
+      fileFilter: imageFileFilter,
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Inscription d\'un Agent Qualite' })
+  @ApiOperation({ summary: "Inscription d'un Agent Qualite" })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -68,20 +74,35 @@ export class AuthController {
         matricule: { type: 'string' },
         email: { type: 'string' },
         password: { type: 'string' },
-        superviseurCode: { type: 'string', description: 'Code SUPERV-QLT-XXXXX du superviseur' },
+        superviseurCode: {
+          type: 'string',
+          description: 'Code SUPERV-QLT-XXXXX du superviseur',
+        },
         image: { type: 'string', format: 'binary' },
       },
     },
   })
-  @ApiResponse({ status: 201, description: 'Inscription reussie. En attente d\'approbation.' })
-  async signupAgent(@Body() signupDto: SignupDto, @UploadedFile() file?: Express.Multer.File) {
+  @ApiResponse({
+    status: 201,
+    description: "Inscription reussie. En attente d'approbation.",
+  })
+  async signupAgent(
+    @Body() signupDto: SignupDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
     return this.authService.signup(signupDto, UserRole.AGENT_QUALITE, file);
   }
 
   @Post('signup/superviseur-qualite')
-  @UseInterceptors(FileInterceptor('image', { storage: imageStorage, fileFilter: imageFileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: imageStorage,
+      fileFilter: imageFileFilter,
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Inscription d\'un Superviseur Qualite' })
+  @ApiOperation({ summary: "Inscription d'un Superviseur Qualite" })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -96,9 +117,19 @@ export class AuthController {
       },
     },
   })
-  @ApiResponse({ status: 201, description: 'Inscription reussie. En attente d\'approbation.' })
-  async signupSuperviseur(@Body() signupDto: SignupDto, @UploadedFile() file?: Express.Multer.File) {
-    return this.authService.signup(signupDto, UserRole.SUPERVISEUR_QUALITE, file);
+  @ApiResponse({
+    status: 201,
+    description: "Inscription reussie. En attente d'approbation.",
+  })
+  async signupSuperviseur(
+    @Body() signupDto: SignupDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    return this.authService.signup(
+      signupDto,
+      UserRole.SUPERVISEUR_QUALITE,
+      file,
+    );
   }
 
   @Post('login')
@@ -113,7 +144,10 @@ export class AuthController {
   @ApiBody({ type: LoginDto })
   @ApiResponse({ status: 200, description: 'Connexion reussie.' })
   @ApiResponse({ status: 401, description: 'Identifiants incorrects' })
-  @ApiResponse({ status: 403, description: 'Compte non approuve par le Super Admin' })
+  @ApiResponse({
+    status: 403,
+    description: 'Compte non approuve par le Super Admin',
+  })
   async login(@Body() loginDto: LoginDto, @Request() req) {
     const ip = req.ip || req.connection?.remoteAddress;
     const userAgent = req.headers['user-agent'];
@@ -136,7 +170,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Demander la reinitialisation du mot de passe' })
   @ApiBody({ type: ForgotPasswordDto })
-  @ApiResponse({ status: 200, description: 'Email de reinitialisation envoye avec succes' })
+  @ApiResponse({
+    status: 200,
+    description: 'Email de reinitialisation envoye avec succes',
+  })
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
     return this.authService.forgotPassword(forgotPasswordDto);
   }
@@ -145,7 +182,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reinitialiser le mot de passe' })
   @ApiBody({ type: ResetPasswordDto })
-  @ApiResponse({ status: 200, description: 'Mot de passe reinitialise avec succes' })
+  @ApiResponse({
+    status: 200,
+    description: 'Mot de passe reinitialise avec succes',
+  })
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(resetPasswordDto);
   }
@@ -154,19 +194,34 @@ export class AuthController {
   @Get('profile')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Recuperer le profil utilisateur connecte' })
-  @ApiResponse({ status: 200, description: 'Profil utilisateur retourne avec succes' })
+  @ApiResponse({
+    status: 200,
+    description: 'Profil utilisateur retourne avec succes',
+  })
   async getProfile(@Request() req) {
     return this.authService.getProfile(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('profile/image')
-  @UseInterceptors(FileInterceptor('image', { storage: imageStorage, fileFilter: imageFileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: imageStorage,
+      fileFilter: imageFileFilter,
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
   @ApiBearerAuth('access-token')
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Uploader une photo de profil' })
-  @ApiResponse({ status: 201, description: 'Photo de profil uploadee avec succes' })
-  async uploadProfileImage(@Request() req, @UploadedFile() file: Express.Multer.File) {
+  @ApiResponse({
+    status: 201,
+    description: 'Photo de profil uploadee avec succes',
+  })
+  async uploadProfileImage(
+    @Request() req,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
     return this.authService.uploadProfileImage(req.user.id, file);
   }
 

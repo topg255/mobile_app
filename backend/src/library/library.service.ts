@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { LibraryImage } from './entities/library-image.entity';
@@ -11,12 +15,18 @@ import { join } from 'path';
 @Injectable()
 export class LibraryService {
   constructor(
-    @InjectRepository(LibraryImage) private readonly imageRepo: Repository<LibraryImage>,
-    @InjectRepository(ImageFolder) private readonly folderRepo: Repository<ImageFolder>,
+    @InjectRepository(LibraryImage)
+    private readonly imageRepo: Repository<LibraryImage>,
+    @InjectRepository(ImageFolder)
+    private readonly folderRepo: Repository<ImageFolder>,
     @InjectRepository(User) private readonly userRepo: Repository<User>,
   ) {}
 
-  async uploadImage(file: Express.Multer.File, user: User, description?: string) {
+  async uploadImage(
+    file: Express.Multer.File,
+    user: User,
+    description?: string,
+  ) {
     const image = this.imageRepo.create({
       url: `/uploads/library/${file.filename}`,
       filename: file.filename,
@@ -30,9 +40,15 @@ export class LibraryService {
     return this.imageRepo.save(image);
   }
 
-  private async verifyAgentBelongsToSuperviseur(agentId: string, superviseurId: string) {
-    const agent = await this.userRepo.findOne({ where: { id: agentId, superviseurId, role: UserRole.AGENT_QUALITE } });
-    if (!agent) throw new ForbiddenException('Cet agent ne vous appartient pas.');
+  private async verifyAgentBelongsToSuperviseur(
+    agentId: string,
+    superviseurId: string,
+  ) {
+    const agent = await this.userRepo.findOne({
+      where: { id: agentId, superviseurId, role: UserRole.AGENT_QUALITE },
+    });
+    if (!agent)
+      throw new ForbiddenException('Cet agent ne vous appartient pas.');
   }
 
   async getImages(user: User, folderId?: string | null, agentId?: string) {
@@ -73,9 +89,15 @@ export class LibraryService {
   }
 
   async updateImage(id: string, dto: UpdateImageDto, user: User) {
-    const image = await this.imageRepo.findOne({ where: { id }, relations: { uploadedBy: true, folder: true } });
+    const image = await this.imageRepo.findOne({
+      where: { id },
+      relations: { uploadedBy: true, folder: true },
+    });
     if (!image) throw new NotFoundException('Image non trouvée');
-    if (user.role === UserRole.AGENT_QUALITE && image.uploadedBy.id !== user.id) {
+    if (
+      user.role === UserRole.AGENT_QUALITE &&
+      image.uploadedBy.id !== user.id
+    ) {
       throw new ForbiddenException('Non autorisé');
     }
     if (dto.description !== undefined) image.description = dto.description;
@@ -86,9 +108,15 @@ export class LibraryService {
   }
 
   async softDelete(id: string, user: User) {
-    const image = await this.imageRepo.findOne({ where: { id }, relations: { uploadedBy: true } });
+    const image = await this.imageRepo.findOne({
+      where: { id },
+      relations: { uploadedBy: true },
+    });
     if (!image) throw new NotFoundException('Image non trouvée');
-    if (user.role === UserRole.AGENT_QUALITE && image.uploadedBy.id !== user.id) {
+    if (
+      user.role === UserRole.AGENT_QUALITE &&
+      image.uploadedBy.id !== user.id
+    ) {
       throw new ForbiddenException('Non autorisé');
     }
     image.isDeleted = true;
@@ -97,9 +125,15 @@ export class LibraryService {
   }
 
   async restore(id: string, user: User) {
-    const image = await this.imageRepo.findOne({ where: { id }, relations: { uploadedBy: true } });
+    const image = await this.imageRepo.findOne({
+      where: { id },
+      relations: { uploadedBy: true },
+    });
     if (!image) throw new NotFoundException('Image non trouvée');
-    if (user.role === UserRole.AGENT_QUALITE && image.uploadedBy.id !== user.id) {
+    if (
+      user.role === UserRole.AGENT_QUALITE &&
+      image.uploadedBy.id !== user.id
+    ) {
       throw new ForbiddenException('Non autorisé');
     }
     image.isDeleted = false;
@@ -108,9 +142,15 @@ export class LibraryService {
   }
 
   async permanentDelete(id: string, user: User) {
-    const image = await this.imageRepo.findOne({ where: { id }, relations: { uploadedBy: true } });
+    const image = await this.imageRepo.findOne({
+      where: { id },
+      relations: { uploadedBy: true },
+    });
     if (!image) throw new NotFoundException('Image non trouvée');
-    if (user.role === UserRole.AGENT_QUALITE && image.uploadedBy.id !== user.id) {
+    if (
+      user.role === UserRole.AGENT_QUALITE &&
+      image.uploadedBy.id !== user.id
+    ) {
       throw new ForbiddenException('Non autorisé');
     }
     try {
@@ -126,7 +166,9 @@ export class LibraryService {
       where.uploadedBy = { id: user.id };
     }
     const images = await this.imageRepo.find({ where });
-    const folder = dto.folderId ? await this.folderRepo.findOne({ where: { id: dto.folderId } }) : null;
+    const folder = dto.folderId
+      ? await this.folderRepo.findOne({ where: { id: dto.folderId } })
+      : null;
     for (const img of images) {
       img.folder = folder || null;
     }
@@ -135,7 +177,9 @@ export class LibraryService {
   }
 
   async createFolder(name: string, user: User) {
-    const existing = await this.folderRepo.findOne({ where: { name, createdBy: { id: user.id } } });
+    const existing = await this.folderRepo.findOne({
+      where: { name, createdBy: { id: user.id } },
+    });
     if (existing) return existing;
     const folder = this.folderRepo.create({ name, createdBy: user });
     return this.folderRepo.save(folder);
@@ -155,15 +199,18 @@ export class LibraryService {
         relations: { folder: true },
       });
       const folderIdsFromImages = imagesByAgent
-        .map(i => i.folder?.id)
+        .map((i) => i.folder?.id)
         .filter(Boolean) as string[];
       if (folderIdsFromImages.length === 0) return createdByAgent;
       const extraFolders = await this.folderRepo
         .createQueryBuilder('folder')
         .where('folder.id IN (:...ids)', { ids: folderIdsFromImages })
         .getMany();
-      const existingIds = new Set(createdByAgent.map(f => f.id));
-      const merged = [...createdByAgent, ...extraFolders.filter(f => !existingIds.has(f.id))];
+      const existingIds = new Set(createdByAgent.map((f) => f.id));
+      const merged = [
+        ...createdByAgent,
+        ...extraFolders.filter((f) => !existingIds.has(f.id)),
+      ];
       return merged.sort((a, b) => a.name.localeCompare(b.name));
     }
     if (user.role === UserRole.AGENT_QUALITE) {
@@ -178,9 +225,15 @@ export class LibraryService {
   }
 
   async deleteFolder(id: string, user: User) {
-    const folder = await this.folderRepo.findOne({ where: { id }, relations: { createdBy: true } });
+    const folder = await this.folderRepo.findOne({
+      where: { id },
+      relations: { createdBy: true },
+    });
     if (!folder) throw new NotFoundException('Dossier non trouvé');
-    if (user.role === UserRole.AGENT_QUALITE && folder.createdBy.id !== user.id) {
+    if (
+      user.role === UserRole.AGENT_QUALITE &&
+      folder.createdBy.id !== user.id
+    ) {
       throw new ForbiddenException('Non autorisé');
     }
 
@@ -190,9 +243,15 @@ export class LibraryService {
   }
 
   async renameFolder(id: string, name: string, user: User) {
-    const folder = await this.folderRepo.findOne({ where: { id }, relations: { createdBy: true } });
+    const folder = await this.folderRepo.findOne({
+      where: { id },
+      relations: { createdBy: true },
+    });
     if (!folder) throw new NotFoundException('Dossier non trouvé');
-    if (user.role === UserRole.AGENT_QUALITE && folder.createdBy.id !== user.id) {
+    if (
+      user.role === UserRole.AGENT_QUALITE &&
+      folder.createdBy.id !== user.id
+    ) {
       throw new ForbiddenException('Non autorisé');
     }
     folder.name = name;
@@ -221,10 +280,17 @@ export class LibraryService {
     let folderCount: number;
     if (agentId || user.role === UserRole.AGENT_QUALITE) {
       const aid = agentId || user.id;
-      const agentImages = await this.imageRepo.find({ where: { uploadedBy: { id: aid }, isDeleted: false }, relations: { folder: true } });
-      const imageFolderIds = new Set(agentImages.filter(i => i.folder).map(i => i.folder!.id));
-      const createdFolders = await this.folderRepo.find({ where: { createdBy: { id: aid } } });
-      createdFolders.forEach(f => imageFolderIds.add(f.id));
+      const agentImages = await this.imageRepo.find({
+        where: { uploadedBy: { id: aid }, isDeleted: false },
+        relations: { folder: true },
+      });
+      const imageFolderIds = new Set(
+        agentImages.filter((i) => i.folder).map((i) => i.folder!.id),
+      );
+      const createdFolders = await this.folderRepo.find({
+        where: { createdBy: { id: aid } },
+      });
+      createdFolders.forEach((f) => imageFolderIds.add(f.id));
       folderCount = imageFolderIds.size;
     } else {
       folderCount = await this.folderRepo.count();
@@ -233,8 +299,15 @@ export class LibraryService {
     return { total, trashCount, folderCount };
   }
 
-  async saveLigneImage(file: Express.Multer.File, user: User, ligneNom: string, description?: string) {
-    let folder = await this.folderRepo.findOne({ where: { name: ligneNom, createdBy: { id: user.id } } });
+  async saveLigneImage(
+    file: Express.Multer.File,
+    user: User,
+    ligneNom: string,
+    description?: string,
+  ) {
+    let folder = await this.folderRepo.findOne({
+      where: { name: ligneNom, createdBy: { id: user.id } },
+    });
     if (!folder) {
       folder = this.folderRepo.create({ name: ligneNom, createdBy: user });
       await this.folderRepo.save(folder);

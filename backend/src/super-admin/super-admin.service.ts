@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole } from '../auth/entities/user.entity';
@@ -12,18 +16,25 @@ import { Notification } from '../notification/entities/notification.entity';
 export class SuperAdminService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
-    @InjectRepository(LoginLog) private readonly loginLogRepository: Repository<LoginLog>,
-    @InjectRepository(Message) private readonly messageRepository: Repository<Message>,
-    @InjectRepository(ControleDate) private readonly controleDateRepository: Repository<ControleDate>,
-    @InjectRepository(LigneControle) private readonly ligneControleRepository: Repository<LigneControle>,
-    @InjectRepository(Notification) private readonly notificationRepository: Repository<Notification>,
+    @InjectRepository(LoginLog)
+    private readonly loginLogRepository: Repository<LoginLog>,
+    @InjectRepository(Message)
+    private readonly messageRepository: Repository<Message>,
+    @InjectRepository(ControleDate)
+    private readonly controleDateRepository: Repository<ControleDate>,
+    @InjectRepository(LigneControle)
+    private readonly ligneControleRepository: Repository<LigneControle>,
+    @InjectRepository(Notification)
+    private readonly notificationRepository: Repository<Notification>,
   ) {}
 
   async getAllUsers() {
     const users = await this.userRepository.find({
       order: { createdAt: 'DESC' },
     });
-    return users.map(({ password, resetToken, resetTokenExpires, ...user }) => user);
+    return users.map(
+      ({ password, resetToken, resetTokenExpires, ...user }) => user,
+    );
   }
 
   async getUsersByRole(role: UserRole) {
@@ -31,7 +42,9 @@ export class SuperAdminService {
       where: { role },
       order: { createdAt: 'DESC' },
     });
-    return users.map(({ password, resetToken, resetTokenExpires, ...user }) => user);
+    return users.map(
+      ({ password, resetToken, resetTokenExpires, ...user }) => user,
+    );
   }
 
   async getPendingUsers() {
@@ -39,7 +52,9 @@ export class SuperAdminService {
       where: { isApproved: false, role: UserRole.SUPERVISEUR_QUALITE },
       order: { createdAt: 'DESC' },
     });
-    return users.map(({ password, resetToken, resetTokenExpires, ...user }) => user);
+    return users.map(
+      ({ password, resetToken, resetTokenExpires, ...user }) => user,
+    );
   }
 
   async approveUser(userId: string) {
@@ -54,7 +69,9 @@ export class SuperAdminService {
     }
 
     if (user.role === UserRole.AGENT_QUALITE) {
-      throw new ConflictException('Les agents sont approuves par leur superviseur, pas par le Super Admin');
+      throw new ConflictException(
+        'Les agents sont approuves par leur superviseur, pas par le Super Admin',
+      );
     }
 
     user.isApproved = true;
@@ -86,7 +103,9 @@ export class SuperAdminService {
     }
 
     if (user.role === UserRole.AGENT_QUALITE) {
-      throw new ConflictException('Les agents sont geres par leur superviseur, pas par le Super Admin');
+      throw new ConflictException(
+        'Les agents sont geres par leur superviseur, pas par le Super Admin',
+      );
     }
 
     user.isApproved = false;
@@ -141,13 +160,15 @@ export class SuperAdminService {
     return {
       logs: logs.map((log) => ({
         id: log.id,
-        user: log.user ? {
-          id: log.user.id,
-          firstName: log.user.firstName,
-          lastName: log.user.lastName,
-          matricule: log.user.matricule,
-          role: log.user.role,
-        } : null,
+        user: log.user
+          ? {
+              id: log.user.id,
+              firstName: log.user.firstName,
+              lastName: log.user.lastName,
+              matricule: log.user.matricule,
+              role: log.user.role,
+            }
+          : null,
         action: log.action,
         ipAddress: log.ipAddress,
         userAgent: log.userAgent,
@@ -193,10 +214,18 @@ export class SuperAdminService {
 
   async getStats() {
     const totalUsers = await this.userRepository.count();
-    const totalAgents = await this.userRepository.count({ where: { role: UserRole.AGENT_QUALITE } });
-    const totalSuperviseurs = await this.userRepository.count({ where: { role: UserRole.SUPERVISEUR_QUALITE } });
-    const pendingUsers = await this.userRepository.count({ where: { isApproved: false } });
-    const approvedUsers = await this.userRepository.count({ where: { isApproved: true } });
+    const totalAgents = await this.userRepository.count({
+      where: { role: UserRole.AGENT_QUALITE },
+    });
+    const totalSuperviseurs = await this.userRepository.count({
+      where: { role: UserRole.SUPERVISEUR_QUALITE },
+    });
+    const pendingUsers = await this.userRepository.count({
+      where: { isApproved: false },
+    });
+    const approvedUsers = await this.userRepository.count({
+      where: { isApproved: true },
+    });
     const totalLogs = await this.loginLogRepository.count();
 
     return {

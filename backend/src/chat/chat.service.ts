@@ -1,4 +1,8 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Message } from './entities/message.entity';
@@ -22,28 +26,35 @@ export class ChatService {
         where: { superviseurId: userId, role: UserRole.AGENT_QUALITE },
         select: { id: true },
       });
-      allowedIds = agents.map(a => a.id);
+      allowedIds = agents.map((a) => a.id);
       allowedIds.push(userId); // include self
     } else if (user.role === UserRole.AGENT_QUALITE && user.superviseurId) {
       allowedIds = [user.superviseurId, userId];
     } else {
       // Super admin sees all
       const all = await this.userRepo.find({ select: { id: true } });
-      allowedIds = all.map(u => u.id);
+      allowedIds = all.map((u) => u.id);
     }
 
     const messages = await this.messageRepo
       .createQueryBuilder('message')
       .leftJoinAndSelect('message.sender', 'sender')
       .leftJoinAndSelect('message.receiver', 'receiver')
-      .where('(sender.id = :userId OR receiver.id = :userId) AND message.is_deleted = false', { userId })
+      .where(
+        '(sender.id = :userId OR receiver.id = :userId) AND message.is_deleted = false',
+        { userId },
+      )
       .orderBy('message.createdAt', 'DESC')
       .getMany();
 
-    const conversationMap = new Map<string, { user: User; lastMessage: Message; unreadCount: number }>();
+    const conversationMap = new Map<
+      string,
+      { user: User; lastMessage: Message; unreadCount: number }
+    >();
 
     for (const msg of messages) {
-      const otherUserId = msg.sender.id === userId ? msg.receiver.id : msg.sender.id;
+      const otherUserId =
+        msg.sender.id === userId ? msg.receiver.id : msg.sender.id;
       const otherUser = msg.sender.id === userId ? msg.receiver : msg.sender;
 
       // Skip users not in the same tenant
@@ -72,8 +83,16 @@ export class ChatService {
   async getMessages(userId: string, otherUserId: string) {
     const messages = await this.messageRepo.find({
       where: [
-        { sender: { id: userId }, receiver: { id: otherUserId }, isDeleted: false },
-        { sender: { id: otherUserId }, receiver: { id: userId }, isDeleted: false },
+        {
+          sender: { id: userId },
+          receiver: { id: otherUserId },
+          isDeleted: false,
+        },
+        {
+          sender: { id: otherUserId },
+          receiver: { id: userId },
+          isDeleted: false,
+        },
       ],
       relations: { sender: true, receiver: true },
       order: { createdAt: 'ASC' },
@@ -83,7 +102,12 @@ export class ChatService {
 
   async markAsRead(userId: string, senderId: string) {
     await this.messageRepo.update(
-      { sender: { id: senderId }, receiver: { id: userId }, isRead: false, isDeleted: false },
+      {
+        sender: { id: senderId },
+        receiver: { id: userId },
+        isRead: false,
+        isDeleted: false,
+      },
       { isRead: true },
     );
   }
@@ -106,7 +130,9 @@ export class ChatService {
     }
 
     if (message.sender.id !== userId) {
-      throw new ForbiddenException('Vous ne pouvez modifier que vos propres messages');
+      throw new ForbiddenException(
+        'Vous ne pouvez modifier que vos propres messages',
+      );
     }
 
     message.content = content.trim();
@@ -127,7 +153,9 @@ export class ChatService {
     }
 
     if (message.sender.id !== userId) {
-      throw new ForbiddenException('Vous ne pouvez supprimer que vos propres messages');
+      throw new ForbiddenException(
+        'Vous ne pouvez supprimer que vos propres messages',
+      );
     }
 
     message.isDeleted = true;
@@ -144,15 +172,33 @@ export class ChatService {
     if (user.role === UserRole.SUPERVISEUR_QUALITE) {
       // Superviseur can only chat with their own agents
       agents = await this.userRepo.find({
-        where: { superviseurId: userId, role: UserRole.AGENT_QUALITE, isApproved: true },
-        select: { id: true, firstName: true, lastName: true, matricule: true, profileImage: true, role: true },
+        where: {
+          superviseurId: userId,
+          role: UserRole.AGENT_QUALITE,
+          isApproved: true,
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          matricule: true,
+          profileImage: true,
+          role: true,
+        },
       });
     } else if (user.role === UserRole.AGENT_QUALITE) {
       // Agent can only chat with their superviseur
       if (user.superviseurId) {
         const superviseur = await this.userRepo.findOne({
           where: { id: user.superviseurId, isApproved: true },
-          select: { id: true, firstName: true, lastName: true, matricule: true, profileImage: true, role: true },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            matricule: true,
+            profileImage: true,
+            role: true,
+          },
         });
         agents = superviseur ? [superviseur] : [];
       } else {
@@ -162,7 +208,14 @@ export class ChatService {
       // Super admin can chat with everyone
       agents = await this.userRepo.find({
         where: { isApproved: true },
-        select: { id: true, firstName: true, lastName: true, matricule: true, profileImage: true, role: true },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          matricule: true,
+          profileImage: true,
+          role: true,
+        },
       });
     }
     return agents;

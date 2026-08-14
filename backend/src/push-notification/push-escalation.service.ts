@@ -134,7 +134,8 @@ export class PushEscalationService {
         NotificationType.SYSTEM,
         `${title} — ${body}`,
         history.id,
-      );      escalated += 1;
+      );
+      escalated += 1;
       this.logger.log(
         `Escalation niveau ${nextLevel} pour ${history.user.firstName} ${history.user.lastName} -> ${target.firstName} ${target.lastName}`,
       );

@@ -10,7 +10,16 @@ import { LigneControle } from '../quality/entities/ligne-controle.entity';
 import { Notification } from '../notification/entities/notification.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, LoginLog, Message, ControleDate, LigneControle, Notification])],
+  imports: [
+    TypeOrmModule.forFeature([
+      User,
+      LoginLog,
+      Message,
+      ControleDate,
+      LigneControle,
+      Notification,
+    ]),
+  ],
   controllers: [SuperAdminController],
   providers: [SuperAdminService],
 })

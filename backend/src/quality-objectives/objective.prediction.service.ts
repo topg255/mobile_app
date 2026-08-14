@@ -25,10 +25,15 @@ export class ObjectivePredictionService {
     totalDays: number,
   ): PredictionResult {
     if (totalDays <= 0 || target <= 0) {
-      return { predictedValue: 0, predictionProbability: 0, riskLevel: RiskLevel.CRITICAL };
+      return {
+        predictedValue: 0,
+        predictionProbability: 0,
+        riskLevel: RiskLevel.CRITICAL,
+      };
     }
 
-    const last = series.length > 0 ? series[series.length - 1].cumulativeValue : 0;
+    const last =
+      series.length > 0 ? series[series.length - 1].cumulativeValue : 0;
 
     // Periode terminee : la valeur finale est connue, plus de prediction.
     if (elapsedDays >= totalDays) {
@@ -62,7 +67,10 @@ export class ObjectivePredictionService {
     };
   }
 
-  private linearRegression(series: ObjectiveSeriesPoint[], totalDays: number): number {
+  private linearRegression(
+    series: ObjectiveSeriesPoint[],
+    totalDays: number,
+  ): number {
     const n = series.length;
     let sumX = 0;
     let sumY = 0;
@@ -96,7 +104,8 @@ export class ObjectivePredictionService {
       const mean = deltas.reduce((s, d) => s + d, 0) / deltas.length;
       if (Math.abs(mean) > 1e-9) {
         const variance =
-          deltas.reduce((s, d) => s + (d - mean) * (d - mean), 0) / deltas.length;
+          deltas.reduce((s, d) => s + (d - mean) * (d - mean), 0) /
+          deltas.length;
         const cv = Math.sqrt(variance) / Math.abs(mean);
         stability = Math.max(0.3, Math.min(1, 1 - cv * 0.5));
       }
@@ -105,7 +114,11 @@ export class ObjectivePredictionService {
     return Math.min(1, timeFactor * stability);
   }
 
-  private ratio(value: number, target: number, higherIsBetter: boolean): number {
+  private ratio(
+    value: number,
+    target: number,
+    higherIsBetter: boolean,
+  ): number {
     if (value <= 0) {
       return higherIsBetter ? 0 : 1;
     }
@@ -125,6 +138,9 @@ export class ObjectivePredictionService {
   }
 
   static daysBetween(start: Date, end: Date): number {
-    return Math.max(1, Math.round((end.getTime() - start.getTime()) / MS_PER_DAY) + 1);
+    return Math.max(
+      1,
+      Math.round((end.getTime() - start.getTime()) / MS_PER_DAY) + 1,
+    );
   }
 }

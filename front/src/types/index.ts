@@ -552,3 +552,83 @@ export interface SignatureUploadResult {
   superviseurId: string;
   processingStatus: SignatureProcessingStatusValue;
 }
+
+// ─── CAPA ────────────────────────────────────────────────────────────────
+
+export type CapaStatus = 'ouvert' | 'en_analyse' | 'en_cours' | 'en_verification' | 'cloture' | 'annule';
+export type CapaPriority = 'faible' | 'moyenne' | 'haute' | 'critique';
+export type CapaTypeValue = 'corrective' | 'preventive' | 'les_deux';
+export type ActionTypeValue = 'corrective' | 'preventive';
+export type ActionStatusValue = 'a_faire' | 'en_cours' | 'terminee' | 'bloquee';
+
+export interface Capa {
+  id: number;
+  reference: string;
+  ligneControleId: string | null;
+  nomLigne: string;
+  superviseurId: string;
+  superviseurName: string;
+  titre: string;
+  description: string;
+  status: CapaStatus;
+  priority: CapaPriority;
+  type: CapaTypeValue;
+  causeRacine: string | null;
+  causeRacineIA: string | null;
+  dateEcheance: string;
+  dateOuverture: string;
+  dateCloture: string | null;
+  efficaciteVerifiee: boolean;
+  noteEfficacite: string | null;
+  coutEstime: number | null;
+  createdAt: string;
+  updatedAt: string;
+  totalActions?: number;
+  terminees?: number;
+  enRetard?: boolean;
+  actions?: CapaAction[];
+  commentaires?: CapaCommentaire[];
+}
+
+export interface CapaAction {
+  id: number;
+  capaId: number;
+  titre: string;
+  description: string;
+  type: ActionTypeValue;
+  responsableId: string;
+  responsableName: string;
+  dateEcheance: string;
+  status: ActionStatusValue;
+  completedAt: string | null;
+  preuve: string | null;
+  createdAt: string;
+  updatedAt: string;
+  capa?: Capa;
+}
+
+export interface CapaCommentaire {
+  id: number;
+  capaId: number;
+  auteurId: string;
+  auteurName: string;
+  contenu: string;
+  type: 'commentaire' | 'changement_statut' | 'action_ajoutee' | 'verification';
+  ancienStatut: string | null;
+  nouveauStatut: string | null;
+  createdAt: string;
+}
+
+export interface CapaStats {
+  totalCapas: number;
+  ouverts: number;
+  enCours: number;
+  cloturesThisMois: number;
+  tauxResolution: number;
+  delaiMoyenResolution: number;
+  capasEnRetard: Capa[];
+  byPriority: Record<string, number>;
+  byType: Record<string, number>;
+  byStatus: Record<string, number>;
+  topLignesProblematiques: { nomLigne: string; count: number }[];
+}

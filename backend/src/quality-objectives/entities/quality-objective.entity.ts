@@ -72,10 +72,18 @@ export class QualityObjective {
   @Column({ type: 'float', default: 0 })
   progress: number;
 
-  @Column({ type: 'enum', enum: ObjectiveStatus, default: ObjectiveStatus.ACTIVE })
+  @Column({
+    type: 'enum',
+    enum: ObjectiveStatus,
+    default: ObjectiveStatus.ACTIVE,
+  })
   status: ObjectiveStatus;
 
-  @Column({ type: 'enum', enum: ObjectivePriority, default: ObjectivePriority.MEDIUM })
+  @Column({
+    type: 'enum',
+    enum: ObjectivePriority,
+    default: ObjectivePriority.MEDIUM,
+  })
   priority: ObjectivePriority;
 
   @Column({ name: 'start_date', type: 'date' })
@@ -90,10 +98,20 @@ export class QualityObjective {
   @Column({ name: 'predicted_value', type: 'float', nullable: true })
   predictedValue: number | null;
 
-  @Column({ name: 'risk_level', type: 'enum', enum: RiskLevel, default: RiskLevel.LOW })
+  @Column({
+    name: 'risk_level',
+    type: 'enum',
+    enum: RiskLevel,
+    default: RiskLevel.LOW,
+  })
   riskLevel: RiskLevel;
 
-  @Column({ name: 'last_risk_level', type: 'enum', enum: RiskLevel, default: RiskLevel.LOW })
+  @Column({
+    name: 'last_risk_level',
+    type: 'enum',
+    enum: RiskLevel,
+    default: RiskLevel.LOW,
+  })
   lastRiskLevel: RiskLevel;
 
   @Column({ type: 'text', nullable: true })

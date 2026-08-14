@@ -16,6 +16,7 @@ import { PushNotificationModule } from './push-notification/push-notification.mo
 import { SignatureModule } from './signature/signature.module';
 import { CalendarModule } from './calendar/calendar.module';
 import { SignaturePadModule } from './signature-pad/signature-pad.module';
+import { CapaModule } from './capa/capa.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { SignaturePadModule } from './signature-pad/signature-pad.module';
     SignatureModule,
     CalendarModule,
     SignaturePadModule,
+    CapaModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -10,6 +10,7 @@ import ResetPassword from './pages/Auth/ResetPassword';
 import Dashboard from './pages/Dashboard/Dashboard';
 import SuperAdminDashboard from './pages/Dashboard/SuperAdminDashboard';
 import ProfilePage from './pages/Profile/ProfilePage';
+import CapaPage from './pages/Capa/CapaPage';
 import './App.css';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -82,6 +83,14 @@ function App() {
             element={
               <RoleRoute roles={[UserRole.AGENT_QUALITE]}>
                 <Dashboard initialTab="my-tasks" />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/capa"
+            element={
+              <RoleRoute roles={[UserRole.SUPERVISEUR_QUALITE, UserRole.SUPER_ADMIN]}>
+                <DashboardRouter initialTab="capa" />
               </RoleRoute>
             }
           />

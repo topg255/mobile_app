@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 import { NoteQualite } from '../entities/ligne-controle.entity';
 
 export class CreateLigneControleDto {
@@ -30,7 +36,7 @@ export class CreateLigneControleDto {
   note: NoteQualite;
 
   @ApiProperty({
-    description: 'Délai en minutes d\'arrêt',
+    description: "Délai en minutes d'arrêt",
     example: '30',
   })
   @IsString()

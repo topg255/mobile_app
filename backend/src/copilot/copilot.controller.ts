@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Post,
-  Body,
-  UseGuards,
-  Request,
-} from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -28,8 +22,14 @@ export class CopilotController {
   @Post('chat')
   @Roles(UserRole.SUPERVISEUR_QUALITE, UserRole.SUPER_ADMIN)
   @ApiOperation({ summary: 'Chat avec le copilote IA (Groq)' })
-  @ApiResponse({ status: 200, description: 'Reponse du copilote avec suggestions' })
-  @ApiResponse({ status: 400, description: 'Erreur de validation ou IA indisponible' })
+  @ApiResponse({
+    status: 200,
+    description: 'Reponse du copilote avec suggestions',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Erreur de validation ou IA indisponible',
+  })
   async chat(@Request() req, @Body() dto: ChatRequestDto) {
     return this.copilotService.chat(
       req.user.id,

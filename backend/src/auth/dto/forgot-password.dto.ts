@@ -3,7 +3,8 @@ import { IsEmail, IsNotEmpty } from 'class-validator';
 
 export class ForgotPasswordDto {
   @ApiProperty({
-    description: 'Adresse email associée au compte pour recevoir le lien de réinitialisation',
+    description:
+      'Adresse email associée au compte pour recevoir le lien de réinitialisation',
     example: 'mohamed.benali@qualite.com',
     format: 'email',
   })

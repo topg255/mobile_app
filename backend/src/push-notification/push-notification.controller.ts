@@ -45,7 +45,7 @@ export class PushNotificationController {
   ) {}
 
   @Get('vapid-public-key')
-  @ApiOperation({ summary: 'Cle publique VAPID pour l\'abonnement navigateur' })
+  @ApiOperation({ summary: "Cle publique VAPID pour l'abonnement navigateur" })
   async getVapidPublicKey() {
     return { publicKey: this.notifier.getVapidPublicKey() };
   }

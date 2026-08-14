@@ -92,7 +92,13 @@ export class PdfService {
       y = this.drawDonutSection(doc, ML, CW, y, params.kpis);
       y = this.drawLineChartSection(doc, ML, CW, y, params.kpis);
       y = this.drawAnalysisSection(doc, ML, CW, y, params.aiAnalysis);
-      y = this.drawRecommendationsSection(doc, ML, CW, y, params.recommendations);
+      y = this.drawRecommendationsSection(
+        doc,
+        ML,
+        CW,
+        y,
+        params.recommendations,
+      );
       this.drawFooter(doc, W, H, params);
 
       doc.end();
@@ -100,7 +106,13 @@ export class PdfService {
   }
 
   // ─── HEADER ────────────────────────────────────────────────────────────────
-  private drawHeader(doc: PDFKit.PDFDocument, W: number, fiveSPath: string, leoniPng: string, leoniSvg: string): number {
+  private drawHeader(
+    doc: PDFKit.PDFDocument,
+    W: number,
+    fiveSPath: string,
+    leoniPng: string,
+    leoniSvg: string,
+  ): number {
     const C = this.C;
     const ML = 40;
     const MR = 40;
@@ -127,20 +139,36 @@ export class PdfService {
 
     // LEONI text (right) — properly sized with enough width
     doc.font('Helvetica-Bold').fontSize(28).fillColor(C.navyLight);
-    doc.text('LEONI', W - MR - 130, (h - 30) / 2, { width: 130, align: 'right' });
+    doc.text('LEONI', W - MR - 130, (h - 30) / 2, {
+      width: 130,
+      align: 'right',
+    });
 
     // Title (center between logos)
     doc.font('Helvetica-Bold').fontSize(14).fillColor(C.navyLight);
-    doc.text('RAPPORT QUALITE QUOTIDIEN', ML + logoSize + 15, 12, { width: W - ML - MR - logoSize - 15 - 140, align: 'center' });
+    doc.text('RAPPORT QUALITE QUOTIDIEN', ML + logoSize + 15, 12, {
+      width: W - ML - MR - logoSize - 15 - 140,
+      align: 'center',
+    });
 
     doc.font('Helvetica').fontSize(8).fillColor(C.slateLight);
-    doc.text('Systeme de Controle Qualite  |  Intelligence Artificielle', ML + logoSize + 15, 32, { width: W - ML - MR - logoSize - 15 - 140, align: 'center' });
+    doc.text(
+      'Systeme de Controle Qualite  |  Intelligence Artificielle',
+      ML + logoSize + 15,
+      32,
+      { width: W - ML - MR - logoSize - 15 - 140, align: 'center' },
+    );
 
     return h + 10;
   }
 
   // Draw a 5S circle badge as fallback
-  private drawFiveSBadge(doc: PDFKit.PDFDocument, x: number, y: number, size: number) {
+  private drawFiveSBadge(
+    doc: PDFKit.PDFDocument,
+    x: number,
+    y: number,
+    size: number,
+  ) {
     const C = this.C;
     const cx = x + size / 2;
     const cy = y + size / 2;
@@ -167,11 +195,21 @@ export class PdfService {
 
     // "5S" text
     doc.font('Helvetica-Bold').fontSize(11).fillColor(C.red);
-    doc.text('5S', x + size * 0.18, y + size * 0.28, { width: size * 0.65, align: 'center' });
+    doc.text('5S', x + size * 0.18, y + size * 0.28, {
+      width: size * 0.65,
+      align: 'center',
+    });
   }
 
   // ─── META BAR ──────────────────────────────────────────────────────────────
-  private drawMetaBar(doc: PDFKit.PDFDocument, W: number, ML: number, CW: number, y: number, params: PdfReportParams): number {
+  private drawMetaBar(
+    doc: PDFKit.PDFDocument,
+    W: number,
+    ML: number,
+    CW: number,
+    y: number,
+    params: PdfReportParams,
+  ): number {
     const C = this.C;
     const barH = 36;
 
@@ -190,19 +228,34 @@ export class PdfService {
     doc.font('Helvetica-Bold').fontSize(7).fillColor(C.slateMuted);
     doc.text('DATE', ML + colW, y + 8, { width: colW, align: 'center' });
     doc.font('Helvetica').fontSize(9).fillColor(C.slate);
-    doc.text(params.dateFormatted, ML + colW, y + 20, { width: colW, align: 'center' });
+    doc.text(params.dateFormatted, ML + colW, y + 20, {
+      width: colW,
+      align: 'center',
+    });
 
     // Reference
     doc.font('Helvetica-Bold').fontSize(7).fillColor(C.slateMuted);
-    doc.text('REFERENCE', ML + colW * 2, y + 8, { width: colW, align: 'right' });
+    doc.text('REFERENCE', ML + colW * 2, y + 8, {
+      width: colW,
+      align: 'right',
+    });
     doc.font('Helvetica').fontSize(9).fillColor(C.slate);
-    doc.text(params.reference, ML + colW * 2, y + 20, { width: colW, align: 'right' });
+    doc.text(params.reference, ML + colW * 2, y + 20, {
+      width: colW,
+      align: 'right',
+    });
 
     return y + barH + 12;
   }
 
   // ─── KPI CARDS ─────────────────────────────────────────────────────────────
-  private drawKpiCards(doc: PDFKit.PDFDocument, ML: number, CW: number, y: number, kpis: ReportKPIs): number {
+  private drawKpiCards(
+    doc: PDFKit.PDFDocument,
+    ML: number,
+    CW: number,
+    y: number,
+    kpis: ReportKPIs,
+  ): number {
     const C = this.C;
 
     doc.font('Helvetica-Bold').fontSize(8).fillColor(C.slateLight);
@@ -210,11 +263,46 @@ export class PdfService {
     y += 14;
 
     const cards = [
-      { label: 'Conformes', value: kpis.vertCount, pct: `${kpis.vertPercent}%`, fg: C.greenDark, bg: C.greenBg, bar: C.green },
-      { label: 'A surveiller', value: kpis.jauneCount, pct: `${kpis.jaunePercent}%`, fg: C.amberDark, bg: C.amberBg, bar: C.amber },
-      { label: 'Critiques', value: kpis.rougeCount, pct: `${kpis.rougePercent}%`, fg: C.redDark, bg: C.redBg, bar: C.red },
-      { label: 'Arrets (min)', value: kpis.totalMinutes, pct: `${kpis.totalLignes} lignes`, fg: C.blueDark, bg: C.blueBg, bar: C.blue },
-      { label: 'Agents actifs', value: kpis.agentsActifs, pct: 'participants', fg: C.slate, bg: C.slateWash, bar: C.slateMid },
+      {
+        label: 'Conformes',
+        value: kpis.vertCount,
+        pct: `${kpis.vertPercent}%`,
+        fg: C.greenDark,
+        bg: C.greenBg,
+        bar: C.green,
+      },
+      {
+        label: 'A surveiller',
+        value: kpis.jauneCount,
+        pct: `${kpis.jaunePercent}%`,
+        fg: C.amberDark,
+        bg: C.amberBg,
+        bar: C.amber,
+      },
+      {
+        label: 'Critiques',
+        value: kpis.rougeCount,
+        pct: `${kpis.rougePercent}%`,
+        fg: C.redDark,
+        bg: C.redBg,
+        bar: C.red,
+      },
+      {
+        label: 'Arrets (min)',
+        value: kpis.totalMinutes,
+        pct: `${kpis.totalLignes} lignes`,
+        fg: C.blueDark,
+        bg: C.blueBg,
+        bar: C.blue,
+      },
+      {
+        label: 'Agents actifs',
+        value: kpis.agentsActifs,
+        pct: 'participants',
+        fg: C.slate,
+        bg: C.slateWash,
+        bar: C.slateMid,
+      },
     ];
 
     const cardGap = 8;
@@ -232,7 +320,10 @@ export class PdfService {
 
       // Value
       doc.font('Helvetica-Bold').fontSize(18).fillColor(card.fg);
-      doc.text(String(card.value), cx + 18, y + 5, { width: cardW - 24, align: 'left' });
+      doc.text(String(card.value), cx + 18, y + 5, {
+        width: cardW - 24,
+        align: 'left',
+      });
 
       // Percentage
       doc.font('Helvetica-Bold').fontSize(8).fillColor(card.bar);
@@ -240,14 +331,23 @@ export class PdfService {
 
       // Label at bottom
       doc.font('Helvetica').fontSize(6.5).fillColor(C.slateMuted);
-      doc.text(card.label.toUpperCase(), cx, y + cardH - 14, { width: cardW, align: 'center' });
+      doc.text(card.label.toUpperCase(), cx, y + cardH - 14, {
+        width: cardW,
+        align: 'center',
+      });
     });
 
     return y + cardH + 14;
   }
 
   // ─── DONUT CHARTS ──────────────────────────────────────────────────────────
-  private drawDonutSection(doc: PDFKit.PDFDocument, ML: number, CW: number, y: number, kpis: ReportKPIs): number {
+  private drawDonutSection(
+    doc: PDFKit.PDFDocument,
+    ML: number,
+    CW: number,
+    y: number,
+    kpis: ReportKPIs,
+  ): number {
     const C = this.C;
 
     doc.font('Helvetica-Bold').fontSize(8).fillColor(C.slateLight);
@@ -259,7 +359,7 @@ export class PdfService {
     const donutY = y + donutSize / 2 + 5;
 
     // Draw donut
-    this.drawDonut(doc, donutX, donutY, donutSize / 2, donutSize / 2 * 0.55, [
+    this.drawDonut(doc, donutX, donutY, donutSize / 2, (donutSize / 2) * 0.55, [
       { pct: kpis.vertPercent, color: C.green },
       { pct: kpis.jaunePercent, color: C.amber },
       { pct: kpis.rougePercent, color: C.red },
@@ -267,16 +367,34 @@ export class PdfService {
 
     // Center text
     doc.font('Helvetica-Bold').fontSize(18).fillColor(C.navyLight);
-    doc.text(`${kpis.totalLignes}`, donutX - 22, donutY - 12, { width: 44, align: 'center' });
+    doc.text(`${kpis.totalLignes}`, donutX - 22, donutY - 12, {
+      width: 44,
+      align: 'center',
+    });
     doc.font('Helvetica').fontSize(6).fillColor(C.slateMuted);
     doc.text('total', donutX - 22, donutY + 8, { width: 44, align: 'center' });
 
     // Legend (right side)
     const legendX = ML + 140;
     const legendItems = [
-      { label: 'Conforme (Vert)', pct: `${kpis.vertPercent}%`, count: kpis.vertCount, color: C.green },
-      { label: 'A surveiller (Jaune)', pct: `${kpis.jaunePercent}%`, count: kpis.jauneCount, color: C.amber },
-      { label: 'Critique (Rouge)', pct: `${kpis.rougePercent}%`, count: kpis.rougeCount, color: C.red },
+      {
+        label: 'Conforme (Vert)',
+        pct: `${kpis.vertPercent}%`,
+        count: kpis.vertCount,
+        color: C.green,
+      },
+      {
+        label: 'A surveiller (Jaune)',
+        pct: `${kpis.jaunePercent}%`,
+        count: kpis.jauneCount,
+        color: C.amber,
+      },
+      {
+        label: 'Critique (Rouge)',
+        pct: `${kpis.rougePercent}%`,
+        count: kpis.rougeCount,
+        color: C.red,
+      },
     ];
 
     let ly = y + 8;
@@ -292,21 +410,45 @@ export class PdfService {
     });
 
     // Status indicator
-    const status = kpis.rougePercent > 30 ? 'CRITIQUE' : kpis.rougePercent > 15 ? 'ATTENTION' : kpis.vertPercent >= 80 ? 'EXCELLENT' : 'CORRECT';
-    const statusColor = kpis.rougePercent > 30 ? C.redDark : kpis.rougePercent > 15 ? C.amberDark : C.greenDark;
-    const statusBg = kpis.rougePercent > 30 ? C.redBg : kpis.rougePercent > 15 ? C.amberBg : C.greenBg;
+    const status =
+      kpis.rougePercent > 30
+        ? 'CRITIQUE'
+        : kpis.rougePercent > 15
+          ? 'ATTENTION'
+          : kpis.vertPercent >= 80
+            ? 'EXCELLENT'
+            : 'CORRECT';
+    const statusColor =
+      kpis.rougePercent > 30
+        ? C.redDark
+        : kpis.rougePercent > 15
+          ? C.amberDark
+          : C.greenDark;
+    const statusBg =
+      kpis.rougePercent > 30
+        ? C.redBg
+        : kpis.rougePercent > 15
+          ? C.amberBg
+          : C.greenBg;
 
-    doc.roundedRect(legendX + 185, ly - 4, CW - (legendX - ML) - 185, 18, 3).fill(statusBg);
+    doc
+      .roundedRect(legendX + 185, ly - 4, CW - (legendX - ML) - 185, 18, 3)
+      .fill(statusBg);
     doc.font('Helvetica-Bold').fontSize(7).fillColor(statusColor);
-    doc.text(status, legendX + 185, ly, { width: CW - (legendX - ML) - 185, align: 'center' });
+    doc.text(status, legendX + 185, ly, {
+      width: CW - (legendX - ML) - 185,
+      align: 'center',
+    });
 
     return y + donutSize + 18;
   }
 
   private drawDonut(
     doc: PDFKit.PDFDocument,
-    cx: number, cy: number,
-    outerR: number, innerR: number,
+    cx: number,
+    cy: number,
+    outerR: number,
+    innerR: number,
     segments: { pct: number; color: string }[],
   ) {
     const total = segments.reduce((s, seg) => s + seg.pct, 0);
@@ -329,8 +471,22 @@ export class PdfService {
         cx + outerR * Math.cos(currentAngle),
         cy + outerR * Math.sin(currentAngle),
       );
-      (doc as any).arc(cx, cy, outerR, currentAngle, currentAngle + sweep, false);
-      (doc as any).arc(cx, cy, innerR, currentAngle + sweep, currentAngle, true);
+      (doc as any).arc(
+        cx,
+        cy,
+        outerR,
+        currentAngle,
+        currentAngle + sweep,
+        false,
+      );
+      (doc as any).arc(
+        cx,
+        cy,
+        innerR,
+        currentAngle + sweep,
+        currentAngle,
+        true,
+      );
       doc.closePath();
       doc.fill(seg.color);
 
@@ -340,14 +496,20 @@ export class PdfService {
   }
 
   // ─── BAR CHART (Power BI professional) ─────────────────────────────────────
-  private drawLineChartSection(doc: PDFKit.PDFDocument, ML: number, CW: number, y: number, kpis: ReportKPIs): number {
+  private drawLineChartSection(
+    doc: PDFKit.PDFDocument,
+    ML: number,
+    CW: number,
+    y: number,
+    kpis: ReportKPIs,
+  ): number {
     const C = this.C;
 
     if (kpis.hourlyBreakdown.length === 0) return y;
 
     // ── Section title ──
     doc.font('Helvetica-Bold').fontSize(9).fillColor(C.navyLight);
-    doc.text('SUIVI D\'ACTIVITE', ML, y);
+    doc.text("SUIVI D'ACTIVITE", ML, y);
     doc.font('Helvetica').fontSize(6.5).fillColor(C.slateMuted);
     doc.text('Nombre de controles par heure', ML + 95, y + 1.5);
     y += 14;
@@ -357,9 +519,30 @@ export class PdfService {
     const cardW = (CW - cardGap * 2) / 3;
 
     const kpiData = [
-      { label: 'Total controles', value: `${kpis.totalLignes}`, badge: `${kpis.agentsActifs} agent(s)`, accent: '#3b82f6', bg: '#dbeafe', textColor: '#1e40af' },
-      { label: 'Conformite', value: `${kpis.vertPercent}%`, badge: `${kpis.vertCount} lignes`, accent: '#22c55e', bg: '#dcfce7', textColor: '#166534' },
-      { label: 'Arrets cumules', value: `${kpis.totalMinutes} min`, badge: `${kpis.rougeCount} rouge`, accent: '#f59e0b', bg: '#fef3c7', textColor: '#92400e' },
+      {
+        label: 'Total controles',
+        value: `${kpis.totalLignes}`,
+        badge: `${kpis.agentsActifs} agent(s)`,
+        accent: '#3b82f6',
+        bg: '#dbeafe',
+        textColor: '#1e40af',
+      },
+      {
+        label: 'Conformite',
+        value: `${kpis.vertPercent}%`,
+        badge: `${kpis.vertCount} lignes`,
+        accent: '#22c55e',
+        bg: '#dcfce7',
+        textColor: '#166534',
+      },
+      {
+        label: 'Arrets cumules',
+        value: `${kpis.totalMinutes} min`,
+        badge: `${kpis.rougeCount} rouge`,
+        accent: '#f59e0b',
+        bg: '#fef3c7',
+        textColor: '#92400e',
+      },
     ];
 
     kpiData.forEach((kpi, i) => {
@@ -367,7 +550,10 @@ export class PdfService {
 
       // Card body — colored background for readability
       doc.roundedRect(cx, y, cardW, 34, 5).fill(kpi.bg);
-      doc.roundedRect(cx, y, cardW, 34, 5).lineWidth(0.5).strokeColor(kpi.accent);
+      doc
+        .roundedRect(cx, y, cardW, 34, 5)
+        .lineWidth(0.5)
+        .strokeColor(kpi.accent);
 
       // Label — dark, clear
       doc.font('Helvetica-Bold').fontSize(7).fillColor(kpi.textColor);
@@ -379,9 +565,14 @@ export class PdfService {
 
       // Badge pill — solid accent color with white text
       const badgeW = 52;
-      doc.roundedRect(cx + cardW - badgeW - 8, y + 17, badgeW, 13, 6).fill(kpi.accent);
+      doc
+        .roundedRect(cx + cardW - badgeW - 8, y + 17, badgeW, 13, 6)
+        .fill(kpi.accent);
       doc.font('Helvetica-Bold').fontSize(6.5).fillColor('#ffffff');
-      doc.text(kpi.badge, cx + cardW - badgeW - 8, y + 20, { width: badgeW, align: 'center' });
+      doc.text(kpi.badge, cx + cardW - badgeW - 8, y + 20, {
+        width: badgeW,
+        align: 'center',
+      });
     });
     y += 42;
 
@@ -396,14 +587,17 @@ export class PdfService {
 
     // Card
     doc.roundedRect(ML, y, CW, chartH, 5).fill(C.white);
-    doc.roundedRect(ML, y, CW, chartH, 5).lineWidth(0.4).strokeColor(C.slateGhost);
+    doc
+      .roundedRect(ML, y, CW, chartH, 5)
+      .lineWidth(0.4)
+      .strokeColor(C.slateGhost);
 
     const data = kpis.hourlyBreakdown;
     const maxCount = Math.max(...data.map((d) => d.count), 1);
     const barCount = data.length;
 
     // Bar sizing — ensure bars are visible and well-spaced
-    const barW = Math.min(Math.max(plotW / barCount * 0.6, 6), 20);
+    const barW = Math.min(Math.max((plotW / barCount) * 0.6, 6), 20);
     const gapW = barCount > 1 ? (plotW - barW * barCount) / (barCount - 1) : 0;
     const offsetX = ML + padL;
 
@@ -450,7 +644,10 @@ export class PdfService {
 
       // Value label on top
       doc.font('Helvetica-Bold').fontSize(6).fillColor(C.navyLight);
-      doc.text(String(entry.count), bx, by - 9, { width: barW, align: 'center' });
+      doc.text(String(entry.count), bx, by - 9, {
+        width: barW,
+        align: 'center',
+      });
     });
 
     // ── X-axis labels ──
@@ -459,7 +656,10 @@ export class PdfService {
       if (i % showEvery === 0 || i === data.length - 1) {
         const lx = offsetX + i * (barW + gapW);
         doc.font('Helvetica').fontSize(5).fillColor(C.slateMuted);
-        doc.text(d.heure, lx - 2, y + padT + plotH + 5, { width: barW + 4, align: 'center' });
+        doc.text(d.heure, lx - 2, y + padT + plotH + 5, {
+          width: barW + 4,
+          align: 'center',
+        });
       }
     });
 
@@ -467,11 +667,22 @@ export class PdfService {
   }
 
   // ─── ANALYSIS ──────────────────────────────────────────────────────────────
-  private drawAnalysisSection(doc: PDFKit.PDFDocument, ML: number, CW: number, y: number, analysis: string): number {
+  private drawAnalysisSection(
+    doc: PDFKit.PDFDocument,
+    ML: number,
+    CW: number,
+    y: number,
+    analysis: string,
+  ): number {
     const C = this.C;
 
     // Separator
-    doc.moveTo(ML, y).lineTo(ML + CW, y).lineWidth(0.5).strokeColor(C.slateGhost).stroke();
+    doc
+      .moveTo(ML, y)
+      .lineTo(ML + CW, y)
+      .lineWidth(0.5)
+      .strokeColor(C.slateGhost)
+      .stroke();
     y += 10;
 
     doc.font('Helvetica-Bold').fontSize(8).fillColor(C.slateLight);
@@ -493,7 +704,10 @@ export class PdfService {
 
       if (line.startsWith('- ')) {
         doc.font('Helvetica').fontSize(7.5).fillColor(C.slateMid);
-        doc.text('•  ' + line.substring(2), ML + 6, y, { width: CW - 12, lineBreak: false });
+        doc.text('•  ' + line.substring(2), ML + 6, y, {
+          width: CW - 12,
+          lineBreak: false,
+        });
       } else {
         doc.font('Helvetica').fontSize(7.5).fillColor(C.slateMid);
         doc.text(line, ML, y, { width: CW, lineBreak: false });
@@ -508,10 +722,21 @@ export class PdfService {
   }
 
   // ─── RECOMMENDATIONS ───────────────────────────────────────────────────────
-  private drawRecommendationsSection(doc: PDFKit.PDFDocument, ML: number, CW: number, y: number, recommendations: string): number {
+  private drawRecommendationsSection(
+    doc: PDFKit.PDFDocument,
+    ML: number,
+    CW: number,
+    y: number,
+    recommendations: string,
+  ): number {
     const C = this.C;
 
-    doc.moveTo(ML, y).lineTo(ML + CW, y).lineWidth(0.5).strokeColor(C.slateGhost).stroke();
+    doc
+      .moveTo(ML, y)
+      .lineTo(ML + CW, y)
+      .lineWidth(0.5)
+      .strokeColor(C.slateGhost)
+      .stroke();
     y += 10;
 
     doc.font('Helvetica-Bold').fontSize(8).fillColor(C.slateLight);
@@ -536,7 +761,10 @@ export class PdfService {
         doc.text(line, ML + 16, y + 1, { width: CW - 22, lineBreak: false });
       } else {
         doc.font('Helvetica').fontSize(7.5).fillColor(C.slateMid);
-        doc.text('•  ' + line, ML + 6, y + 1, { width: CW - 12, lineBreak: false });
+        doc.text('•  ' + line, ML + 6, y + 1, {
+          width: CW - 12,
+          lineBreak: false,
+        });
       }
 
       y += lineH + 3;
@@ -546,19 +774,36 @@ export class PdfService {
   }
 
   // ─── FOOTER ────────────────────────────────────────────────────────────────
-  private drawFooter(doc: PDFKit.PDFDocument, W: number, H: number, params: PdfReportParams) {
+  private drawFooter(
+    doc: PDFKit.PDFDocument,
+    W: number,
+    H: number,
+    params: PdfReportParams,
+  ) {
     const C = this.C;
     const footerY = H - 35;
 
-    doc.moveTo(40, footerY).lineTo(W - 40, footerY).lineWidth(0.3).strokeColor(C.slateGhost).stroke();
+    doc
+      .moveTo(40, footerY)
+      .lineTo(W - 40, footerY)
+      .lineWidth(0.3)
+      .strokeColor(C.slateGhost)
+      .stroke();
 
     doc.font('Helvetica').fontSize(6).fillColor(C.slateMuted);
     doc.text(
       `Rapport genere automatiquement  |  LEONI Qualite IA  |  ${params.reference}  |  ${params.dateFormatted}`,
-      40, footerY + 6, { width: W - 80, align: 'center' },
+      40,
+      footerY + 6,
+      { width: W - 80, align: 'center' },
     );
 
     doc.font('Helvetica').fontSize(5).fillColor(C.slateFaint);
-    doc.text('Document confidentiel — Usage interne uniquement', 40, footerY + 16, { width: W - 80, align: 'center' });
+    doc.text(
+      'Document confidentiel — Usage interne uniquement',
+      40,
+      footerY + 16,
+      { width: W - 80, align: 'center' },
+    );
   }
 }

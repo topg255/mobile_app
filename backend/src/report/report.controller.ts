@@ -41,7 +41,9 @@ export class ReportController {
   @ApiResponse({ status: 400, description: 'Erreur de validation' })
   async manualGenerate(@Query('date') date?: string) {
     try {
-      const reports = await this.reportService.manualGenerate(date || undefined);
+      const reports = await this.reportService.manualGenerate(
+        date || undefined,
+      );
       return {
         message: `${reports.length} rapport(s) genere(s) avec succes`,
         reports,
@@ -63,9 +65,10 @@ export class ReportController {
     @Query('limit') limit?: string,
     @Query('superviseurId') superviseurId?: string,
   ) {
-    const effectiveId = req.user.role === UserRole.SUPERVISEUR_QUALITE
-      ? req.user.id
-      : superviseurId;
+    const effectiveId =
+      req.user.role === UserRole.SUPERVISEUR_QUALITE
+        ? req.user.id
+        : superviseurId;
     return this.reportService.getReports(
       effectiveId,
       parseInt(page || '1'),
@@ -83,10 +86,19 @@ export class ReportController {
 
   @Post('recipients')
   @Roles(UserRole.SUPER_ADMIN, UserRole.SUPERVISEUR_QUALITE)
-  @ApiOperation({ summary: 'Ajouter un destinataire additionnel au rapport IA' })
-  @ApiQuery({ name: 'superviseurId', required: false, description: 'ID du superviseur (Super Admin uniquement)' })
+  @ApiOperation({
+    summary: 'Ajouter un destinataire additionnel au rapport IA',
+  })
+  @ApiQuery({
+    name: 'superviseurId',
+    required: false,
+    description: 'ID du superviseur (Super Admin uniquement)',
+  })
   @ApiResponse({ status: 201, description: 'Destinataire ajoute' })
-  @ApiResponse({ status: 400, description: 'Email invalide ou email du superviseur' })
+  @ApiResponse({
+    status: 400,
+    description: 'Email invalide ou email du superviseur',
+  })
   @ApiResponse({ status: 409, description: 'Email deja present' })
   async addRecipient(
     @Request() req,
@@ -114,14 +126,14 @@ export class ReportController {
 
   @Get(':id')
   @Roles(UserRole.SUPER_ADMIN, UserRole.SUPERVISEUR_QUALITE)
-  @ApiOperation({ summary: 'Detail d\'un rapport' })
+  @ApiOperation({ summary: "Detail d'un rapport" })
   async getReportById(@Param('id') id: string) {
     return this.reportService.getReportById(id);
   }
 
   @Get(':id/pdf')
   @Roles(UserRole.SUPER_ADMIN, UserRole.SUPERVISEUR_QUALITE)
-  @ApiOperation({ summary: 'Telecharger le PDF d\'un rapport' })
+  @ApiOperation({ summary: "Telecharger le PDF d'un rapport" })
   async downloadPdf(@Param('id') id: string, @Res() res: Response) {
     const pdfBuffer = await this.reportService.downloadReportPdf(id);
     res.set({

@@ -3,7 +3,8 @@ import { IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 export class ResetPasswordDto {
   @ApiProperty({
-    description: 'Token de réinitialisation reçu par email (valable 15 minutes)',
+    description:
+      'Token de réinitialisation reçu par email (valable 15 minutes)',
     example: 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0',
   })
   @IsString()

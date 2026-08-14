@@ -27,13 +27,17 @@ export class EmailService {
       });
       this.logger.log('Gmail SMTP configured');
     } else {
-      this.logger.warn('GMAIL_USER / GMAIL_PASS not set — emails will not be sent');
+      this.logger.warn(
+        'GMAIL_USER / GMAIL_PASS not set — emails will not be sent',
+      );
     }
   }
 
   async sendEmail(options: EmailOptions): Promise<boolean> {
     if (!this.transporter) {
-      this.logger.warn(`Gmail SMTP not configured — email to ${options.to} skipped`);
+      this.logger.warn(
+        `Gmail SMTP not configured — email to ${options.to} skipped`,
+      );
       return false;
     }
 
@@ -50,25 +54,25 @@ export class EmailService {
       }
 
       if (options.pdfBuffer) {
-        mailOptions.attachments = [{
-          filename: options.pdfFilename || 'rapport-qualite.pdf',
-          content: options.pdfBuffer,
-          contentType: 'application/pdf',
-        }];
+        mailOptions.attachments = [
+          {
+            filename: options.pdfFilename || 'rapport-qualite.pdf',
+            content: options.pdfBuffer,
+            contentType: 'application/pdf',
+          },
+        ];
       }
 
       const info = await this.transporter.sendMail(mailOptions);
       const ccList = options.cc || [];
-      const recipientsLabel = ccList.length > 0
-        ? `${options.to}, ${ccList.join(', ')}`
-        : options.to;
+      const recipientsLabel =
+        ccList.length > 0 ? `${options.to}, ${ccList.join(', ')}` : options.to;
       this.logger.log(`Email sent to ${recipientsLabel}: ${info.messageId}`);
       return true;
     } catch (error) {
       const ccList = options.cc || [];
-      const recipientsLabel = ccList.length > 0
-        ? `${options.to}, ${ccList.join(', ')}`
-        : options.to;
+      const recipientsLabel =
+        ccList.length > 0 ? `${options.to}, ${ccList.join(', ')}` : options.to;
       this.logger.warn(`Email to ${recipientsLabel} failed: ${error.message}`);
       return false;
     }

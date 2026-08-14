@@ -13,7 +13,12 @@ export class NotificationService {
     private readonly gateway: NotificationGateway,
   ) {}
 
-  async create(userId: string, type: NotificationType, message: string, relatedId?: string) {
+  async create(
+    userId: string,
+    type: NotificationType,
+    message: string,
+    relatedId?: string,
+  ) {
     const notification = this.notificationRepo.create({
       user: { id: userId } as User,
       type,
@@ -29,7 +34,12 @@ export class NotificationService {
     return saved;
   }
 
-  async createForUser(user: User, type: NotificationType, message: string, relatedId?: string) {
+  async createForUser(
+    user: User,
+    type: NotificationType,
+    message: string,
+    relatedId?: string,
+  ) {
     return this.create(user.id, type, message, relatedId);
   }
 

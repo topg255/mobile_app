@@ -526,3 +526,76 @@ export const signaturePadAPI = {
   remove: (): Promise<{ data: { success: boolean } }> =>
     api.delete('/signature-pad/me'),
 };
+
+export const capaAPI = {
+  getAll: (params?: Record<string, string>): Promise<{ data: import('../types').Capa[] }> =>
+    api.get('/capa', { params }),
+
+  getStats: (): Promise<{ data: import('../types').CapaStats }> =>
+    api.get('/capa/stats'),
+
+  getAgents: (): Promise<{ data: import('../types').User[] }> =>
+    api.get('/capa/agents'),
+
+  getById: (id: number): Promise<{ data: import('../types').Capa }> =>
+    api.get(`/capa/${id}`),
+
+  create: (data: {
+    titre: string;
+    description: string;
+    type: import('../types').CapaTypeValue;
+    priority: import('../types').CapaPriority;
+    dateEcheance: string;
+    ligneControleId?: string;
+    nomLigne?: string;
+    causeRacine?: string;
+    coutEstime?: number;
+  }): Promise<{ data: import('../types').Capa }> =>
+    api.post('/capa', data),
+
+  updateStatus: (
+    id: number,
+    status: import('../types').CapaStatus,
+    note?: string,
+  ): Promise<{ data: import('../types').Capa }> =>
+    api.patch(`/capa/${id}/status`, { status, note }),
+
+  addAction: (
+    capaId: number,
+    data: {
+      titre: string;
+      description: string;
+      type: import('../types').ActionTypeValue;
+      responsableId: string;
+      responsableName: string;
+      dateEcheance: string;
+    },
+  ): Promise<{ data: import('../types').CapaAction }> =>
+    api.post(`/capa/${capaId}/actions`, data),
+
+  updateAction: (
+    capaId: number,
+    actionId: number,
+    data: {
+      titre?: string;
+      description?: string;
+      status?: import('../types').ActionStatusValue;
+      preuve?: string;
+    },
+  ): Promise<{ data: import('../types').CapaAction }> =>
+    api.patch(`/capa/${capaId}/actions/${actionId}`, data),
+
+  completeAction: (
+    actionId: number,
+    preuve: string,
+  ): Promise<{ data: import('../types').CapaAction }> =>
+    api.patch(`/capa/actions/${actionId}/complete`, { preuve }),
+
+  addCommentaire: (
+    capaId: number,
+    contenu: string,
+  ): Promise<{ data: import('../types').CapaCommentaire }> =>
+    api.post(`/capa/${capaId}/commentaires`, { contenu }),
+
+  getPdfUrl: (id: number): string => `${API_URL}/capa/${id}/pdf`,
+};

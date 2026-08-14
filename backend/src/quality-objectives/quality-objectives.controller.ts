@@ -49,27 +49,52 @@ export class QualityObjectivesController {
   @ApiOperation({ summary: 'Lister les objectifs (scope par role)' })
   @ApiQuery({ name: 'status', required: false, enum: ObjectiveStatus })
   @ApiQuery({ name: 'category', required: false, enum: ObjectiveCategory })
-  @ApiQuery({ name: 'superviseurId', required: false, description: 'Super Admin uniquement' })
+  @ApiQuery({
+    name: 'superviseurId',
+    required: false,
+    description: 'Super Admin uniquement',
+  })
   async findAll(
     @Request() req,
     @Query('status') status?: ObjectiveStatus,
     @Query('category') category?: ObjectiveCategory,
     @Query('superviseurId') superviseurId?: string,
   ) {
-    return this.objectivesService.findAll(req.user, status, category, superviseurId);
+    return this.objectivesService.findAll(
+      req.user,
+      status,
+      category,
+      superviseurId,
+    );
   }
 
   @Get('dashboard')
-  @ApiOperation({ summary: 'Tableau de bord des objectifs (KPIs, evolution, risques, badges)' })
-  @ApiQuery({ name: 'superviseurId', required: false, description: 'Super Admin uniquement' })
-  async getDashboard(@Request() req, @Query('superviseurId') superviseurId?: string) {
+  @ApiOperation({
+    summary: 'Tableau de bord des objectifs (KPIs, evolution, risques, badges)',
+  })
+  @ApiQuery({
+    name: 'superviseurId',
+    required: false,
+    description: 'Super Admin uniquement',
+  })
+  async getDashboard(
+    @Request() req,
+    @Query('superviseurId') superviseurId?: string,
+  ) {
     return this.objectivesService.getDashboard(req.user, superviseurId);
   }
 
   @Get('predictions')
   @ApiOperation({ summary: 'Predictions de reussite de tous les objectifs' })
-  @ApiQuery({ name: 'superviseurId', required: false, description: 'Super Admin uniquement' })
-  async getPredictions(@Request() req, @Query('superviseurId') superviseurId?: string) {
+  @ApiQuery({
+    name: 'superviseurId',
+    required: false,
+    description: 'Super Admin uniquement',
+  })
+  async getPredictions(
+    @Request() req,
+    @Query('superviseurId') superviseurId?: string,
+  ) {
     return this.objectivesService.getPredictions(req.user, superviseurId);
   }
 
@@ -82,13 +107,20 @@ export class QualityObjectivesController {
 
   @Get('badges')
   @ApiOperation({ summary: 'Badges debloques (scope par role)' })
-  @ApiQuery({ name: 'superviseurId', required: false, description: 'Super Admin uniquement' })
-  async getBadges(@Request() req, @Query('superviseurId') superviseurId?: string) {
+  @ApiQuery({
+    name: 'superviseurId',
+    required: false,
+    description: 'Super Admin uniquement',
+  })
+  async getBadges(
+    @Request() req,
+    @Query('superviseurId') superviseurId?: string,
+  ) {
     return this.objectivesService.getBadges(req.user, superviseurId);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Detail d\'un objectif' })
+  @ApiOperation({ summary: "Detail d'un objectif" })
   @ApiResponse({ status: 404, description: 'Objectif introuvable' })
   async findOne(@Request() req, @Param('id') id: string) {
     return this.objectivesService.findOne(req.user, id);

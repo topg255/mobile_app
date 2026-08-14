@@ -3,7 +3,7 @@ import { IsNotEmpty, IsString } from 'class-validator';
 
 export class LoginDto {
   @ApiProperty({
-    description: 'Matricule de l\'utilisateur',
+    description: "Matricule de l'utilisateur",
     example: 'SUP-2024-001',
   })
   @IsString()
@@ -11,7 +11,7 @@ export class LoginDto {
   matricule: string;
 
   @ApiProperty({
-    description: 'Mot de passe de l\'utilisateur',
+    description: "Mot de passe de l'utilisateur",
     example: 'MonMotDePasse123!',
   })
   @IsString()

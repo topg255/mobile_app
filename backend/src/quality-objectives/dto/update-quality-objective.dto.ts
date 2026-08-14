@@ -10,7 +10,10 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import { ObjectiveCategory, ObjectivePriority } from '../entities/quality-objective.entity';
+import {
+  ObjectiveCategory,
+  ObjectivePriority,
+} from '../entities/quality-objective.entity';
 
 export class UpdateQualityObjectiveDto {
   @IsOptional()

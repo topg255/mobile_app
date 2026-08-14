@@ -19,7 +19,11 @@ import { randomUUID } from 'crypto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { User } from '../auth/entities/user.entity';
 import { LibraryService } from './library.service';
-import { UpdateImageDto, MoveImagesDto, CreateFolderDto } from './dto/library.dto';
+import {
+  UpdateImageDto,
+  MoveImagesDto,
+  CreateFolderDto,
+} from './dto/library.dto';
 
 const storage = diskStorage({
   destination: join(process.cwd(), 'uploads', 'library'),
@@ -34,7 +38,12 @@ export class LibraryController {
   constructor(private readonly libraryService: LibraryService) {}
 
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file', { storage, limits: { fileSize: 10 * 1024 * 1024 } }))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage,
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
   upload(
     @UploadedFile() file: Express.Multer.File,
     @Request() req: any,
@@ -44,7 +53,11 @@ export class LibraryController {
   }
 
   @Get('images')
-  getImages(@Request() req: any, @Query('folderId') folderId?: string, @Query('agentId') agentId?: string) {
+  getImages(
+    @Request() req: any,
+    @Query('folderId') folderId?: string,
+    @Query('agentId') agentId?: string,
+  ) {
     return this.libraryService.getImages(req.user as User, folderId, agentId);
   }
 
@@ -98,7 +111,11 @@ export class LibraryController {
   }
 
   @Patch('folders/:id')
-  renameFolder(@Param('id') id: string, @Body('name') name: string, @Request() req: any) {
+  renameFolder(
+    @Param('id') id: string,
+    @Body('name') name: string,
+    @Request() req: any,
+  ) {
     return this.libraryService.renameFolder(id, name, req.user as User);
   }
 

@@ -35,7 +35,8 @@ export class SuperAdminController {
   @Get('stats')
   @ApiOperation({
     summary: 'Statistiques globales',
-    description: 'Retourne les statistiques de la plateforme : nombre d\'utilisateurs, agents, superviseurs, en attente, etc.',
+    description:
+      "Retourne les statistiques de la plateforme : nombre d'utilisateurs, agents, superviseurs, en attente, etc.",
   })
   @ApiResponse({ status: 200, description: 'Statistiques retournées' })
   async getStats() {
@@ -54,10 +55,14 @@ export class SuperAdminController {
 
   @Get('users/pending')
   @ApiOperation({
-    summary: 'Utilisateurs en attente d\'approbation',
-    description: 'Retourne tous les utilisateurs qui n\'ont pas encore été approuvés.',
+    summary: "Utilisateurs en attente d'approbation",
+    description:
+      "Retourne tous les utilisateurs qui n'ont pas encore été approuvés.",
   })
-  @ApiResponse({ status: 200, description: 'Liste des utilisateurs en attente' })
+  @ApiResponse({
+    status: 200,
+    description: 'Liste des utilisateurs en attente',
+  })
   async getPendingUsers() {
     return this.superAdminService.getPendingUsers();
   }
@@ -66,7 +71,8 @@ export class SuperAdminController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Approuver un utilisateur',
-    description: 'Approuve le compte d\'un agent ou superviseur. L\'utilisateur pourra alors se connecter.',
+    description:
+      "Approuve le compte d'un agent ou superviseur. L'utilisateur pourra alors se connecter.",
   })
   @ApiResponse({ status: 200, description: 'Utilisateur approuvé' })
   @ApiResponse({ status: 404, description: 'Utilisateur non trouvé' })
@@ -78,7 +84,8 @@ export class SuperAdminController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Désapprouver un utilisateur',
-    description: 'Désapprouve le compte d\'un agent ou superviseur. L\'utilisateur ne pourra plus se connecter.',
+    description:
+      "Désapprouve le compte d'un agent ou superviseur. L'utilisateur ne pourra plus se connecter.",
   })
   @ApiResponse({ status: 200, description: 'Utilisateur désapprouvé' })
   @ApiResponse({ status: 404, description: 'Utilisateur non trouvé' })
@@ -101,10 +108,21 @@ export class SuperAdminController {
   @Get('logs')
   @ApiOperation({
     summary: 'Historique des connexions/déconnexions',
-    description: 'Retourne l\'historique de toutes les connexions et déconnexions avec date, heure et détails.',
+    description:
+      "Retourne l'historique de toutes les connexions et déconnexions avec date, heure et détails.",
   })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Numéro de page' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Nombre d\'éléments par page' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Numéro de page',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: "Nombre d'éléments par page",
+  })
   @ApiResponse({ status: 200, description: 'Historique des logs' })
   async getAllLoginLogs(
     @Query('page') page?: number,
@@ -115,10 +133,11 @@ export class SuperAdminController {
 
   @Get('logs/user/:userId')
   @ApiOperation({
-    summary: 'Historique des connexions d\'un utilisateur',
-    description: 'Retourne l\'historique de connexion/déconnexion d\'un utilisateur spécifique.',
+    summary: "Historique des connexions d'un utilisateur",
+    description:
+      "Retourne l'historique de connexion/déconnexion d'un utilisateur spécifique.",
   })
-  @ApiResponse({ status: 200, description: 'Historique de l\'utilisateur' })
+  @ApiResponse({ status: 200, description: "Historique de l'utilisateur" })
   @ApiResponse({ status: 404, description: 'Utilisateur non trouvé' })
   async getLoginLogsByUser(@Param('userId', ParseUUIDPipe) userId: string) {
     return this.superAdminService.getLoginLogsByUser(userId);

@@ -13,7 +13,9 @@ export class ChatMessageDto {
     enum: ['user', 'assistant'],
     description: 'Role du message',
   })
-  @IsIn(['user', 'assistant'], { message: 'Le role doit etre user ou assistant' })
+  @IsIn(['user', 'assistant'], {
+    message: 'Le role doit etre user ou assistant',
+  })
   role: 'user' | 'assistant';
 
   @ApiProperty({ description: 'Contenu du message' })
@@ -23,7 +25,10 @@ export class ChatMessageDto {
 }
 
 export class ChatRequestDto {
-  @ApiProperty({ type: [ChatMessageDto], description: 'Historique de la conversation' })
+  @ApiProperty({
+    type: [ChatMessageDto],
+    description: 'Historique de la conversation',
+  })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ChatMessageDto)

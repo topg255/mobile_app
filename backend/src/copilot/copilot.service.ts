@@ -4,7 +4,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Mistral } from '@mistralai/mistralai';
 import type { ChatCompletionRequestMessage } from '@mistralai/mistralai/models/components';
-import { LigneControle, NoteQualite } from '../quality/entities/ligne-controle.entity';
+import {
+  LigneControle,
+  NoteQualite,
+} from '../quality/entities/ligne-controle.entity';
 import { User, UserRole } from '../auth/entities/user.entity';
 import { DailyReport } from '../report/entities/daily-report.entity';
 
@@ -60,8 +63,7 @@ export class CopilotService {
       (sum, l) => sum + (parseInt(l.delais, 10) || 0),
       0,
     );
-    const txConformite =
-      total > 0 ? Math.round((vert / total) * 1000) / 10 : 0;
+    const txConformite = total > 0 ? Math.round((vert / total) * 1000) / 10 : 0;
     return { total, vert, jaune, rouge, minutesArret, txConformite };
   }
 
@@ -126,7 +128,12 @@ export class CopilotService {
       .sort((a, b) => b.txConformite - a.txConformite);
 
     // Tendance journaliere sur 7 jours
-    const trend: { date: string; total: number; vert: number; txConformite: number }[] = [];
+    const trend: {
+      date: string;
+      total: number;
+      vert: number;
+      txConformite: number;
+    }[] = [];
     for (let i = 6; i >= 0; i--) {
       const dayStart = new Date(now);
       dayStart.setDate(now.getDate() - i);
@@ -158,7 +165,9 @@ export class CopilotService {
       lines.push('Aucun agent rattache.');
     } else {
       agents.forEach((a) =>
-        lines.push(`- ${a.firstName} ${a.lastName} (matricule: ${a.matricule})`),
+        lines.push(
+          `- ${a.firstName} ${a.lastName} (matricule: ${a.matricule})`,
+        ),
       );
     }
     lines.push('');
@@ -180,7 +189,9 @@ export class CopilotService {
     lines.push('');
     lines.push('=== TENDANCE JOURNALIERE (7 JOURS) ===');
     trend.forEach((t) =>
-      lines.push(`- ${t.date}: ${t.total} lignes, ${t.vert} vertes, ${t.txConformite}% conformite`),
+      lines.push(
+        `- ${t.date}: ${t.total} lignes, ${t.vert} vertes, ${t.txConformite}% conformite`,
+      ),
     );
     lines.push('');
     lines.push('=== DERNIERS RAPPORTS IA ===');
@@ -188,9 +199,7 @@ export class CopilotService {
       lines.push('Aucun rapport IA genere.');
     } else {
       reports.forEach((r) =>
-        lines.push(
-          `- ${r.reportDate} (${r.status}): ${r.summary}`,
-        ),
+        lines.push(`- ${r.reportDate} (${r.status}): ${r.summary}`),
       );
     }
 
@@ -244,7 +253,7 @@ export class CopilotService {
       const fallback = [
         'Quelle est la tendance de conformite sur les 7 derniers jours ?',
         'Quel agent a la meilleure performance sur 30 jours ?',
-        'Quelles sont les lignes critiques aujourd\'hui ?',
+        "Quelles sont les lignes critiques aujourd'hui ?",
       ];
       suggestedQuestions = fallback;
     }
@@ -256,7 +265,11 @@ export class CopilotService {
     superviseurId: string,
     superviseurName: string,
     messages: ChatMessageInput[],
-  ): Promise<{ answer: string; suggestedQuestions: string[]; dataContext: DayMetrics }> {
+  ): Promise<{
+    answer: string;
+    suggestedQuestions: string[];
+    dataContext: DayMetrics;
+  }> {
     if (!messages || messages.length === 0) {
       throw new BadRequestException('Aucun message fourni');
     }
@@ -284,7 +297,7 @@ export class CopilotService {
     const mistralMessages: ChatCompletionRequestMessage[] = [
       { role: 'system', content: systemPrompt },
       ...messages.slice(-20).map((m) => ({
-        role: m.role as 'user' | 'assistant',
+        role: m.role,
         content: m.content,
       })),
     ];
@@ -299,9 +312,7 @@ export class CopilotService {
       });
       const content = completion.choices?.[0]?.message?.content;
       raw = Array.isArray(content)
-        ? content
-            .map((chunk) => ('text' in chunk ? chunk.text : ''))
-            .join('')
+        ? content.map((chunk) => ('text' in chunk ? chunk.text : '')).join('')
         : (content ?? '');
       this.logger.log(`Mistral response received (${raw.length} chars)`);
     } catch (error) {

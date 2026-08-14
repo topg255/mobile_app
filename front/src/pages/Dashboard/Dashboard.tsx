@@ -12,6 +12,8 @@ import NotificationBell from '../../components/NotificationBell';
 import CalendarPage from '../Calendar/CalendarPage';
 import MyTasksPage from '../Calendar/MyTasksPage';
 import SignaturePage from '../SignaturePad/SignaturePage';
+import CapaPage from '../Capa/CapaPage';
+import CapaFormModal from '../../components/Capa/CapaFormModal';
 import UserProfileDrawer from '../../components/UserProfileDrawer';
 import { stripEmojis } from '../../utils/text';
 import ImageLibrary from '../../components/ImageLibrary';
@@ -233,6 +235,14 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
               onClick={() => handleTab('signature')}
             >
               <PenLine size={18} /> <span>Ma signature</span>
+            </button>
+          )}
+          {isSuperviseur && (
+            <button
+              className={`nav-item ${activeTab === 'capa' ? 'active' : ''}`}
+              onClick={() => handleTab('capa')}
+            >
+              <ClipboardList size={18} /> <span>CAPAs</span>
             </button>
           )}
             </>
@@ -825,6 +835,7 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
           {activeTab === 'calendar' && isSuperviseur && <CalendarPage />}
           {activeTab === 'my-tasks' && isAgent && <MyTasksPage />}
           {activeTab === 'signature' && isSuperviseur && <SignaturePage />}
+          {activeTab === 'capa' && isSuperviseur && <CapaPage />}
           {activeTab === 'messages' && <Chat onUnreadCountChange={setUnreadCount} />}
           {activeTab === 'images' && <ImageLibrary userRole={user?.role || ''} />}
 {activeTab === 'quality-objectives' && (
@@ -2142,12 +2153,16 @@ const LigneDetailModal: React.FC<{ ligne: LigneControle; onClose: () => void }> 
 };
 
 const RapportTab: React.FC = () => {
+  const { user, isSuperviseur } = useAuth();
   const [debutDate, setDebutDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [rapport, setRapport] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [animatedIn, setAnimatedIn] = useState(false);
+  const [showCapaForm, setShowCapaForm] = useState(false);
+  const [capaLigneId, setCapaLigneId] = useState<string | undefined>(undefined);
+  const [capaNomLigne, setCapaNomLigne] = useState<string | undefined>(undefined);
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2535,6 +2550,24 @@ const RapportTab: React.FC = () => {
                       <span className="rapport-duration-badge">{d.delais} min</span>
                     </span>
                     <span className="rd-col rd-date">{formatDate(d.createdAt)}</span>
+                    {d.note === 'rouge' && isSuperviseur && (
+                      <span className="rd-col" style={{ marginLeft: 8 }}>
+                        <button
+                          onClick={() => {
+                            setCapaLigneId(d.id);
+                            setCapaNomLigne(d.nomLigne);
+                            setShowCapaForm(true);
+                          }}
+                          style={{
+                            padding: '3px 8px', borderRadius: 6, border: '1px solid #FECACA',
+                            background: '#FEF2F2', color: '#DC2626', fontSize: 10, fontWeight: 600,
+                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3,
+                          }}
+                        >
+                          <AlertTriangle size={10} /> CAPA
+                        </button>
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
@@ -2546,6 +2579,16 @@ const RapportTab: React.FC = () => {
             )}
           </div>
         </div>
+      )}
+
+      {showCapaForm && (
+        <CapaFormModal
+          open={showCapaForm}
+          onClose={() => { setShowCapaForm(false); setCapaLigneId(undefined); setCapaNomLigne(undefined); }}
+          onSaved={() => { setShowCapaForm(false); setCapaLigneId(undefined); setCapaNomLigne(undefined); toast.success('CAPA créé'); }}
+          ligneControleId={capaLigneId}
+          nomLigne={capaNomLigne}
+        />
       )}
     </div>
   );

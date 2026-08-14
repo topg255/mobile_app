@@ -21,7 +21,8 @@ export class RapportDto {
   endDate: string;
 
   @ApiProperty({
-    description: 'UUID de l\'agent qualité (requis pour les superviseurs, ignoré pour les agents)',
+    description:
+      "UUID de l'agent qualité (requis pour les superviseurs, ignoré pour les agents)",
     example: '550e8400-e29b-41d4-a716-446655440000',
     required: false,
   })

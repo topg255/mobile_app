@@ -12,7 +12,9 @@ import { Repository } from 'typeorm';
 import { User } from '../auth/entities/user.entity';
 
 @WebSocketGateway({ cors: { origin: '*' }, namespace: '/notifications' })
-export class NotificationGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class NotificationGateway
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server: Server;
 
@@ -49,7 +51,9 @@ export class NotificationGateway implements OnGatewayInit, OnGatewayConnection, 
         this.userSockets.set(userId, new Set());
       }
       this.userSockets.get(userId)!.add(client.id);
-      console.log(`[Notif-WS] ${user.firstName} ${user.lastName} connected (${client.id}), total users: ${this.userSockets.size}`);
+      console.log(
+        `[Notif-WS] ${user.firstName} ${user.lastName} connected (${client.id}), total users: ${this.userSockets.size}`,
+      );
     } catch (err) {
       console.log('[Notif-WS] Connection error:', err.message);
       client.disconnect();
@@ -66,7 +70,9 @@ export class NotificationGateway implements OnGatewayInit, OnGatewayConnection, 
           this.userSockets.delete(userId);
         }
       }
-      console.log(`[Notif-WS] User ${userId} disconnected, remaining users: ${this.userSockets.size}`);
+      console.log(
+        `[Notif-WS] User ${userId} disconnected, remaining users: ${this.userSockets.size}`,
+      );
     }
   }
 
