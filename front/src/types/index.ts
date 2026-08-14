@@ -467,6 +467,7 @@ export interface CalendarEvent {
   title: string;
   description: string | null;
   type: CalendarEventType;
+  customType: string | null;
   priority: EventPriority;
   startDate: string;
   endDate: string;

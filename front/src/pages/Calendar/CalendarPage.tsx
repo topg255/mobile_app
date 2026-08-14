@@ -45,6 +45,7 @@ import {
 } from '../../types';
 import { calendarAPI } from '../../api';
 import { toast } from 'react-hot-toast';
+import './CalendarPage.css';
 
 type ViewType = 'dayGridMonth' | 'timeGridWeek' | 'timeGridDay' | 'listWeek';
 
@@ -120,7 +121,9 @@ export default function CalendarPage() {
     setEvents,
   } = useCalendar();
 
-  const [currentView, setCurrentView] = useState<ViewType>('timeGridWeek');
+  const isMobile = (): boolean => typeof window !== 'undefined' && window.innerWidth < 1024;
+
+  const [currentView, setCurrentView] = useState<ViewType>(() => (isMobile() ? 'dayGridMonth' : 'timeGridWeek'));
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [activeTypes, setActiveTypes] = useState<CalendarEventType[]>([]);
   const [activePriorities, setActivePriorities] = useState<EventPriority[]>([]);
@@ -375,21 +378,9 @@ export default function CalendarPage() {
   const priorityDot = (p: EventPriority) => EVENT_PRIORITY_COLORS[p] ?? '#3b82f6';
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f1f5f9' }}>
-      <div style={{ display: 'flex', gap: 16, padding: 16, alignItems: 'flex-start', maxWidth: 1500, margin: '0 auto' }}>
-        <div
-          style={{
-            width: 300,
-            flexShrink: 0,
-            backgroundColor: '#ffffff',
-            borderRadius: 16,
-            padding: 16,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 14,
-            boxShadow: '0 1px 3px rgba(15,23,42,0.06)',
-          }}
-        >
+    <div className="cal-page">
+      <div className="cal-layout">
+        <div className="cal-sidebar">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: 15, fontWeight: 600, color: '#0f172a' }}>Calendrier</span>
             <button
@@ -441,7 +432,7 @@ export default function CalendarPage() {
             <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', marginBottom: 6 }}>
               Filtres par type
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            <div className="cal-chip-row">
               {(Object.keys(TYPE_LABELS) as CalendarEventType[]).map((t) => {
                 const active = activeTypes.includes(t);
                 const Icon = TYPE_LABELS[t].icon;
@@ -470,7 +461,7 @@ export default function CalendarPage() {
             <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', marginBottom: 6 }}>
               Filtres par priorité
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            <div className="cal-chip-row">
               {(Object.keys(PRIORITY_LABELS) as EventPriority[]).map((p) => {
                 const active = activePriorities.includes(p);
                 return (
@@ -635,8 +626,8 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        <div style={{ flex: 1, minWidth: 0, backgroundColor: '#ffffff', borderRadius: 16, padding: 14, boxShadow: '0 1px 3px rgba(15,23,42,0.06)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <div className="cal-main">
+          <div className="cal-toolbar">
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <button onClick={() => navigate(-1)} style={navBtnStyle}>
                 <ChevronLeft size={16} />
@@ -648,17 +639,18 @@ export default function CalendarPage() {
                 <ChevronRight size={16} />
               </button>
             </div>
-            <span style={{ fontSize: 16, fontWeight: 600, color: '#0f172a', textTransform: 'capitalize' }}>
+            <span className="cal-toolbar-title" style={{ fontSize: 16, fontWeight: 600, color: '#0f172a' }}>
               {formatDayTitle(selectedDate)}
             </span>
             {isLoading && <span style={{ fontSize: 12, color: '#94a3b8' }}>Chargement…</span>}
           </div>
 
-          <FullCalendar
-            ref={calendarRef}
-            plugins={[classicTheme, dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
-            locale={frLocale}
-            initialView="timeGridWeek"
+          <div className={currentView === 'timeGridWeek' || currentView === 'timeGridDay' ? 'cal-time-scroll' : ''}>
+            <FullCalendar
+              ref={calendarRef}
+              plugins={[classicTheme, dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
+              locale={frLocale}
+              initialView={currentView}
             viewDidMount={(arg) => setSelectedDate(new Date(arg.view.currentStart))}
             headerToolbar={false}
             selectable
@@ -683,6 +675,7 @@ export default function CalendarPage() {
               arg.el.title = tip;
             }}
           />
+          </div>
         </div>
       </div>
 

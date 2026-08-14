@@ -12,7 +12,7 @@ import {
   MoreThanOrEqual,
   LessThanOrEqual,
 } from 'typeorm';
-import { CalendarEvent, EventPriority, EventStatus } from './entities/calendar-event.entity';
+import { CalendarEvent, CalendarEventType, EventPriority, EventStatus } from './entities/calendar-event.entity';
 import { EventNotification, NotifType } from './entities/event-notification.entity';
 import { User, UserRole } from '../auth/entities/user.entity';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -146,6 +146,7 @@ export class CalendarService {
       title: dto.title,
       description: dto.description ?? null,
       type: dto.type,
+      customType: dto.type === CalendarEventType.AUTRE ? (dto.customType ?? null) : null,
       priority: dto.priority ?? EventPriority.MEDIUM,
       startDate: dto.startDate,
       endDate: dto.endDate,
@@ -219,6 +220,9 @@ export class CalendarService {
     if (dto.title !== undefined) event.title = dto.title;
     if (dto.description !== undefined) event.description = dto.description ?? null;
     if (dto.type !== undefined) event.type = dto.type;
+    if (dto.customType !== undefined) {
+      event.customType = event.type === CalendarEventType.AUTRE ? dto.customType ?? null : null;
+    }
     if (dto.priority !== undefined) event.priority = dto.priority;
     if (dto.startDate !== undefined) event.startDate = dto.startDate;
     if (dto.endDate !== undefined) event.endDate = dto.endDate;
@@ -477,6 +481,7 @@ export class CalendarService {
       title: parent.title,
       description: parent.description,
       type: parent.type,
+      customType: parent.customType,
       priority: parent.priority,
       startDate: start,
       endDate: new Date(start.getTime() + deltaMs),

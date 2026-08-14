@@ -45,6 +45,9 @@ export class CalendarEvent {
   @Column({ type: 'enum', enum: CalendarEventType })
   type: CalendarEventType;
 
+  @Column({ name: 'custom_type', type: 'varchar', length: 100, nullable: true })
+  customType: string | null;
+
   @Column({ type: 'enum', enum: EventPriority, default: EventPriority.MEDIUM })
   priority: EventPriority;
 

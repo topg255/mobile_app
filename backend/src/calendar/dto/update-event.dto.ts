@@ -38,6 +38,14 @@ export class UpdateEventDto {
   @IsEnum(CalendarEventType, { message: 'Type invalide' })
   type?: CalendarEventType;
 
+  @ApiPropertyOptional({
+    description: 'Precision du type quand type = AUTRE (ex: Livraison)',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  customType?: string;
+
   @ApiPropertyOptional({ enum: EventPriority })
   @IsOptional()
   @IsEnum(EventPriority, { message: 'Priorite invalide' })

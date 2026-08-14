@@ -284,7 +284,7 @@ export default function MyTasksPage() {
                                 const Icon = typeMeta.icon;
                                 return <Icon size={13} />;
                               })()}
-                              {TYPE_LABELS[t.type]}
+                              {t.type === CalendarEventType.AUTRE && t.customType ? t.customType : TYPE_LABELS[t.type]}
                             </span>
                             {t.location && (
                               <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>

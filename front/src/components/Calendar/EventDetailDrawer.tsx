@@ -89,6 +89,10 @@ export default function EventDetailDrawer({
   if (!open || !event) return null;
 
   const typeMeta = TYPE_META[event.type] ?? TYPE_META[CalendarEventType.AUTRE];
+  const typeLabel =
+    event.type === CalendarEventType.AUTRE && event.customType
+      ? event.customType
+      : TYPE_LABELS[event.type];
   const statusMeta = STATUS_META[event.status] ?? STATUS_META[EventStatus.PENDING];
   const isAssignedAgent =
     !!currentUserId && event.assignedToId === currentUserId;
@@ -163,7 +167,7 @@ export default function EventDetailDrawer({
                   const TypeIcon = typeMeta.icon;
                   return (
                     <>
-                      <TypeIcon size={13} /> {TYPE_LABELS[event.type]}
+                      <TypeIcon size={13} /> {typeLabel}
                     </>
                   );
                 })()}

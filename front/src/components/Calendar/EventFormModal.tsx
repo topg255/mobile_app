@@ -26,6 +26,7 @@ import {
   User,
 } from '../../types';
 import { ConfirmModal } from '../UI/ConfirmModal';
+import './EventFormModal.css';
 
 interface EventFormModalProps {
   open: boolean;
@@ -106,6 +107,7 @@ export default function EventFormModal({
 }: EventFormModalProps) {
   const [title, setTitle] = useState('');
   const [type, setType] = useState<CalendarEventType>(CalendarEventType.INSPECTION);
+  const [customType, setCustomType] = useState('');
   const [priority, setPriority] = useState<EventPriority>(EventPriority.MEDIUM);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -132,6 +134,7 @@ export default function EventFormModal({
       const end = new Date(event.endDate);
       setTitle(event.title);
       setType(event.type);
+      setCustomType(event.customType ?? '');
       setPriority(event.priority);
       setStartDate(toDateTimeLocal(start));
       setEndDate(toDateTimeLocal(end));
@@ -150,6 +153,7 @@ export default function EventFormModal({
       const end = new Date(base.getTime() + 60 * 60 * 1000);
       setTitle('');
       setType(CalendarEventType.INSPECTION);
+      setCustomType('');
       setPriority(EventPriority.MEDIUM);
       setStartDate(start);
       setEndDate(toDateTimeLocal(end));
@@ -207,6 +211,7 @@ export default function EventFormModal({
     const dto: Record<string, unknown> = {
       title: title.trim(),
       type,
+      customType: type === CalendarEventType.AUTRE ? customType.trim() || undefined : undefined,
       priority,
       startDate: new Date(startDate).toISOString(),
       endDate: new Date(endDate).toISOString(),
@@ -248,6 +253,7 @@ export default function EventFormModal({
 
   return (
     <div
+      className="efm-overlay"
       onClick={onClose}
       style={{
         position: 'fixed',
@@ -263,6 +269,7 @@ export default function EventFormModal({
       }}
     >
       <div
+        className="efm-panel"
         onClick={(e) => e.stopPropagation()}
         style={{
           background: '#ffffff',
@@ -301,8 +308,8 @@ export default function EventFormModal({
           </button>
         </div>
 
-        <div style={{ padding: '24px', display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-          <div style={{ flex: '1 1 300px', minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div className="efm-body" style={{ padding: '24px', display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+          <div className="efm-col" style={{ flex: '1 1 300px', minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
               <label style={labelStyle}>Titre *</label>
               <input
@@ -344,6 +351,18 @@ export default function EventFormModal({
                   </button>
                 ))}
               </div>
+              {type === CalendarEventType.AUTRE && (
+                <div style={{ marginTop: 10 }}>
+                  <label style={{ ...labelStyle, marginBottom: 6 }}>Précision du type *</label>
+                  <input
+                    style={inputStyle}
+                    value={customType}
+                    onChange={(e) => setCustomType(e.target.value)}
+                    placeholder="Ex: Livraison, Visite client, Nettoyage…"
+                    maxLength={100}
+                  />
+                </div>
+              )}
             </div>
 
             <div>
@@ -476,7 +495,7 @@ export default function EventFormModal({
             </div>
           </div>
 
-          <div style={{ flex: '1 1 300px', minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="efm-col" style={{ flex: '1 1 300px', minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
               <label style={labelStyle}>Description</label>
               <textarea
@@ -805,6 +824,7 @@ export default function EventFormModal({
         )}
 
         <div
+          className="efm-footer"
           style={{
             display: 'flex',
             justifyContent: 'space-between',

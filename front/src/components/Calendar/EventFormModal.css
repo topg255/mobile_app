@@ -1,0 +1,44 @@
+.efm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background-color: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.efm-panel {
+  background: #ffffff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 760px;
+  max-height: 92vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 640px) {
+  .efm-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+  .efm-panel {
+    max-height: 94dvh;
+    border-radius: 20px 20px 0 0;
+  }
+  .efm-col {
+    flex: 1 1 100% !important;
+    min-width: 0 !important;
+  }
+  .efm-footer {
+    flex-wrap: wrap;
+  }
+  .efm-footer > div {
+    flex: 1;
+    justify-content: flex-end;
+  }
+}
