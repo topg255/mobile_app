@@ -292,45 +292,25 @@ export class SignaturePadService {
       const pngBuffer = Buffer.from(pngBase64, 'base64');
 
       const doc = await PDFDocument.load(pdfBuffer);
-      const page = doc.getPage(doc.getPageCount() - 1);
-      const { width: pageWidth, height: pageHeight } = page.getSize();
+      const page = doc.addPage([595.28, 841.89]);
 
       const image = await doc.embedPng(pngBuffer);
-      const blockWidth = 200;
+      const blockWidth = 240;
       const blockHeight = Math.max(
         40,
         Math.round((signature.height / signature.width) * blockWidth),
       );
-      const x = pageWidth - blockWidth - 60;
-      const y = pageHeight - 165;
+      const x = 70;
 
       const font = await doc.embedStandardFont(StandardFonts.Helvetica);
+      const fontBold = await doc.embedStandardFont(StandardFonts.HelveticaBold);
+      const navy = rgb(0.06, 0.09, 0.16);
       const gray = rgb(0.41, 0.47, 0.55);
-
-      const lineY = y + blockHeight + 14;
-      page.drawLine({
-        start: { x: x - 40, y: lineY },
-        end: { x: pageWidth - 40, y: lineY },
-        thickness: 0.6,
-        color: gray,
-        dashArray: [2, 2],
-      });
-
-      page.drawImage(image, { x, y, width: blockWidth, height: blockHeight });
 
       const user = await this.userRepo.findOne({ where: { id: superviseurId } });
       const displayName = user
         ? `${user.firstName} ${user.lastName}`.trim()
         : '';
-      if (displayName) {
-        page.drawText(`Signe par : ${displayName}`, {
-          x,
-          y: lineY - 12,
-          size: 8,
-          font,
-          color: gray,
-        });
-      }
 
       const date = new Date()
         .toLocaleDateString('fr-FR', {
@@ -339,13 +319,58 @@ export class SignaturePadService {
           year: 'numeric',
         })
         .replace(/\//g, '/');
+
+      page.drawText('Signature du rapport', {
+        x,
+        y: 470,
+        size: 15,
+        font: fontBold,
+        color: navy,
+      });
+      page.drawText(
+        'Le present rapport de qualite est valide par le superviseur ci-dessous.',
+        {
+          x,
+          y: 447,
+          size: 9,
+          font,
+          color: gray,
+        },
+      );
+
+      const lineY = 300;
+      page.drawLine({
+        start: { x: 60, y: lineY },
+        end: { x: 340, y: lineY },
+        thickness: 0.8,
+        color: gray,
+        dashArray: [2, 2],
+      });
+
       page.drawText(`Tunis, le ${date}`, {
         x,
-        y: y - 12,
-        size: 8,
+        y: lineY - 14,
+        size: 9,
         font,
         color: gray,
       });
+
+      page.drawImage(image, {
+        x,
+        y: lineY + 20,
+        width: blockWidth,
+        height: blockHeight,
+      });
+
+      if (displayName) {
+        page.drawText(`Signe par : ${displayName}`, {
+          x,
+          y: lineY + blockHeight + 30,
+          size: 11,
+          font: fontBold,
+          color: navy,
+        });
+      }
 
       return Buffer.from(await doc.save());
     } catch (err: any) {
