@@ -10,7 +10,10 @@ import { copyToClipboard } from '../../utils/clipboard';
 import Chat from '../../components/Chat';
 import NotificationBell from '../../components/NotificationBell';
 import CalendarNotificationBell from '../../components/Calendar/NotificationBell';
+import CalendarPage from '../Calendar/CalendarPage';
+import MyTasksPage from '../Calendar/MyTasksPage';
 import UserProfileDrawer from '../../components/UserProfileDrawer';
+import { stripEmojis } from '../../utils/text';
 import ImageLibrary from '../../components/ImageLibrary';
 import { useConfirm } from '../../hooks/useConfirm';
 import { SignatureBadge } from '../../components/Signature/SignatureBadge';
@@ -75,10 +78,10 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-const Dashboard: React.FC = () => {
+const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
   const { user, token, logout, isSuperviseur, isAgent } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(initialTab ?? 'overview');
   const [lignes, setLignes] = useState<LigneControle[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -219,7 +222,7 @@ const Dashboard: React.FC = () => {
               </button>
               <button
                 className={`nav-item ${activeTab === 'calendar' ? 'active' : ''}`}
-                onClick={() => navigate('/calendar')}
+                onClick={() => handleTab('calendar')}
               >
                 <Calendar size={18} /> <span>Calendrier</span>
               </button>
@@ -235,7 +238,7 @@ const Dashboard: React.FC = () => {
               </button>
               <button
                 className={`nav-item ${activeTab === 'my-tasks' ? 'active' : ''}`}
-                onClick={() => navigate('/my-tasks')}
+                onClick={() => handleTab('my-tasks')}
               >
                 <ClipboardList size={18} /> <span>Mes tâches</span>
               </button>
@@ -811,6 +814,8 @@ const Dashboard: React.FC = () => {
           {activeTab === 'rapport' && <RapportTab />}
           {activeTab === 'ai-reports' && <AiReportsTab />}
           {activeTab === 'rapport-libraries' && <RapportLibraries />}
+          {activeTab === 'calendar' && isSuperviseur && <CalendarPage />}
+          {activeTab === 'my-tasks' && isAgent && <MyTasksPage />}
           {activeTab === 'messages' && <Chat onUnreadCountChange={setUnreadCount} />}
           {activeTab === 'images' && <ImageLibrary userRole={user?.role || ''} />}
 {activeTab === 'quality-objectives' && (
@@ -2851,21 +2856,21 @@ const AiReportsTab: React.FC = () => {
             {/* Summary */}
             <div style={{ marginBottom: 16 }}>
               <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: 16, fontSize: 13, lineHeight: 1.7, color: '#475569' }}>
-                {selectedReport.summary}
+                {stripEmojis(selectedReport.summary)}
               </div>
             </div>
             {/* AI Analysis */}
             <div style={{ marginBottom: 16 }}>
               <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 8, color: '#1e293b' }}>Analyse IA</h4>
               <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 10, padding: 16, fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-line', color: '#334155' }}>
-                {selectedReport.aiAnalysis}
+                {stripEmojis(selectedReport.aiAnalysis)}
               </div>
             </div>
             {/* Recommendations */}
             <div>
               <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 8, color: '#1e293b' }}>Recommandations</h4>
               <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: 16, fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-line', color: '#1e40af' }}>
-                {selectedReport.recommendations}
+                {stripEmojis(selectedReport.recommendations)}
               </div>
             </div>
           </div>

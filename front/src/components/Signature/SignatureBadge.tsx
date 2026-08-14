@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Shield, ShieldCheck, BadgeCheck, X, Loader2 } from 'lucide-react';
+import { Shield, ShieldCheck, BadgeCheck, Check, X, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { signatureAPI } from '../../api';
 import { AuditTrailDrawer } from './AuditTrailDrawer';
@@ -207,7 +207,7 @@ export const SignatureBadge: React.FC<SignatureBadgeProps> = ({
                       !d.includes('ne correspond');
                     return (
                       <li key={i} className={ok ? 'sign-detail-ok' : 'sign-detail-bad'}>
-                        <span className="sign-detail-icon">{ok ? '✓' : '✗'}</span>
+                        <span className="sign-detail-icon">{ok ? <Check size={13} /> : <X size={13} />}</span>
                         {d}
                       </li>
                     );

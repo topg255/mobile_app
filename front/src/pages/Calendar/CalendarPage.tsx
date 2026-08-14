@@ -6,6 +6,20 @@ import interactionPlugin from '@fullcalendar/react/interaction';
 import listPlugin from '@fullcalendar/react/list';
 import classicTheme from '@fullcalendar/react/themes/classic';
 import frLocale from '@fullcalendar/react/locales/fr';
+import {
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  Users,
+  ClipboardCheck,
+  BookOpen,
+  Wrench,
+  Pin,
+} from 'lucide-react';
+import '@fullcalendar/react/skeleton.css';
+import '@fullcalendar/react/themes/classic/theme.css';
+import '@fullcalendar/react/themes/classic/palette.css';
 import type {
   EventClickInfo,
   EventDisplayInfo,
@@ -15,17 +29,6 @@ import type {
   CalendarRef,
 } from '@fullcalendar/react';
 import {
-  Plus,
-  ChevronLeft,
-  ChevronRight,
-  Calendar as CalendarIcon,
-  LogOut,
-  ArrowLeft,
-} from 'lucide-react';
-import '@fullcalendar/react/skeleton.css';
-import '@fullcalendar/react/themes/classic/theme.css';
-import '@fullcalendar/react/themes/classic/palette.css';
-import {
   useCalendar,
   eventToFullCalendarFormat,
   EVENT_TYPE_COLORS,
@@ -34,8 +37,6 @@ import {
 } from '../../hooks/useCalendar';
 import EventFormModal from '../../components/Calendar/EventFormModal';
 import EventDetailDrawer from '../../components/Calendar/EventDetailDrawer';
-import NotificationBell from '../../components/Calendar/NotificationBell';
-import { useAuth } from '../../contexts/AuthContext';
 import {
   CalendarEvent,
   CalendarEventType,
@@ -54,13 +55,13 @@ const VIEW_META: { key: ViewType; label: string }[] = [
   { key: 'listWeek', label: 'Liste' },
 ];
 
-const TYPE_LABELS: Record<CalendarEventType, { label: string; icon: string }> = {
-  [CalendarEventType.INSPECTION]: { label: 'Inspection', icon: '🔍' },
-  [CalendarEventType.REUNION]: { label: 'Réunion', icon: '👥' },
-  [CalendarEventType.AUDIT]: { label: 'Audit', icon: '📋' },
-  [CalendarEventType.FORMATION]: { label: 'Formation', icon: '📚' },
-  [CalendarEventType.MAINTENANCE]: { label: 'Maintenance', icon: '🔧' },
-  [CalendarEventType.AUTRE]: { label: 'Autre', icon: '📌' },
+const TYPE_LABELS: Record<CalendarEventType, { label: string; icon: React.ComponentType<{ size?: number | string; color?: string }> }> = {
+  [CalendarEventType.INSPECTION]: { label: 'Inspection', icon: Search },
+  [CalendarEventType.REUNION]: { label: 'Réunion', icon: Users },
+  [CalendarEventType.AUDIT]: { label: 'Audit', icon: ClipboardCheck },
+  [CalendarEventType.FORMATION]: { label: 'Formation', icon: BookOpen },
+  [CalendarEventType.MAINTENANCE]: { label: 'Maintenance', icon: Wrench },
+  [CalendarEventType.AUTRE]: { label: 'Autre', icon: Pin },
 };
 
 const PRIORITY_LABELS: Record<EventPriority, string> = {
@@ -105,7 +106,6 @@ function formatDayTitle(date: Date): string {
 }
 
 export default function CalendarPage() {
-  const { user, logout } = useAuth();
   const {
     events,
     agents,
@@ -376,48 +376,6 @@ export default function CalendarPage() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f1f5f9' }}>
-      <div
-        style={{
-          height: 60,
-          backgroundColor: '#0f172a',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 20px',
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <button
-            onClick={() => (window.location.href = '/dashboard')}
-            style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex' }}
-            title="Retour au tableau de bord"
-          >
-            <ArrowLeft size={18} />
-          </button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <CalendarIcon size={20} color="#60a5fa" />
-            <span style={{ color: '#ffffff', fontSize: 16, fontWeight: 600 }}>Calendrier</span>
-            <span style={{ color: '#64748b', fontSize: 12, marginLeft: 8 }}>Superviseur</span>
-          </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <NotificationBell />
-          <span style={{ color: '#e2e8f0', fontSize: 13, fontWeight: 500 }}>
-            {user?.firstName} {user?.lastName}
-          </span>
-          <button
-            onClick={() => void logout()}
-            style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex' }}
-            title="Déconnexion"
-          >
-            <LogOut size={17} />
-          </button>
-        </div>
-      </div>
-
       <div style={{ display: 'flex', gap: 16, padding: 16, alignItems: 'flex-start', maxWidth: 1500, margin: '0 auto' }}>
         <div
           style={{
@@ -459,7 +417,10 @@ export default function CalendarPage() {
             {VIEW_META.map((v) => (
               <button
                 key={v.key}
-                onClick={() => setCurrentView(v.key)}
+                onClick={() => {
+                  setCurrentView(v.key);
+                  calendarRef.current?.getApi()?.changeView(v.key);
+                }}
                 style={{
                   padding: '7px 0',
                   borderRadius: 9,
@@ -483,6 +444,7 @@ export default function CalendarPage() {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {(Object.keys(TYPE_LABELS) as CalendarEventType[]).map((t) => {
                 const active = activeTypes.includes(t);
+                const Icon = TYPE_LABELS[t].icon;
                 return (
                   <button
                     key={t}
@@ -497,7 +459,7 @@ export default function CalendarPage() {
                       cursor: 'pointer',
                     }}
                   >
-                    {TYPE_LABELS[t].icon} {TYPE_LABELS[t].label}
+                    <Icon size={13} /> {TYPE_LABELS[t].label}
                   </button>
                 );
               })}

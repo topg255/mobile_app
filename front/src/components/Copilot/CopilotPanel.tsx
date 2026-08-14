@@ -12,6 +12,7 @@ import {
   Lightbulb,
 } from 'lucide-react';
 import './Copilot.css';
+import { stripEmojis } from '../../utils/text';
 
 interface DataContext {
   totalLignes: number;
@@ -66,7 +67,7 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({ superviseurName, onClose })
   const [messages, setMessages] = useState<CopilotMessage[]>([
     {
       role: 'assistant',
-      content: `Bonjour ${superviseurName} 👋 Je suis votre Copilote Qualite IA. Posez-moi des questions sur vos lignes, vos agents ou la conformite. J'analyse vos donnees en temps reel pour vous repondre.`,
+      content: `Bonjour ${superviseurName}, Je suis votre Copilote Qualite IA. Posez-moi des questions sur vos lignes, vos agents ou la conformite. J'analyse vos donnees en temps reel pour vous repondre.`,
       suggestedQuestions: WELCOME_SUGGESTIONS,
     },
   ]);
@@ -114,9 +115,9 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({ superviseurName, onClose })
         ...prev,
         {
           role: 'assistant',
-          content: data.answer || 'Je n\'ai pas pu generer une reponse.',
+          content: stripEmojis(data.answer) || 'Je n\'ai pas pu generer une reponse.',
           dataContext: data.dataContext || null,
-          suggestedQuestions: data.suggestedQuestions || [],
+          suggestedQuestions: (data.suggestedQuestions || []).map((q: string) => stripEmojis(q)),
         },
       ]);
     } catch (err: any) {

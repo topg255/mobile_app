@@ -159,7 +159,14 @@ export default function EventDetailDrawer({
                   textTransform: 'uppercase',
                 }}
               >
-                {typeMeta.icon} {TYPE_LABELS[event.type]}
+                {(() => {
+                  const TypeIcon = typeMeta.icon;
+                  return (
+                    <>
+                      <TypeIcon size={13} /> {TYPE_LABELS[event.type]}
+                    </>
+                  );
+                })()}
               </span>
               <span
                 style={{

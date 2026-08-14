@@ -1,17 +1,12 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  ArrowLeft,
-  LogOut,
   Calendar as CalendarIcon,
   MapPin,
   Users,
   CheckCircle2,
-  Clock,
   Loader2,
 } from 'lucide-react';
 import { calendarAPI } from '../../api';
-import { useAuth } from '../../contexts/AuthContext';
-import NotificationBell from '../../components/Calendar/NotificationBell';
 import { TYPE_META } from '../../components/Calendar/EventFormModal';
 import { EVENT_PRIORITY_COLORS } from '../../hooks/useCalendar';
 import {
@@ -75,7 +70,6 @@ function weekStart(date: Date): Date {
 }
 
 export default function MyTasksPage() {
-  const { user, logout } = useAuth();
   const [tasks, setTasks] = useState<TaskEvent[]>([]);
   const [statusFilter, setStatusFilter] = useState<'all' | EventStatus>('all');
   const [loading, setLoading] = useState(true);
@@ -170,48 +164,6 @@ export default function MyTasksPage() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f1f5f9' }}>
-      <div
-        style={{
-          height: 60,
-          backgroundColor: '#0f172a',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 20px',
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <button
-            onClick={() => (window.location.href = '/dashboard')}
-            style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex' }}
-            title="Retour au tableau de bord"
-          >
-            <ArrowLeft size={18} />
-          </button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Clock size={20} color="#60a5fa" />
-            <span style={{ color: '#ffffff', fontSize: 16, fontWeight: 600 }}>Mes tâches</span>
-            <span style={{ color: '#64748b', fontSize: 12, marginLeft: 8 }}>Agent</span>
-          </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <NotificationBell />
-          <span style={{ color: '#e2e8f0', fontSize: 13, fontWeight: 500 }}>
-            {user?.firstName} {user?.lastName}
-          </span>
-          <button
-            onClick={() => void logout()}
-            style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex' }}
-            title="Déconnexion"
-          >
-            <LogOut size={17} />
-          </button>
-        </div>
-      </div>
-
       <div style={{ maxWidth: 900, margin: '0 auto', padding: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
           <span style={{ fontSize: 18, fontWeight: 600, color: '#0f172a' }}>
@@ -328,7 +280,11 @@ export default function MyTasksPage() {
                               {t.supervisorName ?? 'Superviseur'}
                             </span>
                             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                              {typeMeta.icon} {TYPE_LABELS[t.type]}
+                              {(() => {
+                                const Icon = typeMeta.icon;
+                                return <Icon size={13} />;
+                              })()}
+                              {TYPE_LABELS[t.type]}
                             </span>
                             {t.location && (
                               <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>

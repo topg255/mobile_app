@@ -10,8 +10,6 @@ import ResetPassword from './pages/Auth/ResetPassword';
 import Dashboard from './pages/Dashboard/Dashboard';
 import SuperAdminDashboard from './pages/Dashboard/SuperAdminDashboard';
 import ProfilePage from './pages/Profile/ProfilePage';
-import CalendarPage from './pages/Calendar/CalendarPage';
-import MyTasksPage from './pages/Calendar/MyTasksPage';
 import './App.css';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -36,7 +34,7 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return isAuthenticated ? <Navigate to="/dashboard" /> : <>{children}</>;
 };
 
-const DashboardRouter: React.FC = () => {
+const DashboardRouter: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
   const { user, loading } = useAuth();
 
   if (loading) return <div className="loading-screen">Chargement...</div>;
@@ -45,10 +43,10 @@ const DashboardRouter: React.FC = () => {
   const userData = user || (storedUser ? JSON.parse(storedUser) : null);
 
   if (userData?.role === UserRole.SUPER_ADMIN) {
-    return <SuperAdminDashboard />;
+    return <SuperAdminDashboard initialTab={initialTab} />;
   }
 
-  return <Dashboard />;
+  return <Dashboard initialTab={initialTab} />;
 };
 
 function App() {
@@ -67,7 +65,7 @@ function App() {
             path="/calendar"
             element={
               <RoleRoute roles={[UserRole.SUPERVISEUR_QUALITE, UserRole.SUPER_ADMIN]}>
-                <CalendarPage />
+                <DashboardRouter initialTab="calendar" />
               </RoleRoute>
             }
           />
@@ -75,7 +73,7 @@ function App() {
             path="/my-tasks"
             element={
               <RoleRoute roles={[UserRole.AGENT_QUALITE]}>
-                <MyTasksPage />
+                <Dashboard initialTab="my-tasks" />
               </RoleRoute>
             }
           />

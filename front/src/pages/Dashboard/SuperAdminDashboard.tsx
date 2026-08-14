@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { superAdminAPI } from '../../api';
 import { User, LoginLog, SuperAdminStats } from '../../types';
@@ -9,6 +8,7 @@ import UserProfileDrawer from '../../components/UserProfileDrawer';
 import CopilotButton from '../../components/Copilot/CopilotButton';
 import QualityObjectivesTab from '../QualityObjectives/QualityObjectivesTab';
 import PushSettings from '../../components/PushSettings';
+import CalendarPage from '../Calendar/CalendarPage';
 import {
   Shield,
   Users,
@@ -38,12 +38,12 @@ import {
   Target,
   Bell,
   Calendar,
+  Hand,
 } from 'lucide-react';
 
-const SuperAdminDashboard: React.FC = () => {
-  const navigate = useNavigate();
+const SuperAdminDashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
   const { user, token, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(initialTab ?? 'overview');
   const [stats, setStats] = useState<SuperAdminStats | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
@@ -188,7 +188,7 @@ const SuperAdminDashboard: React.FC = () => {
           </button>
           <button
             className={`nav-item ${activeTab === 'calendar' ? 'active' : ''}`}
-            onClick={() => navigate('/calendar')}
+            onClick={() => handleTabChange('calendar')}
           >
             <Calendar size={18} /> Calendrier
           </button>
@@ -248,7 +248,7 @@ const SuperAdminDashboard: React.FC = () => {
                 </div>
                 <div className="wb-content">
                   <div className="wb-greeting">
-                    <span className="wb-wave">👋</span>
+                    <span className="wb-wave"><Hand size={22} /></span>
                     <h2>Bonjour, <span>{user?.firstName}</span></h2>
                   </div>
                   <p className="wb-subtitle">Voici un aperçu de votre système qualité — gestion des utilisateurs et supervision</p>
@@ -413,6 +413,8 @@ const SuperAdminDashboard: React.FC = () => {
           {activeTab === 'push-settings' && (
             <PushSettings isSuperAdmin={true} />
           )}
+
+          {activeTab === 'calendar' && <CalendarPage />}
         </div>
       </main>
       <UserProfileDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />

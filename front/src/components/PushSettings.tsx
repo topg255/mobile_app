@@ -64,7 +64,7 @@ const PushSettings: React.FC<{ isSuperAdmin?: boolean }> = ({ isSuperAdmin }) =>
     if (result.message === 'Notifications activees') {
       toast.success('Notifications activees');
     } else {
-      toast(result.message, { icon: '🔕' });
+      toast(result.message, { icon: <BellOff size={16} /> });
     }
   }, [push]);
 
@@ -75,7 +75,7 @@ const PushSettings: React.FC<{ isSuperAdmin?: boolean }> = ({ isSuperAdmin }) =>
 
   const handleSendTest = useCallback(async () => {
     const msg = await push.sendTest();
-    toast(msg || 'Notification de test envoyee', { icon: '🔔' });
+    toast(msg || 'Notification de test envoyee', { icon: <Bell size={16} /> });
   }, [push]);
 
   const handleRunEscalation = useCallback(async () => {

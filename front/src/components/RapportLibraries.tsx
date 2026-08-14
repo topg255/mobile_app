@@ -3,6 +3,7 @@ import { reportAPI } from '../api';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '../hooks/useConfirm';
 import { SignatureBadge } from './Signature/SignatureBadge';
+import { stripEmojis } from '../utils/text';
 import './Signature/Signature.css';
 import {
   Folder,
@@ -255,20 +256,20 @@ const RapportLibraries: React.FC = () => {
 
         <div className="rl-detail-section">
           <h3><BarChart3 size={16} /> Resume</h3>
-          <p>{selectedReport.summary}</p>
+          <p>{stripEmojis(selectedReport.summary)}</p>
         </div>
 
         {selectedReport.aiAnalysis && (
           <div className="rl-detail-section">
             <h3><CheckCircle size={16} /> Analyse IA</h3>
-            <div className="rl-detail-text">{selectedReport.aiAnalysis}</div>
+            <div className="rl-detail-text">{stripEmojis(selectedReport.aiAnalysis)}</div>
           </div>
         )}
 
         {selectedReport.recommendations && (
           <div className="rl-detail-section">
             <h3><AlertTriangle size={16} /> Recommandations</h3>
-            <div className="rl-detail-text">{selectedReport.recommendations}</div>
+            <div className="rl-detail-text">{stripEmojis(selectedReport.recommendations)}</div>
           </div>
         )}
       </div>

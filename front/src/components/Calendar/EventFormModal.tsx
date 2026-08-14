@@ -11,6 +11,12 @@ import {
   Palette,
   Paperclip,
   Repeat,
+  Search,
+  ClipboardCheck,
+  BookOpen,
+  Wrench,
+  Pin,
+  type LucideIcon,
 } from 'lucide-react';
 import {
   CalendarEvent,
@@ -42,13 +48,13 @@ const TYPE_LABELS: Record<CalendarEventType, string> = {
   [CalendarEventType.AUTRE]: 'Autre',
 };
 
-export const TYPE_META: Record<CalendarEventType, { icon: string; color: string }> = {
-  [CalendarEventType.INSPECTION]: { icon: '🔍', color: '#1d4ed8' },
-  [CalendarEventType.REUNION]: { icon: '👥', color: '#7c3aed' },
-  [CalendarEventType.AUDIT]: { icon: '📋', color: '#0d9488' },
-  [CalendarEventType.FORMATION]: { icon: '📚', color: '#d97706' },
-  [CalendarEventType.MAINTENANCE]: { icon: '🔧', color: '#6b7280' },
-  [CalendarEventType.AUTRE]: { icon: '📌', color: '#374151' },
+export const TYPE_META: Record<CalendarEventType, { icon: LucideIcon; color: string }> = {
+  [CalendarEventType.INSPECTION]: { icon: Search, color: '#1d4ed8' },
+  [CalendarEventType.REUNION]: { icon: Users, color: '#7c3aed' },
+  [CalendarEventType.AUDIT]: { icon: ClipboardCheck, color: '#0d9488' },
+  [CalendarEventType.FORMATION]: { icon: BookOpen, color: '#d97706' },
+  [CalendarEventType.MAINTENANCE]: { icon: Wrench, color: '#6b7280' },
+  [CalendarEventType.AUTRE]: { icon: Pin, color: '#374151' },
 };
 
 const PRIORITY_META: Record<EventPriority, { label: string; color: string; bg: string }> = {
@@ -330,7 +336,10 @@ export default function EventFormModal({
                       gap: 4,
                     }}
                   >
-                    <span>{TYPE_META[t].icon}</span>
+                    {(() => {
+                      const TypeIcon = TYPE_META[t].icon;
+                      return <TypeIcon size={15} />;
+                    })()}
                     <span>{TYPE_LABELS[t]}</span>
                   </button>
                 ))}
