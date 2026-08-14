@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { qualityAPI, authAPI } from '../../api';
 import { reportAPI } from '../../api';
@@ -8,6 +9,7 @@ import { toast } from 'react-hot-toast';
 import { copyToClipboard } from '../../utils/clipboard';
 import Chat from '../../components/Chat';
 import NotificationBell from '../../components/NotificationBell';
+import CalendarNotificationBell from '../../components/Calendar/NotificationBell';
 import UserProfileDrawer from '../../components/UserProfileDrawer';
 import ImageLibrary from '../../components/ImageLibrary';
 import { useConfirm } from '../../hooks/useConfirm';
@@ -75,6 +77,7 @@ import autoTable from 'jspdf-autotable';
 
 const Dashboard: React.FC = () => {
   const { user, token, logout, isSuperviseur, isAgent } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [lignes, setLignes] = useState<LigneControle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -214,15 +217,29 @@ const Dashboard: React.FC = () => {
               >
                 <UserCheck size={18} /> <span>Mes Agents</span>
               </button>
+              <button
+                className={`nav-item ${activeTab === 'calendar' ? 'active' : ''}`}
+                onClick={() => navigate('/calendar')}
+              >
+                <Calendar size={18} /> <span>Calendrier</span>
+              </button>
             </>
           )}
           {isAgent && (
-            <button
-              className={`nav-item ${activeTab === 'mes-lignes' ? 'active' : ''}`}
-              onClick={() => handleTab('mes-lignes')}
-            >
-              <FileSpreadsheet size={18} /> <span>Mes lignes</span>
-            </button>
+            <>
+              <button
+                className={`nav-item ${activeTab === 'mes-lignes' ? 'active' : ''}`}
+                onClick={() => handleTab('mes-lignes')}
+              >
+                <FileSpreadsheet size={18} /> <span>Mes lignes</span>
+              </button>
+              <button
+                className={`nav-item ${activeTab === 'my-tasks' ? 'active' : ''}`}
+                onClick={() => navigate('/my-tasks')}
+              >
+                <ClipboardList size={18} /> <span>Mes tâches</span>
+              </button>
+            </>
           )}
           <button
             className={`nav-item ${activeTab === 'add-ligne' ? 'active' : ''}`}
@@ -332,6 +349,7 @@ const Dashboard: React.FC = () => {
               <span>⌘K</span>
             </div>
             <NotificationBell token={token} />
+            <CalendarNotificationBell />
             <button className="top-bar-avatar-btn top-bar-profile-btn" onClick={() => setDrawerOpen(true)}>
               <div className="top-bar-avatar-wrap">
                 {user?.profileImage ? (

@@ -14,6 +14,7 @@ import { CopilotModule } from './copilot/copilot.module';
 import { QualityObjectivesModule } from './quality-objectives/quality-objectives.module';
 import { PushNotificationModule } from './push-notification/push-notification.module';
 import { SignatureModule } from './signature/signature.module';
+import { CalendarModule } from './calendar/calendar.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { SignatureModule } from './signature/signature.module';
     QualityObjectivesModule,
     PushNotificationModule,
     SignatureModule,
+    CalendarModule,
   ],
   controllers: [AppController],
   providers: [AppService],

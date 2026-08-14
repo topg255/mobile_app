@@ -453,6 +453,38 @@ export const pushAPI = {
     data: import('../types').PushEscalationConfig;
   }> => api.patch('/push/escalation', data),
 
-  runEscalation: (): Promise<{ data: { escalated: number } }> =>
+runEscalation: (): Promise<{ data: { escalated: number } }> =>
     api.post('/push/escalation/run'),
+};
+
+export const calendarAPI = {
+  getEvents: (params: Record<string, unknown>): Promise<{ data: import('../types').CalendarEvent[] }> =>
+    api.get('/calendar/events', { params }),
+
+  getEventById: (id: number): Promise<{ data: import('../types').CalendarEvent }> =>
+    api.get(`/calendar/events/${id}`),
+
+  createEvent: (data: Record<string, unknown>): Promise<{ data: import('../types').CalendarEvent }> =>
+    api.post('/calendar/events', data),
+
+  updateEvent: (id: number, data: Record<string, unknown>): Promise<{ data: import('../types').CalendarEvent }> =>
+    api.patch(`/calendar/events/${id}`, data),
+
+  deleteEvent: (id: number): Promise<{ data: { message: string } }> =>
+    api.delete(`/calendar/events/${id}`),
+
+  completeEvent: (id: number, completedNote?: string): Promise<{ data: import('../types').CalendarEvent }> =>
+    api.patch(`/calendar/events/${id}/complete`, completedNote ? { completedNote } : {}),
+
+  getStats: (): Promise<{ data: import('../types').CalendarStats }> =>
+    api.get('/calendar/events/stats'),
+
+  getMyTasks: (startDate: string, endDate: string, status?: string): Promise<{ data: import('../types').CalendarEvent[] }> =>
+    api.get('/calendar/events/my-tasks', { params: { startDate, endDate, status } }),
+
+  getNotifications: (): Promise<{ data: import('../types').EventNotification[] }> =>
+    api.get('/calendar/notifications'),
+
+  markNotificationsRead: (notifIds?: number[]): Promise<{ data: { message: string } }> =>
+    api.patch('/calendar/notifications/read', notifIds ? { notifIds } : {}),
 };

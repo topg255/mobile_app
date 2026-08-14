@@ -435,3 +435,84 @@ export interface PushEscalationConfig {
   groupingWindowMin: number;
   enabled: boolean;
 }
+
+export enum CalendarEventType {
+  INSPECTION = 'inspection',
+  REUNION = 'reunion',
+  AUDIT = 'audit',
+  FORMATION = 'formation',
+  MAINTENANCE = 'maintenance',
+  AUTRE = 'autre',
+}
+
+export enum EventPriority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  CRITICAL = 'critical',
+}
+
+export enum EventStatus {
+  PENDING = 'pending',
+  IN_PROGRESS = 'in_progress',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+  POSTPONED = 'postponed',
+}
+
+export type CalendarEventFilter = CalendarEventType | EventPriority | EventStatus;
+
+export interface CalendarEvent {
+  id: number;
+  title: string;
+  description: string | null;
+  type: CalendarEventType;
+  priority: EventPriority;
+  startDate: string;
+  endDate: string;
+  allDay: boolean;
+  location: string | null;
+  superviseurId: string;
+  assignedToId: string | null;
+  assignedToName: string | null;
+  status: EventStatus;
+  isRecurring: boolean;
+  recurrenceRule: string | null;
+  recurrenceParentId: number | null;
+  reminderMinutes: number | null;
+  color: string | null;
+  attachmentNote: string | null;
+  completedAt: string | null;
+  completedNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export enum EventNotifType {
+  ASSIGNED = 'ASSIGNED',
+  REMINDER = 'REMINDER',
+  UPDATED = 'UPDATED',
+  CANCELLED = 'CANCELLED',
+  COMPLETED = 'COMPLETED',
+}
+
+export interface EventNotification {
+  id: number;
+  eventId: number;
+  recipientId: string;
+  type: EventNotifType;
+  isRead: boolean;
+  sentAt: string;
+  message: string;
+}
+
+export interface CalendarStats {
+  totalEvents: number;
+  assignedToAgents: number;
+  personalTasks: number;
+  completedCount: number;
+  pendingCount: number;
+  byType: Record<string, number>;
+  byPriority: Record<string, number>;
+  upcomingToday: CalendarEvent[];
+}

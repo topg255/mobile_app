@@ -10,12 +10,24 @@ import ResetPassword from './pages/Auth/ResetPassword';
 import Dashboard from './pages/Dashboard/Dashboard';
 import SuperAdminDashboard from './pages/Dashboard/SuperAdminDashboard';
 import ProfilePage from './pages/Profile/ProfilePage';
+import CalendarPage from './pages/Calendar/CalendarPage';
+import MyTasksPage from './pages/Calendar/MyTasksPage';
 import './App.css';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
   if (loading) return <div className="loading-screen">Chargement...</div>;
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
+};
+
+const RoleRoute: React.FC<{ children: React.ReactNode; roles: UserRole[] }> = ({ children, roles }) => {
+  const { user, isAuthenticated, loading } = useAuth();
+  if (loading) return <div className="loading-screen">Chargement...</div>;
+  if (!isAuthenticated) return <Navigate to="/login" />;
+  const storedUser = localStorage.getItem('user');
+  const userData = user || (storedUser ? JSON.parse(storedUser) : null);
+  if (!userData || !roles.includes(userData.role)) return <Navigate to="/dashboard" />;
+  return <>{children}</>;
 };
 
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -51,6 +63,22 @@ function App() {
           <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><DashboardRouter /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route
+            path="/calendar"
+            element={
+              <RoleRoute roles={[UserRole.SUPERVISEUR_QUALITE, UserRole.SUPER_ADMIN]}>
+                <CalendarPage />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/my-tasks"
+            element={
+              <RoleRoute roles={[UserRole.AGENT_QUALITE]}>
+                <MyTasksPage />
+              </RoleRoute>
+            }
+          />
           <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
       </Router>

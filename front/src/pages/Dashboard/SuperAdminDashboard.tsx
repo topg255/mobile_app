@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { superAdminAPI } from '../../api';
 import { User, LoginLog, SuperAdminStats } from '../../types';
@@ -36,9 +37,11 @@ import {
   BarChart2,
   Target,
   Bell,
+  Calendar,
 } from 'lucide-react';
 
 const SuperAdminDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { user, token, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [stats, setStats] = useState<SuperAdminStats | null>(null);
@@ -182,6 +185,12 @@ const SuperAdminDashboard: React.FC = () => {
             onClick={() => handleTabChange('push-settings')}
           >
             <Bell size={18} /> Notifications
+          </button>
+          <button
+            className={`nav-item ${activeTab === 'calendar' ? 'active' : ''}`}
+            onClick={() => navigate('/calendar')}
+          >
+            <Calendar size={18} /> Calendrier
           </button>
         </nav>
         <div className="sidebar-footer">
