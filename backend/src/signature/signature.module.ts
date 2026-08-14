@@ -14,6 +14,7 @@ import { EmailService } from '../report/email.service';
 import { PdfService } from '../report/pdf.service';
 import { NotificationModule } from '../notification/notification.module';
 import { PushNotificationModule } from '../push-notification/push-notification.module';
+import { SignaturePadModule } from '../signature-pad/signature-pad.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { PushNotificationModule } from '../push-notification/push-notification.m
     ]),
     NotificationModule,
     PushNotificationModule,
+    SignaturePadModule,
   ],
   controllers: [SignatureController],
   providers: [
