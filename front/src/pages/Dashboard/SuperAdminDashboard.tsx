@@ -9,6 +9,7 @@ import CopilotButton from '../../components/Copilot/CopilotButton';
 import QualityObjectivesTab from '../QualityObjectives/QualityObjectivesTab';
 import PushSettings from '../../components/PushSettings';
 import CalendarPage from '../Calendar/CalendarPage';
+import SignaturePage from '../SignaturePad/SignaturePage';
 import {
   Shield,
   Users,
@@ -38,6 +39,7 @@ import {
   Target,
   Bell,
   Calendar,
+  PenLine,
   Hand,
 } from 'lucide-react';
 
@@ -191,6 +193,12 @@ const SuperAdminDashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) 
             onClick={() => handleTabChange('calendar')}
           >
             <Calendar size={18} /> Calendrier
+          </button>
+          <button
+            className={`nav-item ${activeTab === 'signature' ? 'active' : ''}`}
+            onClick={() => handleTabChange('signature')}
+          >
+            <PenLine size={18} /> Ma signature
           </button>
         </nav>
         <div className="sidebar-footer">
@@ -415,6 +423,7 @@ const SuperAdminDashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) 
           )}
 
           {activeTab === 'calendar' && <CalendarPage />}
+          {activeTab === 'signature' && <SignaturePage />}
         </div>
       </main>
       <UserProfileDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />

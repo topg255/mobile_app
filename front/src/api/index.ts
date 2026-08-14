@@ -488,3 +488,41 @@ export const calendarAPI = {
   markNotificationsRead: (notifIds?: number[]): Promise<{ data: { message: string } }> =>
     api.patch('/calendar/notifications/read', notifIds ? { notifIds } : {}),
 };
+
+export const signaturePadAPI = {
+  getMine: (): Promise<{ data: import('../types').SuperviseurSignature | null }> =>
+    api.get('/signature-pad/me'),
+
+  uploadAsJson: (
+    imageBase64: string,
+    width?: number,
+    height?: number,
+  ): Promise<{ data: import('../types').SignatureUploadResult }> =>
+    api.post('/signature-pad/upload', {
+      imageBase64,
+      width: width ?? undefined,
+      height: height ?? undefined,
+    }),
+
+  uploadAsMultipart: (
+    file: File,
+    width?: number,
+    height?: number,
+  ): Promise<{ data: import('../types').SignatureUploadResult }> => {
+    const formData = new FormData();
+    formData.append('signature', file);
+    if (width) formData.append('width', String(width));
+    if (height) formData.append('height', String(height));
+    return api.post('/signature-pad/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
+  getStatus: (
+    id: number,
+  ): Promise<{ data: import('../types').SuperviseurSignature }> =>
+    api.get(`/signature-pad/status/${id}`),
+
+  remove: (): Promise<{ data: { success: boolean } }> =>
+    api.delete('/signature-pad/me'),
+};

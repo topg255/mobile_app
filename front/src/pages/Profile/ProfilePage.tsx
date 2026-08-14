@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { authAPI } from '../../api';
-import { User, UserRole } from '../../types';
+import { authAPI, signaturePadAPI } from '../../api';
+import { User, UserRole, SuperviseurSignature } from '../../types';
 import { toast } from 'react-hot-toast';
 import { copyToClipboard } from '../../utils/clipboard';
 import {
@@ -21,7 +21,82 @@ import {
   CheckCircle2,
   Key,
   Copy,
+  PenLine,
+  ChevronRight,
 } from 'lucide-react';
+
+const ProfileSignatureCard: React.FC = () => {
+  const navigate = useNavigate();
+  const [signature, setSignature] = useState<SuperviseurSignature | null>(null);
+  const [checked, setChecked] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    signaturePadAPI
+      .getMine()
+      .then(({ data }) => {
+        if (!cancelled) setSignature(data);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) setChecked(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!checked) {
+    return null;
+  }
+
+  return (
+    <div
+      className="profile-info-card"
+      style={{
+        gridColumn: 'span 3',
+        cursor: 'pointer',
+        alignItems: 'center',
+      }}
+      onClick={() => navigate('/signature')}
+      role="button"
+    >
+      <div className="profile-info-card-icon" style={{ background: '#eff6ff', color: '#2563eb' }}>
+        <PenLine size={18} />
+      </div>
+      <div className="profile-info-card-body" style={{ flex: 1 }}>
+        <span className="profile-info-card-label">SIGNATURE NUMERIQUE</span>
+        <span className="profile-info-card-title" style={{ fontSize: 15 }}>
+          {signature ? 'Signature enregistree' : 'Aucune signature'}
+        </span>
+        <span className="profile-info-card-sub">
+          {signature
+            ? 'Apposee automatiquement sur vos rapports PDF et e-mails'
+            : "Signaturez pour apposer votre signature sur vos rapports qualite"}
+        </span>
+      </div>
+      {signature ? (
+        <img
+          src={`data:image/png;base64,${signature.enhancedImageBase64 ?? signature.originalImageBase64}`}
+          alt="Signature"
+          style={{
+            height: 44,
+            maxWidth: 110,
+            objectFit: 'contain',
+            background: '#ffffff',
+            borderRadius: 6,
+            padding: 4,
+            border: '1px solid #e2e8f0',
+          }}
+        />
+      ) : (
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#2563eb' }}>
+          Creer <ChevronRight size={16} />
+        </span>
+      )}
+    </div>
+  );
+};
 
 const ProfilePage: React.FC = () => {
   const { user, logout, refreshUser } = useAuth();
@@ -152,6 +227,9 @@ const ProfilePage: React.FC = () => {
               </span>
             </div>
           </div>
+
+          {(user.role === UserRole.SUPERVISEUR_QUALITE ||
+            user.role === UserRole.SUPER_ADMIN) && <ProfileSignatureCard />}
 
           {/* Superviseur Code Card */}
           {user.role === UserRole.SUPERVISEUR_QUALITE && user.superviseurCode && (

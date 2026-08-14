@@ -9,9 +9,9 @@ import { toast } from 'react-hot-toast';
 import { copyToClipboard } from '../../utils/clipboard';
 import Chat from '../../components/Chat';
 import NotificationBell from '../../components/NotificationBell';
-import CalendarNotificationBell from '../../components/Calendar/NotificationBell';
 import CalendarPage from '../Calendar/CalendarPage';
 import MyTasksPage from '../Calendar/MyTasksPage';
+import SignaturePage from '../SignaturePad/SignaturePage';
 import UserProfileDrawer from '../../components/UserProfileDrawer';
 import { stripEmojis } from '../../utils/text';
 import ImageLibrary from '../../components/ImageLibrary';
@@ -42,6 +42,7 @@ import {
   X,
   Camera,
   MessageSquare,
+  PenLine,
   Menu,
   Bell,
   TrendingUp,
@@ -220,12 +221,20 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
               >
                 <UserCheck size={18} /> <span>Mes Agents</span>
               </button>
-              <button
-                className={`nav-item ${activeTab === 'calendar' ? 'active' : ''}`}
-                onClick={() => handleTab('calendar')}
-              >
-                <Calendar size={18} /> <span>Calendrier</span>
-              </button>
+<button
+            className={`nav-item ${activeTab === 'calendar' ? 'active' : ''}`}
+            onClick={() => handleTab('calendar')}
+          >
+            <Calendar size={18} /> <span>Calendrier</span>
+          </button>
+          {isSuperviseur && (
+            <button
+              className={`nav-item ${activeTab === 'signature' ? 'active' : ''}`}
+              onClick={() => handleTab('signature')}
+            >
+              <PenLine size={18} /> <span>Ma signature</span>
+            </button>
+          )}
             </>
           )}
           {isAgent && (
@@ -352,7 +361,6 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
               <span>⌘K</span>
             </div>
             <NotificationBell token={token} />
-            <CalendarNotificationBell />
             <button className="top-bar-avatar-btn top-bar-profile-btn" onClick={() => setDrawerOpen(true)}>
               <div className="top-bar-avatar-wrap">
                 {user?.profileImage ? (
@@ -816,6 +824,7 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
           {activeTab === 'rapport-libraries' && <RapportLibraries />}
           {activeTab === 'calendar' && isSuperviseur && <CalendarPage />}
           {activeTab === 'my-tasks' && isAgent && <MyTasksPage />}
+          {activeTab === 'signature' && isSuperviseur && <SignaturePage />}
           {activeTab === 'messages' && <Chat onUnreadCountChange={setUnreadCount} />}
           {activeTab === 'images' && <ImageLibrary userRole={user?.role || ''} />}
 {activeTab === 'quality-objectives' && (

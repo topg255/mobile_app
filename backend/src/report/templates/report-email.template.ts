@@ -7,27 +7,50 @@ export function buildReportEmailHtml(params: {
   aiAnalysis: string;
   recommendations: string;
   summary: string;
+  signatureImage?: string;
 }): string {
-  const { superviseurName, dateFormatted, kpis, aiAnalysis, recommendations, summary } = params;
+  const {
+    superviseurName,
+    dateFormatted,
+    kpis,
+    aiAnalysis,
+    recommendations,
+    summary,
+    signatureImage,
+  } = params;
 
   const statusColor =
-    kpis.rougePercent > 30 ? '#dc2626' :
-    kpis.rougePercent > 15 ? '#f59e0b' :
-    kpis.vertPercent >= 80 ? '#16a34a' : '#2563eb';
+    kpis.rougePercent > 30
+      ? '#dc2626'
+      : kpis.rougePercent > 15
+        ? '#f59e0b'
+        : kpis.vertPercent >= 80
+          ? '#16a34a'
+          : '#2563eb';
 
   const statusLabel =
-    kpis.rougePercent > 30 ? 'Critique' :
-    kpis.rougePercent > 15 ? 'Attention' :
-    kpis.vertPercent >= 80 ? 'Excellent' : 'A ameliorer';
+    kpis.rougePercent > 30
+      ? 'Critique'
+      : kpis.rougePercent > 15
+        ? 'Attention'
+        : kpis.vertPercent >= 80
+          ? 'Excellent'
+          : 'A ameliorer';
 
   const markdownToHtml = (text: string): string => {
     return text
       .split('\n\n')
       .map((para) => {
-        let html = para
+        const html = para
           .replace(/\n/g, '<br>')
-          .replace(/\[OK\]/g, '<span style="color:#16a34a;font-weight:700">[OK]</span>')
-          .replace(/\[URGENT\]/g, '<span style="color:#dc2626;font-weight:700">[URGENT]</span>')
+          .replace(
+            /\[OK\]/g,
+            '<span style="color:#16a34a;font-weight:700">[OK]</span>',
+          )
+          .replace(
+            /\[URGENT\]/g,
+            '<span style="color:#dc2626;font-weight:700">[URGENT]</span>',
+          )
           .replace(/• /g, '&bull; ');
         return `<p style="margin:0 0 14px 0;font-size:14px;line-height:1.7;color:#334155">${html}</p>`;
       })
@@ -154,7 +177,9 @@ export function buildReportEmailHtml(params: {
           </tr>
 
           <!-- Agent Activity -->
-          ${kpis.topAgent !== 'Aucun' ? `
+          ${
+            kpis.topAgent !== 'Aucun'
+              ? `
           <tr>
             <td style="padding:24px 40px 0">
               <h2 style="margin:0 0 16px;font-size:16px;color:#1e293b;font-weight:700">
@@ -165,7 +190,24 @@ export function buildReportEmailHtml(params: {
                 <div style="font-size:12px;color:#4ade80;margin-top:4px">Agent le plus actif du jour</div>
               </div>
             </td>
-          </tr>` : ''}
+          </tr>`
+              : ''
+          }
+
+          <!-- Signature -->
+          ${
+            signatureImage
+              ? `
+          <tr>
+            <td style="padding:24px 40px 0">
+              <div style="border-top:1px solid #e2e8f0;padding-top:16px">
+                <div style="font-size:11px;color:#64748b;margin-bottom:6px;font-weight:600">Signe numeriquement par ${superviseurName}</div>
+                <img src="${signatureImage}" alt="Signature" style="max-height:72px;max-width:220px;object-fit:contain;background:#ffffff" />
+              </div>
+            </td>
+          </tr>`
+              : ''
+          }
 
           <!-- Footer -->
           <tr>

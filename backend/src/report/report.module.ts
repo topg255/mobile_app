@@ -13,6 +13,7 @@ import { EmailService } from './email.service';
 import { PdfService } from './pdf.service';
 import { NotificationModule } from '../notification/notification.module';
 import { PushNotificationModule } from '../push-notification/push-notification.module';
+import { SignaturePadModule } from '../signature-pad/signature-pad.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { PushNotificationModule } from '../push-notification/push-notification.m
     ScheduleModule.forRoot(),
     NotificationModule,
     PushNotificationModule,
+    SignaturePadModule,
   ],
   controllers: [ReportController],
   providers: [ReportService, AiReportService, EmailService, PdfService],

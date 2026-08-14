@@ -19,6 +19,7 @@ import { NotificationService } from '../notification/notification.service';
 import { NotificationType } from '../notification/entities/notification.entity';
 import { User, UserRole } from '../auth/entities/user.entity';
 import { PushNotifierService } from '../push-notification/push-notifier.service';
+import { SignaturePadService } from '../signature-pad/signature-pad.service';
 
 @Injectable()
 export class ReportService {
@@ -36,6 +37,7 @@ export class ReportService {
     private readonly pdfService: PdfService,
     private readonly notificationService: NotificationService,
     private readonly pushNotifier: PushNotifierService,
+    private readonly signaturePadService: SignaturePadService,
   ) {}
 
   @Cron('0 18 * * *')
@@ -327,7 +329,12 @@ export class ReportService {
       aiAnalysis: report.aiAnalysis || '',
       recommendations: report.recommendations || '',
       summary: report.summary,
-    });
+    }).then((buffer) =>
+      this.signaturePadService.embedSignatureInPdfBuffer(
+        buffer,
+        report.superviseur.id,
+      ),
+    );
   }
 
   private buildReferenceParts(report: DailyReport): {
@@ -386,6 +393,10 @@ export class ReportService {
       day: 'numeric',
     });
 
+    const signature = await this.signaturePadService.generateSignatureForEmail(
+      superviseur.id,
+    );
+
     const html = buildReportEmailHtml({
       superviseurName,
       dateFormatted,
@@ -393,6 +404,9 @@ export class ReportService {
       aiAnalysis: report.aiAnalysis || '',
       recommendations: report.recommendations || '',
       summary: report.summary,
+      signatureImage: signature
+        ? `data:${signature.mimeType};base64,${signature.base64}`
+        : undefined,
     });
 
     let pdfBuffer: Buffer | undefined;
@@ -411,6 +425,10 @@ export class ReportService {
         recommendations: report.recommendations || '',
         summary: report.summary,
       });
+      pdfBuffer = await this.signaturePadService.embedSignatureInPdfBuffer(
+        pdfBuffer,
+        superviseur.id,
+      );
     } catch (e) {
       this.logger.warn(
         `PDF generation failed: ${e.message} — sending email without attachment`,

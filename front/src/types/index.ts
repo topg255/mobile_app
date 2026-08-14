@@ -517,3 +517,38 @@ export interface CalendarStats {
   byPriority: Record<string, number>;
   upcomingToday: CalendarEvent[];
 }
+
+export type SignatureProcessingStatusValue =
+  | 'pending'
+  | 'processing'
+  | 'completed'
+  | 'failed';
+
+export interface SuperviseurSignature {
+  id: number;
+  superviseurId: string;
+  originalImageBase64: string;
+  enhancedImageBase64: string | null;
+  svgPath: string | null;
+  width: number;
+  height: number;
+  isActive: boolean;
+  quality: number | null;
+  improvements: string | null;
+  processingStatus: SignatureProcessingStatusValue;
+  processingError: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LocalSignature {
+  base64: string;
+  width: number;
+  height: number;
+}
+
+export interface SignatureUploadResult {
+  id: number;
+  superviseurId: string;
+  processingStatus: SignatureProcessingStatusValue;
+}

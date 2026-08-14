@@ -15,6 +15,7 @@ import { QualityObjectivesModule } from './quality-objectives/quality-objectives
 import { PushNotificationModule } from './push-notification/push-notification.module';
 import { SignatureModule } from './signature/signature.module';
 import { CalendarModule } from './calendar/calendar.module';
+import { SignaturePadModule } from './signature-pad/signature-pad.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { CalendarModule } from './calendar/calendar.module';
     PushNotificationModule,
     SignatureModule,
     CalendarModule,
+    SignaturePadModule,
   ],
   controllers: [AppController],
   providers: [AppService],

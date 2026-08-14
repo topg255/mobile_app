@@ -70,6 +70,14 @@ function App() {
             }
           />
           <Route
+            path="/signature"
+            element={
+              <RoleRoute roles={[UserRole.SUPERVISEUR_QUALITE, UserRole.SUPER_ADMIN]}>
+                <DashboardRouter initialTab="signature" />
+              </RoleRoute>
+            }
+          />
+          <Route
             path="/my-tasks"
             element={
               <RoleRoute roles={[UserRole.AGENT_QUALITE]}>
