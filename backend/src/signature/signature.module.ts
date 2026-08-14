@@ -7,6 +7,8 @@ import { SignatureController } from './signature.controller';
 import { SignatureService } from './signature.service';
 import { ReportService } from '../report/report.service';
 import { ReportRecipient } from '../report/entities/report-recipient.entity';
+import { LigneControle } from '../quality/entities/ligne-controle.entity';
+import { ControleDate } from '../quality/entities/controle-date.entity';
 import { AiReportService } from '../report/ai-report.service';
 import { EmailService } from '../report/email.service';
 import { PdfService } from '../report/pdf.service';
@@ -20,6 +22,8 @@ import { PushNotificationModule } from '../push-notification/push-notification.m
       DailyReport,
       User,
       ReportRecipient,
+      LigneControle,
+      ControleDate,
     ]),
     NotificationModule,
     PushNotificationModule,
