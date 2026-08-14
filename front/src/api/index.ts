@@ -212,7 +212,7 @@ export const signatureAPI = {
   sign: (
     reportId: string,
   ): Promise<{ data: Blob; headers: Record<string, string> }> =>
-    api.post(`/signature/sign/${reportId}`, null, { responseType: 'blob' }),
+    api.post(`/signature/sign/${reportId}`, undefined, { responseType: 'blob' }),
 
   verify: (pdf: Blob, reportId?: string): Promise<{ data: any }> => {
     const formData = new FormData();
