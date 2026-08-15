@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+﻿import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Mistral } from '@mistralai/mistralai';
@@ -483,9 +483,10 @@ Sois direct, concret et professionnel. Utilise des retours à la ligne pour aér
     await this.critereRepo.save(newCriteres);
   }
 
+  
   async generateAuditPdf(auditId: number): Promise<Buffer> {
     const audit = await this.auditRepo.findOne({ where: { id: auditId } });
-    if (!audit) throw new Error('Audit non trouvé');
+    if (!audit) throw new Error('Audit non trouve');
 
     const ligne = await this.ligneRepo.findOne({ where: { id: audit.ligneControleId } });
     const agent = await this.userRepo.findOne({ where: { id: audit.agentId } });
@@ -493,14 +494,17 @@ Sois direct, concret et professionnel. Utilise des retours à la ligne pour aér
     const reponses = JSON.parse(audit.reponsesJson || '{}');
 
     const pdf = await PDFDocument.create();
-    const helvetica = await pdf.embedFont(StandardFonts.Helvetica);
-    const helveticaBold = await pdf.embedFont(StandardFonts.HelveticaBold);
+    const font = await pdf.embedFont(StandardFonts.Helvetica);
+    const fontBold = await pdf.embedFont(StandardFonts.HelveticaBold);
 
-    const page = pdf.addPage([595.28, 841.89]);
-    const w = page.getWidth();
-    const margin = 40;
-    const contentW = w - margin * 2;
-    let y = 810;
+    const PW = 595.28;
+    const PH = 841.89;
+    const M = 45;
+    const CW = PW - M * 2;
+    const BOTTOM = 45;
+
+    let currentPage = pdf.addPage([PW, PH]);
+    let y = PH - 60;
 
     const NC: Record<string, [number, number, number]> = {
       vert: [0.13, 0.77, 0.37],
@@ -508,125 +512,135 @@ Sois direct, concret et professionnel. Utilise des retours à la ligne pour aér
       rouge: [0.86, 0.15, 0.17],
     };
     const NL: Record<string, string> = {
-      vert: 'VERT — Conforme',
-      orange: 'ORANGE — À améliorer',
-      rouge: 'ROUGE — Non conforme',
+      vert: 'VERT - Conforme',
+      orange: 'ORANGE - A ameliorer',
+      rouge: 'ROUGE - Non conforme',
     };
     const [cr, cg, cb] = NC[audit.noteCalculee] || [0, 0, 0];
 
-    const drawLine = (yy: number, color: [number, number, number] = [0.88, 0.89, 0.92]) => {
-      page.drawLine({ start: { x: margin, y: yy }, end: { x: w - margin, y: yy }, thickness: 0.5, color: rgb(...color) });
+    const drawFooter = (p: any) => {
+      p.drawRectangle({ x: 0, y: 0, width: PW, height: 32, color: rgb(0.06, 0.09, 0.17) });
+      p.drawText('LEONI Qualite IA', { x: M, y: 12, size: 7, font, color: rgb(0.5, 0.55, 0.62) });
+      p.drawText('Ref: AUDIT-5S-' + audit.id, { x: PW - M - 100, y: 12, size: 7, font, color: rgb(0.5, 0.55, 0.62) });
+      const pages = pdf.getPages();
+      const idx = pages.indexOf(p) + 1;
+      p.drawText('Page ' + idx + '/' + pages.length, { x: PW / 2 - 15, y: 12, size: 7, font, color: rgb(0.55, 0.6, 0.68) });
     };
 
-    const drawSectionTitle = (yy: number, title: string) => {
-      page.drawRectangle({ x: margin, y: yy - 4, width: 4, height: 16, color: rgb(0.39, 0.4, 0.95) });
-      page.drawText(title, { x: margin + 12, y: yy, size: 11, font: helveticaBold, color: rgb(0.15, 0.15, 0.2) });
-      return yy - 10;
+    const newPage = () => {
+      drawFooter(currentPage);
+      currentPage = pdf.addPage([PW, PH]);
+      y = PH - 50;
+      currentPage.drawRectangle({ x: 0, y: PH - 30, width: PW, height: 30, color: rgb(0.06, 0.09, 0.17) });
+      currentPage.drawText('RAPPORT AUDIT 5S - Suite', { x: M, y: PH - 22, size: 9, font: fontBold, color: rgb(1, 1, 1) });
+      currentPage.drawText('Ref: AUDIT-5S-' + audit.id, { x: PW - M - 100, y: PH - 22, size: 8, font, color: rgb(0.5, 0.55, 0.62) });
+      y -= 10;
     };
 
-    // ── HEADER ──
-    page.drawRectangle({ x: 0, y: y - 10, width: w, height: 40, color: rgb(0.06, 0.09, 0.17) });
-    page.drawText('RAPPORT AUDIT 5S', { x: margin, y: y, size: 18, font: helveticaBold, color: rgb(1, 1, 1) });
-    page.drawText('LEONI Qualite IA', { x: w - 155, y: y + 2, size: 9, font: helvetica, color: rgb(0.55, 0.6, 0.68) });
-    page.drawText(`Ref: AUDIT-5S-${audit.id}`, { x: w - 155, y: y - 12, size: 8, font: helvetica, color: rgb(0.45, 0.5, 0.58) });
-    y -= 30;
+    const ensureSpace = (needed: number) => {
+      if (y - needed < BOTTOM) newPage();
+    };
 
-    // ── RESULT BADGE ──
-    y -= 20;
-    page.drawRectangle({ x: margin, y: y - 5, width: contentW, height: 50, color: rgb(cr * 0.12 + 0.88, cg * 0.12 + 0.88, cb * 0.12 + 0.88), borderColor: rgb(cr, cg, cb), borderWidth: 1.5 });
-    page.drawText(`${audit.scoreGlobal}`, { x: margin + 16, y: y + 10, size: 30, font: helveticaBold, color: rgb(cr, cg, cb) });
-    page.drawText('/ 100', { x: margin + 70, y: y + 16, size: 12, font: helvetica, color: rgb(0.5, 0.5, 0.5) });
-    page.drawText(NL[audit.noteCalculee] || audit.noteCalculee.toUpperCase(), { x: margin + 140, y: y + 12, size: 14, font: helveticaBold, color: rgb(cr, cg, cb) });
+    const sectionTitle = (title: string) => {
+      ensureSpace(30);
+      y -= 8;
+      currentPage.drawRectangle({ x: M, y: y - 2, width: 4, height: 16, color: rgb(0.39, 0.4, 0.95) });
+      currentPage.drawText(title, { x: M + 14, y, size: 12, font: fontBold, color: rgb(0.1, 0.1, 0.15) });
+      y -= 22;
+    };
+
+    const field = (x: number, yy: number, label: string, value: string) => {
+      currentPage.drawText(label, { x, y: yy, size: 7, font: fontBold, color: rgb(0.5, 0.52, 0.58) });
+      currentPage.drawText(value || '-', { x, y: yy - 11, size: 10, font, color: rgb(0.12, 0.12, 0.18) });
+    };
+
+    // === HEADER ===
+    currentPage.drawRectangle({ x: 0, y: PH - 50, width: PW, height: 50, color: rgb(0.06, 0.09, 0.17) });
+    currentPage.drawText('RAPPORT AUDIT 5S', { x: M, y: PH - 32, size: 20, font: fontBold, color: rgb(1, 1, 1) });
+    currentPage.drawText('LEONI Qualite IA', { x: PW - M - 110, y: PH - 28, size: 9, font, color: rgb(0.55, 0.6, 0.68) });
+    currentPage.drawText('Ref: AUDIT-5S-' + audit.id, { x: PW - M - 110, y: PH - 40, size: 8, font, color: rgb(0.45, 0.5, 0.58) });
+
+    // === SCORE BADGE ===
+    y -= 15;
+    const badgeH = 55;
+    currentPage.drawRectangle({
+      x: M, y: y - badgeH + 15, width: CW, height: badgeH,
+      color: rgb(cr * 0.12 + 0.88, cg * 0.12 + 0.88, cb * 0.12 + 0.88),
+      borderColor: rgb(cr, cg, cb), borderWidth: 1.5,
+    });
+    currentPage.drawText(String(audit.scoreGlobal), { x: M + 18, y: y - 5, size: 32, font: fontBold, color: rgb(cr, cg, cb) });
+    currentPage.drawText('/ 100', { x: M + 80, y: y, size: 13, font, color: rgb(0.45, 0.45, 0.5) });
+    currentPage.drawText(NL[audit.noteCalculee] || audit.noteCalculee.toUpperCase(), { x: M + 150, y: y - 2, size: 15, font: fontBold, color: rgb(cr, cg, cb) });
     if (audit.capaDeclenche) {
-      page.drawText('CAPA ouvert', { x: margin + 140, y: y - 2, size: 9, font: helveticaBold, color: rgb(0.86, 0.15, 0.17) });
+      currentPage.drawText('CAPA ouvert', { x: M + 150, y: y - 18, size: 9, font: fontBold, color: rgb(0.86, 0.15, 0.17) });
     }
-    y -= 40;
+    y -= badgeH + 5;
 
-    // ── INFORMATIONS LIGNE ──
-    y = drawSectionTitle(y, 'INFORMATIONS DE LA LIGNE');
-    y -= 12;
+    // === INFORMATIONS LIGNE ===
+    sectionTitle('INFORMATIONS DE LA LIGNE');
+    const c1 = M + 10;
+    const c2 = M + CW / 2 + 10;
 
-    const col1X = margin + 10;
-    const col2X = margin + contentW / 2 + 10;
-    const lineH = 16;
+    field(c1, y, 'NOM DE LA LIGNE', ligne?.nomLigne || audit.nomLigne);
+    field(c2, y, 'AGENT', audit.agentName);
+    y -= 28;
 
-    const drawField = (x: number, yy: number, label: string, value: string) => {
-      page.drawText(label, { x, y: yy, size: 7, font: helveticaBold, color: rgb(0.55, 0.55, 0.6) });
-      page.drawText(value || '-', { x, y: yy - 11, size: 10, font: helvetica, color: rgb(0.15, 0.15, 0.2) });
-    };
+    field(c1, y, 'DATE', audit.createdAt.toLocaleDateString('fr-FR'));
+    field(c2, y, 'HEURE', ligne?.heure || '-');
+    y -= 28;
 
-    drawField(col1X, y, 'NOM DE LA LIGNE', ligne?.nomLigne || audit.nomLigne);
-    drawField(col2X, y, 'AGENT', audit.agentName);
-    y -= lineH + 8;
-
-    const dateStr = audit.createdAt.toLocaleDateString('fr-FR');
-    const timeStr = audit.createdAt.toLocaleTimeString('fr-FR');
-    drawField(col1X, y, 'DATE D\'AUDIT', `${dateStr} a ${timeStr}`);
-    drawField(col2X, y, 'HEURE', ligne?.heure || '-');
-    y -= lineH + 8;
-
-    drawField(col1X, y, 'DELAI', ligne ? `${ligne.delais} min` : '-');
-    drawField(col2X, y, 'RESPONSABLE', ligne?.responsable || '-');
-    y -= lineH + 8;
+    field(c1, y, 'DELAI', ligne ? ligne.delais + ' min' : '-');
+    field(c2, y, 'RESPONSABLE', ligne?.responsable || '-');
+    y -= 28;
 
     if (ligne?.details) {
-      drawField(col1X, y, 'DETAILS', ligne.details.length > 60 ? ligne.details.substring(0, 60) + '...' : ligne.details);
-      y -= lineH + 8;
+      field(c1, y, 'DETAILS', ligne.details.length > 50 ? ligne.details.substring(0, 50) + '...' : ligne.details);
+      y -= 28;
     }
 
     if (audit.dureeRemplissageSecondes) {
       const min = Math.floor(audit.dureeRemplissageSecondes / 60);
       const sec = audit.dureeRemplissageSecondes % 60;
-      drawField(col1X, y, 'DUREE REMPLISSAGE', `${min}min ${sec}s`);
-      y -= lineH + 8;
+      field(c1, y, 'DUREE REMPLISSAGE', min + 'min ' + sec + 's');
+      y -= 28;
     }
 
     if (agent?.email) {
-      drawField(col2X, y, 'EMAIL AGENT', agent.email);
-      y -= lineH + 8;
+      field(c2, y, 'EMAIL AGENT', agent.email);
+      y -= 28;
     }
 
-    // ── SCORES PAR PILIER ──
-    y -= 8;
-    y = drawSectionTitle(y, 'SCORES PAR PILIER');
-    y -= 14;
-
-    const PILIER_NAMES = ['1S — Trier (Seiri)', '2S — Ranger (Seiton)', '3S — Nettoyer (Seiso)', '4S — Standardiser (Seiketsu)', '5S — Soutenir (Shitsuke)'];
+    // === SCORES PAR PILIER ===
+    sectionTitle('SCORES PAR PILIER');
+    const PILIER_NAMES = ['1S - Trier (Seiri)', '2S - Ranger (Seiton)', '3S - Nettoyer (Seiso)', '4S - Standardiser (Seiketsu)', '5S - Soutenir (Shitsuke)'];
     const PILIER_COLORS: [number, number, number][] = [
       [0.39, 0.4, 0.95], [0.55, 0.36, 0.96], [0.02, 0.71, 0.83], [0.98, 0.45, 0.09], [0.93, 0.29, 0.69],
     ];
     const pilierScores = [audit.scoreS1, audit.scoreS2, audit.scoreS3, audit.scoreS4, audit.scoreS5];
 
     for (let i = 0; i < 5; i++) {
+      ensureSpace(24);
       const score = pilierScores[i];
       const pct = score / 20;
       const sr = score >= 16 ? 0.13 : score >= 11 ? 0.95 : 0.86;
       const sg = score >= 16 ? 0.77 : score >= 11 ? 0.45 : 0.15;
       const sb = score >= 16 ? 0.37 : score >= 11 ? 0.09 : 0.17;
 
-      // Pilier color dot
-      page.drawCircle({ x: col1X + 4, y: y + 4, size: 4, color: rgb(...PILIER_COLORS[i]) });
-      page.drawText(PILIER_NAMES[i], { x: col1X + 16, y, size: 9, font: helveticaBold, color: rgb(0.2, 0.2, 0.25) });
+      currentPage.drawCircle({ x: c1 + 4, y: y + 4, size: 4, color: rgb(PILIER_COLORS[i][0], PILIER_COLORS[i][1], PILIER_COLORS[i][2]) });
+      currentPage.drawText(PILIER_NAMES[i], { x: c1 + 16, y, size: 9, font: fontBold, color: rgb(0.18, 0.18, 0.22) });
+      currentPage.drawText(score + '/20', { x: PW - M - 45, y, size: 9, font: fontBold, color: rgb(sr, sg, sb) });
 
-      // Score
-      page.drawText(`${score} / 20`, { x: w - margin - 50, y, size: 9, font: helveticaBold, color: rgb(sr, sg, sb) });
-
-      // Progress bar
-      const barX = col1X + 170;
-      const barW = contentW - 230;
-      page.drawRectangle({ x: barX, y: y - 1, width: barW, height: 7, color: rgb(0.93, 0.94, 0.96), borderColor: rgb(0.9, 0.91, 0.93), borderWidth: 0.3 });
+      const barX = c1 + 175;
+      const barW = CW - 230;
+      currentPage.drawRectangle({ x: barX, y: y - 1, width: barW, height: 7, color: rgb(0.93, 0.94, 0.96) });
       if (pct > 0) {
-        page.drawRectangle({ x: barX, y: y - 1, width: Math.max(barW * pct, 4), height: 7, color: rgb(sr, sg, sb) });
+        currentPage.drawRectangle({ x: barX, y: y - 1, width: Math.max(barW * pct, 4), height: 7, color: rgb(sr, sg, sb) });
       }
-
       y -= 22;
     }
 
-    // ── DETAIL DES CRITERES ──
-    y -= 8;
-    y = drawSectionTitle(y, 'DETAIL DES CRITERES');
-    y -= 14;
-
+    // === DETAIL DES CRITERES ===
+    sectionTitle('DETAIL DES CRITERES PAR PILIER');
     const pilierKeys: ('s1' | 's2' | 's3' | 's4' | 's5')[] = ['s1', 's2', 's3', 's4', 's5'];
     const pilierShort = ['1S', '2S', '3S', '4S', '5S'];
 
@@ -634,112 +648,67 @@ Sois direct, concret et professionnel. Utilise des retours à la ligne pour aér
       const key = pilierKeys[pi];
       const pilier = criteres[key];
       const score = pilierScores[pi];
+      const pr = PILIER_COLORS[pi][0];
+      const pg = PILIER_COLORS[pi][1];
+      const pb = PILIER_COLORS[pi][2];
 
-      if (y < 100) {
-        page.drawRectangle({ x: 0, y: 0, width: w, height: 30, color: rgb(0.06, 0.09, 0.17) });
-        page.drawText('LEONI Qualite IA — Page 2', { x: margin, y: 10, size: 8, font: helvetica, color: rgb(0.5, 0.55, 0.62) });
-        page.drawText(`Ref: AUDIT-5S-${audit.id}`, { x: w - margin - 80, y: 10, size: 8, font: helvetica, color: rgb(0.5, 0.55, 0.62) });
-        const page2 = pdf.addPage([595.28, 841.89]);
-        (page as any).__proto__ === (page2 as any).__proto__;
-        y = 810;
-      }
-
-      // Pilier header
-      const [pr, pg, pb] = PILIER_COLORS[pi];
-      page.drawRectangle({ x: margin, y: y - 3, width: contentW, height: 18, color: rgb(pr * 0.12 + 0.88, pg * 0.12 + 0.88, pb * 0.12 + 0.88) });
-      page.drawText(`${pilierShort[pi]} — ${pilier.label.replace(/^\dS\s—\s/, '')}  (${score}/20)`, { x: margin + 8, y: y, size: 9, font: helveticaBold, color: rgb(pr * 0.7, pg * 0.7, pb * 0.7) });
-      y -= 20;
+      ensureSpace(20 + pilier.criteria.length * 16);
+      currentPage.drawRectangle({ x: M, y: y - 3, width: CW, height: 18, color: rgb(pr * 0.12 + 0.88, pg * 0.12 + 0.88, pb * 0.12 + 0.88) });
+      currentPage.drawText(pilierShort[pi] + ' - ' + pilier.label.replace(/^\dS\s—\s/, '') + '  (' + score + '/20)', { x: M + 10, y: y, size: 9, font: fontBold, color: rgb(pr * 0.65, pg * 0.65, pb * 0.65) });
+      y -= 22;
 
       for (let ci = 0; ci < pilier.criteria.length; ci++) {
+        ensureSpace(16);
         const crit = pilier.criteria[ci];
-        const repKey = `${key}_${ci}`;
+        const repKey = key + '_' + ci;
         const isChecked = !!reponses[repKey];
 
-        if (y < 60) {
-          page.drawRectangle({ x: 0, y: 0, width: w, height: 30, color: rgb(0.06, 0.09, 0.17) });
-          page.drawText('LEONI Qualite IA', { x: margin, y: 10, size: 8, font: helvetica, color: rgb(0.5, 0.55, 0.62) });
-          const newPage = pdf.addPage([595.28, 841.89]);
-          y = 810;
-          newPage.drawRectangle({ x: 0, y: y + 10, width: w, height: 30, color: rgb(0.06, 0.09, 0.17) });
-          newPage.drawText(`Ref: AUDIT-5S-${audit.id} — Suite`, { x: margin, y: y + 18, size: 8, font: helvetica, color: rgb(0.5, 0.55, 0.62) });
-          y -= 10;
-        }
-
-        // Checkbox
-        const boxX = margin + 10;
-        page.drawRectangle({ x: boxX, y: y - 2, width: 10, height: 10, borderColor: isChecked ? rgb(0.13, 0.77, 0.37) : rgb(0.75, 0.77, 0.8), borderWidth: 0.8, color: isChecked ? rgb(0.9, 0.98, 0.93) : rgb(1, 1, 1) });
+        const boxX = M + 12;
+        currentPage.drawRectangle({ x: boxX, y: y - 2, width: 10, height: 10, borderColor: isChecked ? rgb(0.13, 0.77, 0.37) : rgb(0.75, 0.77, 0.8), borderWidth: 0.8, color: isChecked ? rgb(0.9, 0.98, 0.93) : rgb(1, 1, 1) });
         if (isChecked) {
-          page.drawText('X', { x: boxX + 2, y: y - 1, size: 8, font: helveticaBold, color: rgb(0.13, 0.77, 0.37) });
+          currentPage.drawText('X', { x: boxX + 2, y: y - 1, size: 8, font: fontBold, color: rgb(0.13, 0.77, 0.37) });
         }
-
-        // Criterion text
-        page.drawText(crit.label, { x: boxX + 16, y: y, size: 8, font: helvetica, color: isChecked ? rgb(0.15, 0.3, 0.15) : rgb(0.4, 0.4, 0.4) });
-
-        // Points
-        page.drawText(`${crit.points} pts`, { x: w - margin - 35, y: y, size: 8, font: helveticaBold, color: isChecked ? rgb(0.13, 0.77, 0.37) : rgb(0.7, 0.72, 0.75) });
-
-        y -= 14;
+        currentPage.drawText(crit.label, { x: boxX + 18, y, size: 8.5, font, color: isChecked ? rgb(0.1, 0.25, 0.1) : rgb(0.35, 0.35, 0.4) });
+        currentPage.drawText(crit.points + ' pts', { x: PW - M - 38, y, size: 8, font: fontBold, color: isChecked ? rgb(0.13, 0.77, 0.37) : rgb(0.7, 0.72, 0.75) });
+        y -= 15;
       }
-      y -= 4;
+      y -= 6;
     }
 
-    // ── NOTE AGENT ──
+    // === COMMENTAIRE AGENT ===
     if (audit.commentaireAgent) {
-      y -= 8;
-      if (y < 120) {
-        page.drawRectangle({ x: 0, y: 0, width: w, height: 30, color: rgb(0.06, 0.09, 0.17) });
-        page.drawText('LEONI Qualite IA', { x: margin, y: 10, size: 8, font: helvetica, color: rgb(0.5, 0.55, 0.62) });
-        const p3 = pdf.addPage([595.28, 841.89]);
-        y = 810;
-        p3.drawRectangle({ x: 0, y: y + 10, width: w, height: 30, color: rgb(0.06, 0.09, 0.17) });
-        y -= 10;
-      }
-      y = drawSectionTitle(y, 'COMMENTAIRE DE L\'AGENT');
-      y -= 10;
-      page.drawRectangle({ x: margin, y: y - 60, width: contentW, height: 70, color: rgb(0.97, 0.97, 0.99), borderColor: rgb(0.9, 0.91, 0.93), borderWidth: 0.5 });
+      sectionTitle("COMMENTAIRE DE L'AGENT");
       const cLines = this.wrapText(audit.commentaireAgent, 85);
-      let ly = y - 12;
-      for (const line of cLines.slice(0, 5)) {
-        page.drawText(line, { x: margin + 10, y: ly, size: 9, font: helvetica, color: rgb(0.3, 0.3, 0.35) });
-        ly -= 12;
-      }
-      y = ly - 15;
-    }
-
-    // ── ANALYSE IA ──
-    if (audit.analyseIA && audit.analyseIA !== 'Analyse en cours...') {
-      y -= 8;
-      if (y < 150) {
-        page.drawRectangle({ x: 0, y: 0, width: w, height: 30, color: rgb(0.06, 0.09, 0.17) });
-        page.drawText('LEONI Qualite IA', { x: margin, y: 10, size: 8, font: helvetica, color: rgb(0.5, 0.55, 0.62) });
-        const p4 = pdf.addPage([595.28, 841.89]);
-        y = 810;
-        y -= 10;
-      }
-      y = drawSectionTitle(y, 'ANALYSE INTELLIGENCE ARTIFICIELLE');
-      y -= 10;
-
-      const aLines = this.wrapText(audit.analyseIA, 85);
-      const boxH = Math.min(aLines.length * 13 + 20, 200);
-      page.drawRectangle({ x: margin, y: y - boxH + 10, width: contentW, height: boxH, color: rgb(0.935, 0.94, 0.996), borderColor: rgb(0.77, 0.8, 0.93), borderWidth: 0.5 });
-
-      let ly = y - 12;
-      for (const line of aLines.slice(0, 14)) {
-        page.drawText(line, { x: margin + 10, y: ly, size: 9, font: helvetica, color: rgb(0.25, 0.25, 0.35) });
+      const boxH = Math.min(cLines.length * 13 + 16, 120);
+      ensureSpace(boxH + 10);
+      currentPage.drawRectangle({ x: M, y: y - boxH + 12, width: CW, height: boxH, color: rgb(0.97, 0.97, 0.99), borderColor: rgb(0.9, 0.91, 0.93), borderWidth: 0.5 });
+      let ly = y - 4;
+      for (const line of cLines.slice(0, 8)) {
+        currentPage.drawText(line, { x: M + 10, y: ly, size: 9, font, color: rgb(0.28, 0.28, 0.32) });
         ly -= 13;
       }
-      y = ly - 15;
+      y = ly - 12;
     }
 
-    // ── FOOTER on all pages ──
-    const pages = pdf.getPages();
-    for (const p of pages) {
-      const ph = p.getHeight();
-      p.drawRectangle({ x: 0, y: 0, width: w, height: 28, color: rgb(0.06, 0.09, 0.17) });
-      p.drawText('LEONI Qualite IA — Rapport genere automatiquement', { x: margin, y: 10, size: 7, font: helvetica, color: rgb(0.5, 0.55, 0.62) });
-      p.drawText(`Ref: AUDIT-5S-${audit.id}`, { x: w - margin - 80, y: 10, size: 7, font: helvetica, color: rgb(0.5, 0.55, 0.62) });
-      const pageNum = pages.indexOf(p) + 1;
-      p.drawText(`Page ${pageNum}/${pages.length}`, { x: w / 2 - 15, y: 10, size: 7, font: helvetica, color: rgb(0.5, 0.55, 0.62) });
+    // === ANALYSE IA ===
+    if (audit.analyseIA && audit.analyseIA !== 'Analyse en cours...') {
+      sectionTitle('ANALYSE INTELLIGENCE ARTIFICIELLE');
+      const cleaned = audit.analyseIA.replace(/\*\*/g, '').replace(/"/g, '');
+      const aLines = this.wrapText(cleaned, 85);
+      const boxH = Math.min(aLines.length * 13 + 20, 220);
+      ensureSpace(boxH + 10);
+      currentPage.drawRectangle({ x: M, y: y - boxH + 14, width: CW, height: boxH, color: rgb(0.935, 0.94, 0.996), borderColor: rgb(0.77, 0.8, 0.93), borderWidth: 0.5 });
+      let ly = y - 4;
+      for (const line of aLines.slice(0, 15)) {
+        currentPage.drawText(line, { x: M + 10, y: ly, size: 9, font, color: rgb(0.22, 0.22, 0.32) });
+        ly -= 13;
+      }
+      y = ly - 12;
+    }
+
+    // === FOOTERS ===
+    for (const p of pdf.getPages()) {
+      drawFooter(p);
     }
 
     return Buffer.from(await pdf.save());
@@ -754,10 +723,11 @@ Sois direct, concret et professionnel. Utilise des retours à la ligne pour aér
         lines.push(current);
         current = word;
       } else {
-        current = current ? `${current} ${word}` : word;
+        current = current ? current + ' ' + word : word;
       }
     }
     if (current) lines.push(current);
     return lines;
   }
 }
+
