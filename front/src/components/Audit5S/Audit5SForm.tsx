@@ -190,8 +190,8 @@ export default function Audit5SForm({ ligneControleId, nomLigne, onCompleted }: 
   const pilierChecked = pilierCriteria.filter((_: any, i: number) => reponses[`${PILIER_KEYS[activePilier]}_${i}`]).length;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', justifyContent: 'center', background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(6px)' }}>
-      <div style={{ width: '100%', maxWidth: 440, height: '100vh', background: '#fff', display: 'flex', flexDirection: 'column', boxShadow: '0 0 60px rgba(0,0,0,0.2)' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(6px)' }}>
+      <div style={{ width: '92%', maxWidth: 420, maxHeight: '85vh', background: '#fff', borderRadius: 20, display: 'flex', flexDirection: 'column', boxShadow: '0 25px 60px rgba(0,0,0,0.25)', overflow: 'hidden' }}>
 
         {/* ── HEADER ── */}
         <div style={{ padding: '12px 16px', borderBottom: '1px solid #f1f5f9', flexShrink: 0 }}>
@@ -307,11 +307,6 @@ export default function Audit5SForm({ ligneControleId, nomLigne, onCompleted }: 
                 <span style={{ fontSize: 12, flex: 1, color: isChecked ? '#166534' : '#475569', fontWeight: isChecked ? 500 : 400 }}>
                   {crit.label}
                 </span>
-                <span style={{
-                  fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4,
-                  background: isChecked ? '#dcfce7' : '#f1f5f9',
-                  color: isChecked ? '#16a34a' : '#94a3b8',
-                }}>{crit.points}pts</span>
               </div>
             );
           })}
