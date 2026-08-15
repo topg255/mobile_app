@@ -136,6 +136,7 @@ export const qualityAPI = {
     responsable: string;
     details: string;
     controleDateId: string;
+    piliers5S?: string[];
   }): Promise<{ data: { message: string; ligne: LigneControle } }> =>
     api.post('/quality/lignes', data),
 

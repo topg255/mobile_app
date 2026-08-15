@@ -1956,6 +1956,52 @@ const AddLigneTab: React.FC<{ onSuccess: () => void; onEdit: (ligne: LigneContro
           </div>
         </div>
       )}
+      {/* 5S Pillars Selection */}
+      <div className="form-group">
+        <label style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, display: 'block' }}>Piliers 5S</label>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {([
+            { key: '1S', name: 'Trier', color: '#6366f1', bg: '#eef2ff' },
+            { key: '2S', name: 'Ranger', color: '#8b5cf6', bg: '#f5f3ff' },
+            { key: '3S', name: 'Nettoyer', color: '#06b6d4', bg: '#ecfeff' },
+            { key: '4S', name: 'Standardiser', color: '#f97316', bg: '#fff7ed' },
+            { key: '5S', name: 'Soutenir', color: '#ec4899', bg: '#fdf2f8' },
+          ] as const).map((p) => {
+            const isSelected = selectedPiliers5S.includes(p.key);
+            return (
+              <button
+                key={p.key}
+                type="button"
+                onClick={() => {
+                  setSelectedPiliers5S((prev: string[]) =>
+                    isSelected ? prev.filter((k: string) => k !== p.key) : [...prev, p.key]
+                  );
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '6px 12px', borderRadius: 8, cursor: 'pointer',
+                  border: isSelected ? `2px solid ${p.color}` : '2px solid #e2e8f0',
+                  background: isSelected ? p.bg : '#fff',
+                  transition: 'all 0.15s ease',
+                  fontSize: 12, fontWeight: 600,
+                  color: isSelected ? p.color : '#64748b',
+                }}
+              >
+                <div style={{
+                  width: 16, height: 16, borderRadius: 4,
+                  border: isSelected ? `2px solid ${p.color}` : '2px solid #d1d5db',
+                  background: isSelected ? p.color : 'transparent',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'all 0.15s',
+                }}>
+                  {isSelected && <CheckCircle2 size={10} color="#fff" />}
+                </div>
+                {p.key} — {p.name}
+              </button>
+            );
+          })}
+        </div>
+      </div>
       <button type="submit" className="btn btn-primary" disabled={loading}>
         <Plus size={16} /> Ajouter la ligne
       </button>
@@ -2092,53 +2138,6 @@ const EditLigneTab: React.FC<{ ligne: LigneControle; onSuccess: () => void; onCa
         </div>
       )}
       <div style={{ display: 'flex', gap: '12px' }}>
-      {/* 5S Pillars Selection */}
-      <div className="form-group">
-        <label style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, display: 'block' }}>Piliers 5S</label>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {[
-            { key: '1S', name: 'Trier', color: '#6366f1', bg: '#eef2ff' },
-            { key: '2S', name: 'Ranger', color: '#8b5cf6', bg: '#f5f3ff' },
-            { key: '3S', name: 'Nettoyer', color: '#06b6d4', bg: '#ecfeff' },
-            { key: '4S', name: 'Standardiser', color: '#f97316', bg: '#fff7ed' },
-            { key: '5S', name: 'Soutenir', color: '#ec4899', bg: '#fdf2f8' },
-          ].map((p) => {
-            const isSelected = selectedPiliers5S.includes(p.key);
-            return (
-              <button
-                key={p.key}
-                type="button"
-                onClick={() => {
-                  setSelectedPiliers5S((prev) =>
-                    isSelected ? prev.filter((k) => k !== p.key) : [...prev, p.key]
-                  );
-                }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '6px 12px', borderRadius: 8, cursor: 'pointer',
-                  border: isSelected ? `2px solid ${p.color}` : '2px solid #e2e8f0',
-                  background: isSelected ? p.bg : '#fff',
-                  transition: 'all 0.15s ease',
-                  fontSize: 12, fontWeight: 600,
-                  color: isSelected ? p.color : '#64748b',
-                }}
-              >
-                <div style={{
-                  width: 16, height: 16, borderRadius: 4,
-                  border: isSelected ? `2px solid ${p.color}` : '2px solid #d1d5db',
-                  background: isSelected ? p.color : 'transparent',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'all 0.15s',
-                }}>
-                  {isSelected && <CheckCircle2 size={10} color="#fff" />}
-                </div>
-                {p.key} — {p.name}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       <button type="submit" className="btn btn-primary" disabled={loading}>
           <Plus size={16} /> Enregistrer
         </button>
