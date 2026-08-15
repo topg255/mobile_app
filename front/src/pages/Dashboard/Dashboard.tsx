@@ -1753,6 +1753,8 @@ const AddLigneTab: React.FC<{ onSuccess: () => void; onEdit: (ligne: LigneContro
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [showImagePicker, setShowImagePicker] = useState(false);
+  const [showAudit5S, setShowAudit5S] = useState(false);
+  const [createdLigne, setCreatedLigne] = useState<{ id: string; nomLigne: string } | null>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -1821,7 +1823,8 @@ const AddLigneTab: React.FC<{ onSuccess: () => void; onEdit: (ligne: LigneContro
       setImageFile(null);
       setImagePreview(null);
       onSuccess();
-      onEdit({ ...newLigne, image: imageFile ? `/uploads/${imageFile.name}` : undefined });
+      setCreatedLigne({ id: newLigne.id, nomLigne: newLigne.nomLigne });
+      setShowAudit5S(true);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Erreur');
     } finally {
@@ -1853,14 +1856,6 @@ const AddLigneTab: React.FC<{ onSuccess: () => void; onEdit: (ligne: LigneContro
             value={formData.heure}
             onChange={handleChange}
           />
-        </div>
-        <div className="form-group">
-          <label>Note</label>
-          <select name="note" value={formData.note} onChange={handleChange}>
-            <option value="vert">Vert</option>
-            <option value="jaune">Jaune</option>
-            <option value="rouge">Rouge</option>
-          </select>
         </div>
         <div className="form-group">
           <label>Date de contrôle</label>
@@ -1982,6 +1977,24 @@ const AddLigneTab: React.FC<{ onSuccess: () => void; onEdit: (ligne: LigneContro
       <button type="submit" className="btn btn-primary" disabled={loading}>
         <Plus size={16} /> Ajouter la ligne
       </button>
+
+      {showAudit5S && createdLigne && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.5)', overflow: 'auto' }}>
+          <div style={{ background: '#fff', minHeight: '100vh' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 12px' }}>
+              <button onClick={() => { setShowAudit5S(false); setCreatedLigne(null); }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+                <span style={{ fontSize: 20, color: '#64748b' }}>&times;</span>
+              </button>
+            </div>
+            <Audit5SForm
+              ligneControleId={createdLigne.id}
+              nomLigne={createdLigne.nomLigne}
+              onCompleted={() => { setShowAudit5S(false); setCreatedLigne(null); }}
+            />
+          </div>
+        </div>
+      )}
     </form>
   );
 };
@@ -2043,14 +2056,6 @@ const EditLigneTab: React.FC<{ ligne: LigneControle; onSuccess: () => void; onCa
         <div className="form-group">
           <label>Heure</label>
           <input type="time" name="heure" value={formData.heure} onChange={handleChange} />
-        </div>
-        <div className="form-group">
-          <label>Note</label>
-          <select name="note" value={formData.note} onChange={handleChange}>
-            <option value="vert">Vert</option>
-            <option value="jaune">Jaune</option>
-            <option value="rouge">Rouge</option>
-          </select>
         </div>
       </div>
       <div className="form-row">
