@@ -203,12 +203,6 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
           {isSuperviseur && (
             <>
               <button
-                className={`nav-item ${activeTab === 'controle-dates' ? 'active' : ''}`}
-                onClick={() => handleTab('controle-dates')}
-              >
-                <Calendar size={18} /> <span>Dates de contrôle</span>
-              </button>
-              <button
                 className={`nav-item ${activeTab === 'lignes' ? 'active' : ''}`}
                 onClick={() => handleTab('lignes')}
               >
@@ -1744,8 +1738,6 @@ const AddLigneTab: React.FC<{ onSuccess: () => void; onEdit: (ligne: LigneContro
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [showImagePicker, setShowImagePicker] = useState(false);
-  const [showAudit5S, setShowAudit5S] = useState(false);
-  const [createdLigne, setCreatedLigne] = useState<{ id: string; nomLigne: string } | null>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -1814,8 +1806,6 @@ const AddLigneTab: React.FC<{ onSuccess: () => void; onEdit: (ligne: LigneContro
       setImageFile(null);
       setImagePreview(null);
       onSuccess();
-      setCreatedLigne({ id: newLigne.id, nomLigne: newLigne.nomLigne });
-      setShowAudit5S(true);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Erreur');
     } finally {
@@ -1968,14 +1958,6 @@ const AddLigneTab: React.FC<{ onSuccess: () => void; onEdit: (ligne: LigneContro
       <button type="submit" className="btn btn-primary" disabled={loading}>
         <Plus size={16} /> Ajouter la ligne
       </button>
-
-      {showAudit5S && createdLigne && (
-        <Audit5SForm
-          ligneControleId={createdLigne.id}
-          nomLigne={createdLigne.nomLigne}
-          onCompleted={() => { setShowAudit5S(false); setCreatedLigne(null); }}
-        />
-      )}
     </form>
   );
 };
