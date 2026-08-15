@@ -1423,21 +1423,11 @@ const LignesTab: React.FC<{ lignes: LigneControle[]; loading: boolean; onEdit?: 
       {viewLigne && <LigneDetailModal ligne={viewLigne} onClose={() => setViewLigne(null)} />}
 
       {showAudit5SModal && audit5SLigne && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.5)', overflow: 'auto' }}>
-          <div style={{ background: '#fff', minHeight: '100vh' }}>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 12px' }}>
-              <button onClick={() => { setShowAudit5SModal(false); setAudit5SLigne(null); }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-                <span style={{ fontSize: 20, color: '#64748b' }}>&times;</span>
-              </button>
-            </div>
-            <Audit5SForm
-              ligneControleId={audit5SLigne.id}
-              nomLigne={audit5SLigne.nomLigne}
-              onCompleted={() => { setShowAudit5SModal(false); setAudit5SLigne(null); }}
-            />
-          </div>
-        </div>
+        <Audit5SForm
+          ligneControleId={audit5SLigne.id}
+          nomLigne={audit5SLigne.nomLigne}
+          onCompleted={() => { setShowAudit5SModal(false); setAudit5SLigne(null); }}
+        />
       )}
     </div>
   );
@@ -1979,21 +1969,11 @@ const AddLigneTab: React.FC<{ onSuccess: () => void; onEdit: (ligne: LigneContro
       </button>
 
       {showAudit5S && createdLigne && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.5)', overflow: 'auto' }}>
-          <div style={{ background: '#fff', minHeight: '100vh' }}>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 12px' }}>
-              <button onClick={() => { setShowAudit5S(false); setCreatedLigne(null); }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-                <span style={{ fontSize: 20, color: '#64748b' }}>&times;</span>
-              </button>
-            </div>
-            <Audit5SForm
-              ligneControleId={createdLigne.id}
-              nomLigne={createdLigne.nomLigne}
-              onCompleted={() => { setShowAudit5S(false); setCreatedLigne(null); }}
-            />
-          </div>
-        </div>
+        <Audit5SForm
+          ligneControleId={createdLigne.id}
+          nomLigne={createdLigne.nomLigne}
+          onCompleted={() => { setShowAudit5S(false); setCreatedLigne(null); }}
+        />
       )}
     </form>
   );

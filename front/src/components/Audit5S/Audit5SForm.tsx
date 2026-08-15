@@ -2,7 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { audit5sAPI } from '../../api';
 import { CriteresParPilier, Audit5S } from '../../types';
 import { toast } from 'react-hot-toast';
-import { X, CheckCircle2, Loader2, AlertTriangle, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  X, CheckCircle2, Loader2, AlertTriangle, Clock,
+  ChevronDown, ChevronUp, Trash2, Archive, Sparkles,
+  ClipboardList, RotateCcw, Send, FileText,
+} from 'lucide-react';
 
 interface Props {
   ligneControleId: string;
@@ -11,8 +15,9 @@ interface Props {
 }
 
 const PILIER_KEYS = ['s1', 's2', 's3', 's4', 's5'] as const;
-const PILIER_ICONS = ['🗑️', '📦', '🧹', '📋', '🔄'];
-const PILIER_COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444'];
+const PILIER_ICONS = [Trash2, Archive, Sparkles, ClipboardList, RotateCcw];
+const PILIER_COLORS = ['#6366f1', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444'];
+const PILIER_LABELS_SHORT = ['Trier', 'Ranger', 'Nettoyer', 'Standardiser', 'Pérenniser'];
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -20,7 +25,7 @@ function formatTime(seconds: number): string {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
-function ScoreRing({ score, size = 80 }: { score: number; size?: number }) {
+function ScoreRing({ score, size = 72 }: { score: number; size?: number }) {
   const radius = (size - 8) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
@@ -28,27 +33,18 @@ function ScoreRing({ score, size = 80 }: { score: number; size?: number }) {
 
   return (
     <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#e5e7eb" strokeWidth={6} />
+      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#f1f5f9" strokeWidth={5} />
       <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        stroke={color}
-        strokeWidth={6}
-        strokeDasharray={circumference}
-        strokeDashoffset={offset}
+        cx={size / 2} cy={size / 2} r={radius} fill="none"
+        stroke={color} strokeWidth={5}
+        strokeDasharray={circumference} strokeDashoffset={offset}
         strokeLinecap="round"
-        style={{ transition: 'stroke-dashoffset 0.5s ease, stroke 0.3s ease' }}
+        style={{ transition: 'stroke-dashoffset 0.4s ease, stroke 0.3s ease' }}
       />
       <text
-        x={size / 2}
-        y={size / 2}
-        textAnchor="middle"
-        dominantBaseline="central"
-        fill={color}
-        fontSize={size * 0.28}
-        fontWeight="700"
+        x={size / 2} y={size / 2}
+        textAnchor="middle" dominantBaseline="central"
+        fill={color} fontSize={size * 0.26} fontWeight="700"
         style={{ transform: 'rotate(90deg)', transformOrigin: 'center' }}
       >
         {score}
@@ -72,7 +68,6 @@ export default function Audit5SForm({ ligneControleId, nomLigne, onCompleted }: 
   useEffect(() => {
     audit5sAPI.getCriteres().then((res) => {
       setCriteres(res.data);
-      // Init all reponses to false
       const init: Record<string, boolean> = {};
       const keys = ['s1', 's2', 's3', 's4', 's5'] as const;
       for (const key of keys) {
@@ -99,8 +94,7 @@ export default function Audit5SForm({ ligneControleId, nomLigne, onCompleted }: 
     if (!criteres) return { scoreGlobal: 0, noteCalculee: 'rouge', scoreS1: 0, scoreS2: 0, scoreS3: 0, scoreS4: 0, scoreS5: 0 };
     const calcPilier = (key: 's1' | 's2' | 's3' | 's4' | 's5') => {
       const pilier = criteres[key];
-      let obtained = 0;
-      let total = 0;
+      let obtained = 0, total = 0;
       for (let i = 0; i < pilier.criteria.length; i++) {
         total += pilier.criteria[i].points;
         if (reponses[`${key}_${i}`]) obtained += pilier.criteria[i].points;
@@ -115,12 +109,6 @@ export default function Audit5SForm({ ligneControleId, nomLigne, onCompleted }: 
 
   const score = calcScoreLocal();
   const hasAnyResponse = Object.values(reponses).some(Boolean);
-
-  const getSubmitLabel = () => {
-    if (score.scoreGlobal >= 80) return 'Soumettre — Ligne verte';
-    if (score.scoreGlobal >= 55) return 'Soumettre — Ligne orange';
-    return 'Soumettre — Ligne rouge (CAPA automatique)';
-  };
 
   const handleSubmit = async () => {
     if (!hasAnyResponse || isSubmitting) return;
@@ -145,7 +133,7 @@ export default function Audit5SForm({ ligneControleId, nomLigne, onCompleted }: 
   if (!criteres) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
-        <Loader2 size={24} className="animate-spin" style={{ color: '#3b82f6' }} />
+        <Loader2 size={24} className="animate-spin" style={{ color: '#6366f1' }} />
       </div>
     );
   }
@@ -153,61 +141,83 @@ export default function Audit5SForm({ ligneControleId, nomLigne, onCompleted }: 
   // Result modal
   if (isCompleted && auditResult) {
     return (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}>
-        <div style={{ background: '#fff', borderRadius: 16, padding: 32, maxWidth: 480, width: '90%', maxHeight: '80vh', overflow: 'auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 24 }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 80, height: 80, borderRadius: '50%', background: auditResult.noteCalculee === 'vert' ? '#dcfce7' : auditResult.noteCalculee === 'orange' ? '#ffedd5' : '#fecaca', marginBottom: 16 }}>
-              {auditResult.noteCalculee === 'vert' ? <CheckCircle2 size={40} color="#22c55e" /> : <AlertTriangle size={40} color={auditResult.noteCalculee === 'orange' ? '#f97316' : '#ef4444'} />}
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 1000,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(8px)',
+      }}>
+        <div style={{
+          background: '#fff', borderRadius: 20, padding: '32px 28px',
+          maxWidth: 440, width: '92%', boxShadow: '0 25px 60px rgba(0,0,0,0.25)',
+        }}>
+          <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              width: 64, height: 64, borderRadius: '50%', marginBottom: 12,
+              background: auditResult.noteCalculee === 'vert' ? '#dcfce7' : auditResult.noteCalculee === 'orange' ? '#ffedd5' : '#fecaca',
+            }}>
+              {auditResult.noteCalculee === 'vert'
+                ? <CheckCircle2 size={32} color="#22c55e" />
+                : <AlertTriangle size={32} color={auditResult.noteCalculee === 'orange' ? '#f97316' : '#ef4444'} />}
             </div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Audit 5S terminé</h2>
-            <p style={{ color: '#64748b', fontSize: 14 }}>{nomLigne}</p>
+            <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: '#0f172a' }}>Audit terminé</h2>
+            <p style={{ color: '#64748b', fontSize: 13, margin: '4px 0 0' }}>{nomLigne}</p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 20 }}>
-            <ScoreRing score={auditResult.scoreGlobal} size={90} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 18 }}>
+            <ScoreRing score={auditResult.scoreGlobal} size={80} />
             <div>
-              <div style={{ fontSize: 14, color: '#64748b' }}>Score global</div>
+              <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5 }}>Score</div>
               <div style={{
-                fontSize: 18, fontWeight: 700,
+                fontSize: 22, fontWeight: 800,
                 color: auditResult.noteCalculee === 'vert' ? '#22c55e' : auditResult.noteCalculee === 'orange' ? '#f97316' : '#ef4444',
               }}>
-                {auditResult.noteCalculee === 'vert' ? 'Vert' : auditResult.noteCalculee === 'orange' ? 'Orange' : 'Rouge'}
+                {auditResult.scoreGlobal}/100
               </div>
             </div>
           </div>
 
-          {/* Per pilier scores */}
-          <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 20 }}>
-            {[auditResult.scoreS1, auditResult.scoreS2, auditResult.scoreS3, auditResult.scoreS4, auditResult.scoreS5].map((s, i) => (
-              <div key={i} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 10, color: '#94a3b8' }}>{PILIER_ICONS[i]}</div>
-                <div style={{
-                  fontSize: 13, fontWeight: 600,
-                  color: s >= 16 ? '#22c55e' : s >= 11 ? '#f97316' : '#ef4444',
-                }}>{s}/20</div>
-              </div>
-            ))}
+          {/* Mini pilier scores */}
+          <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 18 }}>
+            {[auditResult.scoreS1, auditResult.scoreS2, auditResult.scoreS3, auditResult.scoreS4, auditResult.scoreS5].map((s, i) => {
+              const Icon = PILIER_ICONS[i];
+              return (
+                <div key={i} style={{
+                  flex: 1, textAlign: 'center', padding: '8px 2px', borderRadius: 10,
+                  background: '#f8fafc', border: '1px solid #f1f5f9',
+                }}>
+                  <Icon size={12} color={PILIER_COLORS[i]} style={{ marginBottom: 2 }} />
+                  <div style={{
+                    fontSize: 12, fontWeight: 700,
+                    color: s >= 16 ? '#22c55e' : s >= 11 ? '#f97316' : '#ef4444',
+                  }}>{s}<span style={{ fontWeight: 400, fontSize: 10, color: '#94a3b8' }}>/20</span></div>
+                </div>
+              );
+            })}
           </div>
 
           {auditResult.analyseIA && auditResult.analyseIA !== 'Analyse en cours...' ? (
-            <div style={{ background: '#f8fafc', borderRadius: 10, padding: 14, marginBottom: 16, border: '1px solid #e2e8f0' }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#3b82f6', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Analyse IA</div>
-              <p style={{ fontSize: 13, lineHeight: 1.6, color: '#334155', margin: 0 }}>{auditResult.analyseIA}</p>
+            <div style={{ background: '#f8fafc', borderRadius: 12, padding: 14, marginBottom: 14, border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                <Sparkles size={12} color="#6366f1" />
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', letterSpacing: 0.5 }}>Analyse IA</span>
+              </div>
+              <p style={{ fontSize: 12, lineHeight: 1.6, color: '#475569', margin: 0 }}>{auditResult.analyseIA}</p>
             </div>
           ) : (
-            <div style={{ background: '#f8fafc', borderRadius: 10, padding: 14, marginBottom: 16, border: '1px solid #e2e8f0' }}>
+            <div style={{ background: '#f8fafc', borderRadius: 12, padding: 14, marginBottom: 14, border: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Loader2 size={14} className="animate-spin" style={{ color: '#3b82f6' }} />
-                <span style={{ fontSize: 12, color: '#94a3b8' }}>Analyse IA en cours...</span>
+                <Loader2 size={14} className="animate-spin" color="#6366f1" />
+                <span style={{ fontSize: 12, color: '#94a3b8' }}>Analyse en cours...</span>
               </div>
             </div>
           )}
 
           {auditResult.capaDeclenche && (
-            <div style={{ background: '#fef2f2', borderRadius: 10, padding: 12, marginBottom: 16, border: '1px solid #fecaca' }}>
+            <div style={{ background: '#fef2f2', borderRadius: 12, padding: 12, marginBottom: 14, border: '1px solid #fecaca' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <AlertTriangle size={14} color="#ef4444" />
-                <span style={{ fontSize: 12, color: '#dc2626', fontWeight: 600 }}>Un CAPA a été ouvert automatiquement</span>
+                <span style={{ fontSize: 12, color: '#dc2626', fontWeight: 600 }}>CAPA ouvert automatiquement</span>
               </div>
             </div>
           )}
@@ -215,9 +225,9 @@ export default function Audit5SForm({ ligneControleId, nomLigne, onCompleted }: 
           <button
             onClick={() => onCompleted(auditResult)}
             style={{
-              width: '100%', padding: '12px 0', borderRadius: 10, border: 'none',
-              background: '#3b82f6', color: '#fff', fontSize: 14, fontWeight: 600,
-              cursor: 'pointer',
+              width: '100%', padding: '11px 0', borderRadius: 12, border: 'none',
+              background: '#0f172a', color: '#fff', fontSize: 13, fontWeight: 600,
+              cursor: 'pointer', transition: 'opacity 0.15s',
             }}
           >
             Fermer
@@ -228,145 +238,196 @@ export default function Audit5SForm({ ligneControleId, nomLigne, onCompleted }: 
   }
 
   return (
-    <div style={{ maxWidth: 600, margin: '0 auto', padding: '0 0 100px' }}>
-      {/* Header */}
-      <div style={{ padding: '16px 0', borderBottom: '1px solid #e2e8f0', marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-          <div>
-            <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>{nomLigne}</h2>
-            <span style={{ display: 'inline-block', marginTop: 4, padding: '2px 10px', borderRadius: 20, background: '#dbeafe', color: '#2563eb', fontSize: 11, fontWeight: 600 }}>Audit 5S en cours</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#64748b', fontSize: 13 }}>
-            <Clock size={14} />
-            <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{formatTime(elapsed)}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Sticky score */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#fff', padding: '12px 0', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
-        <ScoreRing score={score.scoreGlobal} size={64} />
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 2 }}>Score provisoire</div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {PILIER_KEYS.map((key, i) => {
-              const s = score[`score${key.toUpperCase()}` as keyof typeof score] as number;
-              return (
-                <div key={key} style={{ flex: 1 }}>
-                  <div style={{ fontSize: 9, color: '#94a3b8', marginBottom: 2 }}>{PILIER_ICONS[i]}</div>
-                  <div style={{ height: 4, background: '#e5e7eb', borderRadius: 2, overflow: 'hidden' }}>
-                    <div style={{
-                      height: '100%', width: `${(s / 20) * 100}%`, borderRadius: 2,
-                      background: s >= 16 ? '#22c55e' : s >= 11 ? '#f97316' : '#ef4444',
-                      transition: 'width 0.3s ease',
-                    }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Pilier sections */}
-      {PILIER_KEYS.map((key, pilierIdx) => {
-        const pilier = criteres[key];
-        const pilierScore = score[`score${key.toUpperCase()}` as keyof typeof score] as number;
-        const isExpanded = expandedPilier === key;
-        const checkedCount = pilier.criteria.filter((_: any, i: number) => reponses[`${key}_${i}`]).length;
-
-        return (
-          <div key={key} style={{ marginBottom: 12, border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden' }}>
-            {/* Pilier header */}
-            <div
-              onClick={() => setExpandedPilier(isExpanded ? null : key)}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '12px 14px', cursor: 'pointer',
-                background: isExpanded ? '#f8fafc' : '#fff',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 18 }}>{PILIER_ICONS[pilierIdx]}</span>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>{pilier.label}</div>
-                  <div style={{ fontSize: 11, color: '#94a3b8' }}>{checkedCount}/{pilier.criteria.length} critères</div>
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{
-                  fontSize: 13, fontWeight: 700,
-                  color: pilierScore >= 16 ? '#22c55e' : pilierScore >= 11 ? '#f97316' : '#ef4444',
-                }}>{pilierScore}/20</span>
-                {isExpanded ? <ChevronUp size={16} color="#94a3b8" /> : <ChevronDown size={16} color="#94a3b8" />}
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      display: 'flex', justifyContent: 'center',
+      background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(6px)',
+    }}>
+      <div style={{
+        width: '100%', maxWidth: 520, height: '100vh',
+        background: '#fff', overflow: 'auto', position: 'relative',
+        boxShadow: '0 0 60px rgba(0,0,0,0.2)',
+      }}>
+        {/* Header */}
+        <div style={{
+          position: 'sticky', top: 0, zIndex: 20, background: '#fff',
+          borderBottom: '1px solid #f1f5f9', padding: '14px 16px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button
+                onClick={() => onCompleted({} as Audit5S)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 6 }}
+              >
+                <X size={18} color="#64748b" />
+              </button>
+              <div>
+                <h2 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: '#0f172a' }}>{nomLigne}</h2>
+                <span style={{ fontSize: 10, color: '#94a3b8' }}>Audit 5S</span>
               </div>
             </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#64748b', fontSize: 12 }}>
+              <Clock size={13} />
+              <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{formatTime(elapsed)}</span>
+            </div>
+          </div>
 
-            {/* Criteria */}
-            {isExpanded && (
-              <div style={{ padding: '0 14px 14px' }}>
-                {pilier.criteria.map((crit: any, i: number) => {
-                  const repKey = `${key}_${i}`;
-                  const isChecked = !!reponses[repKey];
+          {/* Score bar */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
+            <ScoreRing score={score.scoreGlobal} size={52} />
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {PILIER_KEYS.map((key, i) => {
+                  const s = score[`score${key.toUpperCase()}` as keyof typeof score] as number;
+                  const Icon = PILIER_ICONS[i];
                   return (
-                    <div
-                      key={i}
-                      onClick={() => toggleReponse(repKey)}
-                      style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '10px 12px', marginTop: 8, borderRadius: 10, cursor: 'pointer',
-                        border: isChecked ? '1px solid #22c55e' : '1px solid #e5e7eb',
-                        background: isChecked ? '#f0fdf4' : '#fff',
-                        transition: 'all 0.2s ease',
-                      }}
-                    >
-                      <span style={{
-                        fontSize: 12, fontWeight: 500,
-                        color: isChecked ? '#166534' : '#475569',
-                        flex: 1,
-                      }}>{crit.label}</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 12 }}>
-                        <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>{crit.points}pts</span>
-                        {isChecked && <CheckCircle2 size={16} color="#22c55e" />}
+                    <div key={key} style={{ flex: 1, textAlign: 'center' }}>
+                      <Icon size={10} color={PILIER_COLORS[i]} style={{ marginBottom: 1 }} />
+                      <div style={{ height: 3, background: '#f1f5f9', borderRadius: 2, overflow: 'hidden' }}>
+                        <div style={{
+                          height: '100%', width: `${(s / 20) * 100}%`, borderRadius: 2,
+                          background: s >= 16 ? '#22c55e' : s >= 11 ? '#f97316' : '#ef4444',
+                          transition: 'width 0.3s ease',
+                        }} />
                       </div>
                     </div>
                   );
                 })}
               </div>
-            )}
+            </div>
           </div>
-        );
-      })}
+        </div>
 
-      {/* Bottom bar */}
-      <div style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0, background: '#fff',
-        borderTop: '1px solid #e2e8f0', padding: '12px 16px', zIndex: 20,
-      }}>
-        <textarea
-          placeholder="Observation de l'agent (optionnel)"
-          value={commentaire}
-          onChange={(e) => setCommentaire(e.target.value)}
-          rows={2}
-          style={{
-            width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #e2e8f0',
-            fontSize: 12, resize: 'none', marginBottom: 10, boxSizing: 'border-box',
-          }}
-        />
-        <button
-          onClick={handleSubmit}
-          disabled={!hasAnyResponse || isSubmitting}
-          style={{
-            width: '100%', padding: '12px 0', borderRadius: 10, border: 'none',
-            background: !hasAnyResponse ? '#cbd5e1' : score.scoreGlobal >= 80 ? '#22c55e' : score.scoreGlobal >= 55 ? '#f97316' : '#ef4444',
-            color: '#fff', fontSize: 14, fontWeight: 600,
-            cursor: !hasAnyResponse ? 'not-allowed' : 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          }}
-        >
-          {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : null}
-          {isSubmitting ? 'Soumission...' : getSubmitLabel()}
-        </button>
+        {/* Pilier sections */}
+        <div style={{ padding: '12px 16px 120px' }}>
+          {PILIER_KEYS.map((key, pilierIdx) => {
+            const pilier = criteres[key];
+            const pilierScore = score[`score${key.toUpperCase()}` as keyof typeof score] as number;
+            const isExpanded = expandedPilier === key;
+            const checkedCount = pilier.criteria.filter((_: any, i: number) => reponses[`${key}_${i}`]).length;
+            const PilierIcon = PILIER_ICONS[pilierIdx];
+
+            return (
+              <div key={key} style={{
+                marginBottom: 8, border: '1px solid #f1f5f9', borderRadius: 12,
+                overflow: 'hidden', background: isExpanded ? '#fafbfc' : '#fff',
+              }}>
+                <div
+                  onClick={() => setExpandedPilier(isExpanded ? null : key)}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '11px 12px', cursor: 'pointer',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: 8,
+                      background: `${PILIER_COLORS[pilierIdx]}15`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <PilierIcon size={14} color={PILIER_COLORS[pilierIdx]} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: '#0f172a' }}>
+                        {pilierIdx + 1}S — {PILIER_LABELS_SHORT[pilierIdx]}
+                      </div>
+                      <div style={{ fontSize: 10, color: '#94a3b8' }}>{checkedCount}/{pilier.criteria.length}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{
+                      fontSize: 12, fontWeight: 700,
+                      color: pilierScore >= 16 ? '#22c55e' : pilierScore >= 11 ? '#f97316' : '#ef4444',
+                    }}>{pilierScore}/20</span>
+                    {isExpanded ? <ChevronUp size={14} color="#cbd5e1" /> : <ChevronDown size={14} color="#cbd5e1" />}
+                  </div>
+                </div>
+
+                {isExpanded && (
+                  <div style={{ padding: '0 12px 12px' }}>
+                    {pilier.criteria.map((crit: any, i: number) => {
+                      const repKey = `${key}_${i}`;
+                      const isChecked = !!reponses[repKey];
+                      return (
+                        <div
+                          key={i}
+                          onClick={() => toggleReponse(repKey)}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 10,
+                            padding: '9px 10px', marginBottom: 4, borderRadius: 8, cursor: 'pointer',
+                            border: isChecked ? '1px solid #bbf7d0' : '1px solid transparent',
+                            background: isChecked ? '#f0fdf4' : '#f8fafc',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <div style={{
+                            width: 20, height: 20, borderRadius: 6,
+                            border: isChecked ? '2px solid #22c55e' : '2px solid #d1d5db',
+                            background: isChecked ? '#22c55e' : 'transparent',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            transition: 'all 0.15s ease', flexShrink: 0,
+                          }}>
+                            {isChecked && <CheckCircle2 size={12} color="#fff" />}
+                          </div>
+                          <span style={{
+                            fontSize: 12, flex: 1,
+                            color: isChecked ? '#166534' : '#475569',
+                            fontWeight: isChecked ? 500 : 400,
+                          }}>{crit.label}</span>
+                          <span style={{
+                            fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4,
+                            background: isChecked ? '#dcfce7' : '#f1f5f9',
+                            color: isChecked ? '#16a34a' : '#94a3b8',
+                          }}>{crit.points}pts</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Bottom bar */}
+        <div style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 20,
+          background: '#fff', borderTop: '1px solid #f1f5f9',
+          padding: '10px 16px 16px', maxWidth: 520, margin: '0 auto',
+        }}>
+          <textarea
+            placeholder="Observation (optionnel)"
+            value={commentaire}
+            onChange={(e) => setCommentaire(e.target.value)}
+            rows={1}
+            style={{
+              width: '100%', padding: '8px 10px', borderRadius: 8,
+              border: '1px solid #e2e8f0', fontSize: 12, resize: 'none',
+              marginBottom: 8, boxSizing: 'border-box', fontFamily: 'inherit',
+            }}
+          />
+          <button
+            onClick={handleSubmit}
+            disabled={!hasAnyResponse || isSubmitting}
+            style={{
+              width: '100%', padding: '11px 0', borderRadius: 10, border: 'none',
+              background: !hasAnyResponse ? '#e2e8f0'
+                : score.scoreGlobal >= 80 ? '#22c55e'
+                : score.scoreGlobal >= 55 ? '#f97316' : '#ef4444',
+              color: '#fff', fontSize: 13, fontWeight: 600,
+              cursor: !hasAnyResponse ? 'not-allowed' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              transition: 'all 0.15s ease',
+              opacity: !hasAnyResponse ? 0.6 : 1,
+            }}
+          >
+            {isSubmitting ? <Loader2 size={15} className="animate-spin" /> : <Send size={14} />}
+            {isSubmitting ? 'Soumission...' : !hasAnyResponse ? 'Cochez au moins un critère'
+              : score.scoreGlobal >= 80 ? 'Soumettre — Vert'
+              : score.scoreGlobal >= 55 ? 'Soumettre — Orange'
+              : 'Soumettre — Rouge (CAPA)'}
+          </button>
+        </div>
       </div>
     </div>
   );
