@@ -1726,7 +1726,6 @@ const AddLigneTab: React.FC<{ onSuccess: () => void; onEdit: (ligne: LigneContro
   const [formData, setFormData] = useState({
     nomLigne: '',
     heure: '',
-    note: 'vert',
     delais: '',
     responsable: '',
     details: '',
@@ -1741,6 +1740,8 @@ const AddLigneTab: React.FC<{ onSuccess: () => void; onEdit: (ligne: LigneContro
   const [selectedPiliers5S, setSelectedPiliers5S] = useState<string[]>([]);
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  const noteCalculee = selectedPiliers5S.length >= 5 ? 'vert' : selectedPiliers5S.length >= 3 ? 'jaune' : 'rouge';
 
   useEffect(() => {
     qualityAPI.getAllControleDates().then((r) => setDates(r.data));
@@ -1792,7 +1793,7 @@ const AddLigneTab: React.FC<{ onSuccess: () => void; onEdit: (ligne: LigneContro
     }
     setLoading(true);
     try {
-      const response = await qualityAPI.createLigneControle({ ...formData, piliers5S: selectedPiliers5S });
+      const response = await qualityAPI.createLigneControle({ ...formData, note: noteCalculee, piliers5S: selectedPiliers5S });
       const newLigne = response.data.ligne;
 
       if (imageFile) {
@@ -1802,7 +1803,7 @@ const AddLigneTab: React.FC<{ onSuccess: () => void; onEdit: (ligne: LigneContro
       }
 
       toast.success('Ligne ajoutée');
-      setFormData({ nomLigne: '', heure: '', note: 'vert', delais: '', responsable: '', details: '', controleDateId: '' });
+      setFormData({ nomLigne: '', heure: '', delais: '', responsable: '', details: '', controleDateId: '' });
       setSelectedDate('');
       setImageFile(null);
       setImagePreview(null);
@@ -1959,7 +1960,7 @@ const AddLigneTab: React.FC<{ onSuccess: () => void; onEdit: (ligne: LigneContro
       {/* 5S Pillars Selection */}
       <div className="form-group">
         <label style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, display: 'block' }}>Piliers 5S</label>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
           {([
             { key: '1S', name: 'Trier', color: '#6366f1', bg: '#eef2ff' },
             { key: '2S', name: 'Ranger', color: '#8b5cf6', bg: '#f5f3ff' },
@@ -2001,6 +2002,19 @@ const AddLigneTab: React.FC<{ onSuccess: () => void; onEdit: (ligne: LigneContro
             );
           })}
         </div>
+        {selectedPiliers5S.length > 0 && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 10,
+            background: noteCalculee === 'vert' ? '#f0fdf4' : noteCalculee === 'jaune' ? '#fff7ed' : '#fef2f2',
+            border: `1px solid ${noteCalculee === 'vert' ? '#bbf7d0' : noteCalculee === 'jaune' ? '#fed7aa' : '#fecaca'}`,
+            fontSize: 13, fontWeight: 600,
+            color: noteCalculee === 'vert' ? '#15803d' : noteCalculee === 'jaune' ? '#c2410c' : '#dc2626',
+          }}>
+            {noteCalculee === 'vert' && <><CheckCircle2 size={16} /> Conforme — {selectedPiliers5S.length}/5 piliers</>}
+            {noteCalculee === 'jaune' && <><AlertCircle size={16} /> À améliorer — {selectedPiliers5S.length}/5 piliers</>}
+            {noteCalculee === 'rouge' && <><XCircle size={16} /> Non conforme — {selectedPiliers5S.length}/5 piliers</>}
+          </div>
+        )}
       </div>
       <button type="submit" className="btn btn-primary" disabled={loading}>
         <Plus size={16} /> Ajouter la ligne
