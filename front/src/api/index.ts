@@ -599,3 +599,26 @@ export const capaAPI = {
 
   getPdfUrl: (id: number): string => `${API_URL}/capa/${id}/pdf`,
 };
+
+export const audit5sAPI = {
+  getCriteres: () => api.get('/audit5s/criteres'),
+
+  submit: (data: {
+    ligneControleId: string;
+    reponses: Record<string, boolean>;
+    commentaireAgent?: string;
+    dureeSecondes?: number;
+  }) => api.post('/audit5s/submit', data),
+
+  getHistorique: (ligneControleId: string) =>
+    api.get(`/audit5s/historique/${ligneControleId}`),
+
+  getStats: () => api.get('/audit5s/stats'),
+
+  updateCriteres: (criteres: {
+    pilier: string;
+    label: string;
+    points: number;
+    ordre: number;
+  }[]) => api.put('/audit5s/criteres', { criteres }),
+};

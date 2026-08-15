@@ -23,6 +23,8 @@ import '../../components/Signature/Signature.css';
 import CopilotButton from '../../components/Copilot/CopilotButton';
 import QualityObjectivesTab from '../QualityObjectives/QualityObjectivesTab';
 import PushSettings from '../../components/PushSettings';
+import Score5SBadge from '../../components/Audit5S/Score5SBadge';
+import Audit5SForm from '../../components/Audit5S/Audit5SForm';
 import { chatAPI } from '../../api';
 import {
   LayoutDashboard,
@@ -243,6 +245,14 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
               onClick={() => handleTab('capa')}
             >
               <ClipboardList size={18} /> <span>CAPAs</span>
+            </button>
+          )}
+          {isSuperviseur && (
+            <button
+              className={`nav-item ${activeTab === 'audit5s' ? 'active' : ''}`}
+              onClick={() => handleTab('audit5s')}
+            >
+              <CheckCircle size={18} /> <span>Audit 5S</span>
             </button>
           )}
             </>
@@ -836,6 +846,12 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
           {activeTab === 'my-tasks' && isAgent && <MyTasksPage />}
           {activeTab === 'signature' && isSuperviseur && <SignaturePage />}
           {activeTab === 'capa' && isSuperviseur && <CapaPage />}
+          {activeTab === 'audit5s' && isSuperviseur && (
+            <div style={{ padding: 20 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Audit 5S — Vue d'ensemble</h2>
+              <p style={{ color: '#64748b', fontSize: 13 }}>Cliquez sur le badge "5S" à côté d'une ligne pour lancer un audit.</p>
+            </div>
+          )}
           {activeTab === 'messages' && <Chat onUnreadCountChange={setUnreadCount} />}
           {activeTab === 'images' && <ImageLibrary userRole={user?.role || ''} />}
 {activeTab === 'quality-objectives' && (
@@ -1297,6 +1313,8 @@ const LignesTab: React.FC<{ lignes: LigneControle[]; loading: boolean; onEdit?: 
   const [search, setSearch] = useState('');
   const [viewLigne, setViewLigne] = useState<LigneControle | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [showAudit5SModal, setShowAudit5SModal] = useState(false);
+  const [audit5SLigne, setAudit5SLigne] = useState<{ id: string; nomLigne: string } | null>(null);
   const confirm = useConfirm();
   const filtered = lignes.filter(
     (l) => l.nomLigne?.toLowerCase().includes(search.toLowerCase())
@@ -1363,7 +1381,13 @@ const LignesTab: React.FC<{ lignes: LigneControle[]; loading: boolean; onEdit?: 
               <td data-label="Ligne">{l.nomLigne}</td>
               <td data-label="Heure">{l.heure || '-'}</td>
               <td data-label="Note">
-                <span className={`note-badge ${l.note}`}>{l.note}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span className={`note-badge ${l.note}`}>{l.note}</span>
+                  <Score5SBadge
+                    ligneControleId={l.id}
+                    onClick={() => { setAudit5SLigne({ id: l.id, nomLigne: l.nomLigne }); setShowAudit5SModal(true); }}
+                  />
+                </div>
               </td>
               <td data-label="Délai">{l.delais} min</td>
               <td data-label="Responsable">{l.responsable}</td>
@@ -1397,6 +1421,24 @@ const LignesTab: React.FC<{ lignes: LigneControle[]; loading: boolean; onEdit?: 
         <div className="empty-state">Aucune ligne trouvée</div>
       )}
       {viewLigne && <LigneDetailModal ligne={viewLigne} onClose={() => setViewLigne(null)} />}
+
+      {showAudit5SModal && audit5SLigne && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.5)', overflow: 'auto' }}>
+          <div style={{ background: '#fff', minHeight: '100vh' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 12px' }}>
+              <button onClick={() => { setShowAudit5SModal(false); setAudit5SLigne(null); }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+                <span style={{ fontSize: 20, color: '#64748b' }}>&times;</span>
+              </button>
+            </div>
+            <Audit5SForm
+              ligneControleId={audit5SLigne.id}
+              nomLigne={audit5SLigne.nomLigne}
+              onCompleted={() => { setShowAudit5SModal(false); setAudit5SLigne(null); }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

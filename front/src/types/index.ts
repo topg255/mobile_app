@@ -632,3 +632,52 @@ export interface CapaStats {
   byStatus: Record<string, number>;
   topLignesProblematiques: { nomLigne: string; count: number }[];
 }
+
+export interface Audit5S {
+  id: number;
+  ligneControleId: string;
+  nomLigne: string;
+  agentId: string;
+  agentName: string;
+  superviseurId: string;
+  scoreGlobal: number;
+  noteCalculee: 'vert' | 'orange' | 'rouge';
+  scoreS1: number;
+  scoreS2: number;
+  scoreS3: number;
+  scoreS4: number;
+  scoreS5: number;
+  reponsesJson: string;
+  analyseIA: string | null;
+  pilierPlusFaible: string | null;
+  capaDeclenche: boolean;
+  capaId: number | null;
+  dureeRemplissageSecondes: number | null;
+  commentaireAgent: string | null;
+  createdAt: string;
+}
+
+export interface Critere5S {
+  id: number;
+  label: string;
+  points: number;
+  ordre: number;
+}
+
+export interface CriteresParPilier {
+  s1: { label: string; criteria: Critere5S[] };
+  s2: { label: string; criteria: Critere5S[] };
+  s3: { label: string; criteria: Critere5S[] };
+  s4: { label: string; criteria: Critere5S[] };
+  s5: { label: string; criteria: Critere5S[] };
+}
+
+export interface Audit5SStats {
+  moyenneScore: number;
+  repartitionNotes: { vert: number; orange: number; rouge: number };
+  evolutionScoreParJour: { date: string; moyenne: number }[];
+  piliersPlusFaibles: { pilier: string; scoreMoyen: number }[];
+  lignesMeilleureScore: { nomLigne: string; scoreMoyen: number }[];
+  lignesPireScore: { nomLigne: string; scoreMoyen: number }[];
+  totalAuditsEffectues: number;
+}

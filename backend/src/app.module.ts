@@ -17,6 +17,7 @@ import { SignatureModule } from './signature/signature.module';
 import { CalendarModule } from './calendar/calendar.module';
 import { SignaturePadModule } from './signature-pad/signature-pad.module';
 import { CapaModule } from './capa/capa.module';
+import { Audit5SModule } from './audit5s/audit5s.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { CapaModule } from './capa/capa.module';
     CalendarModule,
     SignaturePadModule,
     CapaModule,
+    Audit5SModule,
   ],
   controllers: [AppController],
   providers: [AppService],

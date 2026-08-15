@@ -1,0 +1,466 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Mistral } from '@mistralai/mistralai';
+import { ConfigService } from '@nestjs/config';
+import { Audit5S, NoteCalculee } from './entities/audit5s.entity';
+import { Critere5S, Pilier5S } from './entities/critere5s.entity';
+import { DEFAULT_CRITERIA, PILIER_LABELS, DefaultCritere } from './data/default-criteria';
+import { User } from '../auth/entities/user.entity';
+import { LigneControle, NoteQualite } from '../quality/entities/ligne-controle.entity';
+import { CapaService } from '../capa/capa.service';
+import { CapaPriority } from '../capa/entities/capa.entity';
+
+export interface CriteresParPilier {
+  s1: { label: string; criteria: { id: number; label: string; points: number; ordre: number }[] };
+  s2: { label: string; criteria: { id: number; label: string; points: number; ordre: number }[] };
+  s3: { label: string; criteria: { id: number; label: string; points: number; ordre: number }[] };
+  s4: { label: string; criteria: { id: number; label: string; points: number; ordre: number }[] };
+  s5: { label: string; criteria: { id: number; label: string; points: number; ordre: number }[] };
+}
+
+export interface ScoreResult {
+  scoreGlobal: number;
+  noteCalculee: NoteCalculee;
+  scoreS1: number;
+  scoreS2: number;
+  scoreS3: number;
+  scoreS4: number;
+  scoreS5: number;
+  pilierPlusFaible: string;
+}
+
+export interface Stats5S {
+  moyenneScore: number;
+  repartitionNotes: { vert: number; orange: number; rouge: number };
+  evolutionScoreParJour: { date: string; moyenne: number }[];
+  piliersPlusFaibles: { pilier: string; scoreMoyen: number }[];
+  lignesMeilleureScore: { nomLigne: string; scoreMoyen: number }[];
+  lignesPireScore: { nomLigne: string; scoreMoyen: number }[];
+  totalAuditsEffectues: number;
+}
+
+@Injectable()
+export class Audit5SService {
+  private readonly logger = new Logger(Audit5SService.name);
+
+  constructor(
+    @InjectRepository(Audit5S)
+    private readonly auditRepo: Repository<Audit5S>,
+    @InjectRepository(Critere5S)
+    private readonly critereRepo: Repository<Critere5S>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
+    @InjectRepository(LigneControle)
+    private readonly ligneRepo: Repository<LigneControle>,
+    private readonly configService: ConfigService,
+    private readonly capaService: CapaService,
+  ) {}
+
+  async getCriteres(superviseurId: string): Promise<CriteresParPilier> {
+    const customCriteres = await this.critereRepo.find({
+      where: { tenantId: superviseurId, isActive: true },
+      order: { pilier: 'ASC', ordre: 'ASC' },
+    });
+
+    if (customCriteres.length > 0) {
+      return this.buildCriteresParPilier(customCriteres);
+    }
+
+    const defaults: (DefaultCritere & { id: number })[] = DEFAULT_CRITERIA.map((c, i) => ({
+      ...c,
+      id: i + 1,
+    }));
+    return this.buildCriteresParPilier(defaults);
+  }
+
+  private buildCriteresParPilier(
+    criteres: { id: number; pilier: Pilier5S; label: string; points: number; ordre: number }[],
+  ): CriteresParPilier {
+    const group: Record<string, typeof criteres> = {};
+    for (const pilier of Object.values(Pilier5S)) {
+      group[pilier] = criteres
+        .filter((c) => c.pilier === pilier)
+        .sort((a, b) => a.ordre - b.ordre);
+    }
+    return {
+      s1: { label: PILIER_LABELS[Pilier5S.S1], criteria: group[Pilier5S.S1] || [] },
+      s2: { label: PILIER_LABELS[Pilier5S.S2], criteria: group[Pilier5S.S2] || [] },
+      s3: { label: PILIER_LABELS[Pilier5S.S3], criteria: group[Pilier5S.S3] || [] },
+      s4: { label: PILIER_LABELS[Pilier5S.S4], criteria: group[Pilier5S.S4] || [] },
+      s5: { label: PILIER_LABELS[Pilier5S.S5], criteria: group[Pilier5S.S5] || [] },
+    };
+  }
+
+  calculateScore(
+    reponses: Record<string, boolean>,
+    criteres: CriteresParPilier,
+  ): ScoreResult {
+    const calcPilier = (
+      key: 's1' | 's2' | 's3' | 's4' | 's5',
+    ): number => {
+      const pilier = criteres[key];
+      let obtained = 0;
+      let total = 0;
+      for (let i = 0; i < pilier.criteria.length; i++) {
+        const crit = pilier.criteria[i];
+        total += crit.points;
+        if (reponses[`${key}_${i}`]) {
+          obtained += crit.points;
+        }
+      }
+      return total > 0 ? Math.round((obtained / total) * 20) : 0;
+    };
+
+    const scoreS1 = calcPilier('s1');
+    const scoreS2 = calcPilier('s2');
+    const scoreS3 = calcPilier('s3');
+    const scoreS4 = calcPilier('s4');
+    const scoreS5 = calcPilier('s5');
+    const scoreGlobal = scoreS1 + scoreS2 + scoreS3 + scoreS4 + scoreS5;
+
+    let noteCalculee: NoteCalculee;
+    if (scoreGlobal >= 80) {
+      noteCalculee = NoteCalculee.VERT;
+    } else if (scoreGlobal >= 55) {
+      noteCalculee = NoteCalculee.ORANGE;
+    } else {
+      noteCalculee = NoteCalculee.ROUGE;
+    }
+
+    const scores = [
+      { key: 's1', score: scoreS1 },
+      { key: 's2', score: scoreS2 },
+      { key: 's3', score: scoreS3 },
+      { key: 's4', score: scoreS4 },
+      { key: 's5', score: scoreS5 },
+    ];
+    const weakest = scores.reduce((a, b) => (a.score <= b.score ? a : b));
+
+    return {
+      scoreGlobal,
+      noteCalculee,
+      scoreS1,
+      scoreS2,
+      scoreS3,
+      scoreS4,
+      scoreS5,
+      pilierPlusFaible: PILIER_LABELS[weakest.key as Pilier5S],
+    };
+  }
+
+  async generateAnalyseIA(
+    scoreResult: ScoreResult,
+    nomLigne: string,
+    agentName: string,
+  ): Promise<string> {
+    const mistralApiKey = this.configService.get<string>('MISTRAL_API_KEY');
+    if (!mistralApiKey) {
+      return this.generateFallbackAnalyse(scoreResult, nomLigne, agentName);
+    }
+
+    try {
+      const client = new Mistral({ apiKey: mistralApiKey });
+      const { scoreGlobal, noteCalculee, scoreS1, scoreS2, scoreS3, scoreS4, scoreS5, pilierPlusFaible } = scoreResult;
+      const pilierPct = Math.round(
+        ((scoreResult.scoreS1 === scoreResult.scoreS2 &&
+          scoreResult.scoreS1 === scoreResult.scoreS3 &&
+          scoreResult.scoreS1 === scoreResult.scoreS4)
+          ? scoreS1
+          : Math.min(scoreS1, scoreS2, scoreS3, scoreS4, scoreS5)),
+      );
+
+      const prompt = `Tu es expert qualité LEONI. Un agent vient de réaliser un audit 5S.
+Voici les résultats : Score global ${scoreGlobal}/100 (${noteCalculee}).
+Pilier le plus faible : ${pilierPlusFaible} (${pilierPct}%).
+Scores par pilier : 1S=${scoreS1}%, 2S=${scoreS2}%, 3S=${scoreS3}%, 4S=${scoreS4}%, 5S=${scoreS5}%.
+Ligne : ${nomLigne}. Agent : ${agentName}.
+Génère une analyse courte (3-4 phrases max) en français avec :
+1. Une évaluation rapide du niveau général
+2. La priorité d'action sur le pilier le plus faible avec une action concrète
+3. Si rouge : mention que le superviseur sera notifié et un CAPA sera ouvert
+Sois direct et professionnel.`;
+
+      const completion = await client.chat.complete({
+        model: 'mistral-large-latest',
+        maxTokens: 500,
+        messages: [{ role: 'user', content: prompt }],
+      });
+
+      const raw = (completion as any)?.choices?.[0]?.message?.content;
+      if (raw && typeof raw === 'string' && raw.trim().length > 0) {
+        return raw.trim();
+      }
+      return this.generateFallbackAnalyse(scoreResult, nomLigne, agentName);
+    } catch (err: any) {
+      this.logger.warn(`Erreur Mistral analyse 5S: ${err?.message}`);
+      return this.generateFallbackAnalyse(scoreResult, nomLigne, agentName);
+    }
+  }
+
+  private generateFallbackAnalyse(
+    scoreResult: ScoreResult,
+    nomLigne: string,
+    agentName: string,
+  ): string {
+    const { scoreGlobal, noteCalculee, pilierPlusFaible } = scoreResult;
+    let texte = `Audit 5S de la ligne "${nomLigne}" par ${agentName}. Score global : ${scoreGlobal}/100 (${noteCalculee}).`;
+    texte += ` Le pilier le plus faible est ${pilierPlusFaible}.`;
+    if (noteCalculee === NoteCalculee.ROUGE) {
+      texte += ' La ligne est en non-conformité. Un CAPA sera ouvert automatiquement et le superviseur sera notifié.';
+    } else if (noteCalculee === NoteCalculee.ORANGE) {
+      texte += ' Des améliorations sont nécessaires pour atteindre le niveau vert.';
+    } else {
+      texte += ' Le niveau de conformité est satisfaisant. Maintenir les efforts.';
+    }
+    return texte;
+  }
+
+  async submitAudit(
+    agentId: string,
+    ligneControleId: string,
+    dto: {
+      reponses: Record<string, boolean>;
+      commentaireAgent?: string;
+      dureeSecondes?: number;
+    },
+  ): Promise<Audit5S> {
+    const agent = await this.userRepo.findOne({ where: { id: agentId } });
+    if (!agent) throw new Error('Agent non trouvé');
+
+    const ligne = await this.ligneRepo.findOne({
+      where: { id: ligneControleId },
+    });
+    if (!ligne) throw new Error('Ligne de contrôle non trouvée');
+
+    const superviseurId = agent.superviseurId || agent.id;
+    const criteres = await this.getCriteres(superviseurId);
+    const scoreResult = this.calculateScore(dto.reponses, criteres);
+
+    const audit = this.auditRepo.create({
+      ligneControleId,
+      nomLigne: ligne.nomLigne,
+      agentId,
+      agentName: `${agent.firstName} ${agent.lastName}`,
+      superviseurId,
+      scoreGlobal: scoreResult.scoreGlobal,
+      noteCalculee: scoreResult.noteCalculee,
+      scoreS1: scoreResult.scoreS1,
+      scoreS2: scoreResult.scoreS2,
+      scoreS3: scoreResult.scoreS3,
+      scoreS4: scoreResult.scoreS4,
+      scoreS5: scoreResult.scoreS5,
+      reponsesJson: JSON.stringify(dto.reponses),
+      pilierPlusFaible: scoreResult.pilierPlusFaible,
+      dureeRemplissageSecondes: dto.dureeSecondes || null,
+      commentaireAgent: dto.commentaireAgent || null,
+      analyseIA: 'Analyse en cours...',
+    });
+
+    const savedAudit = await this.auditRepo.save(audit);
+
+    // Update LigneControle note
+    const noteMap: Record<string, NoteQualite> = {
+      vert: NoteQualite.VERT,
+      orange: NoteQualite.JAUNE,
+      rouge: NoteQualite.ROUGE,
+    };
+    ligne.note = noteMap[scoreResult.noteCalculee] || NoteQualite.JAUNE;
+    await this.ligneRepo.save(ligne);
+
+    // Auto-create CAPA for red lines
+    if (scoreResult.noteCalculee === NoteCalculee.ROUGE) {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const existingAudits = await this.auditRepo.find({
+          where: {
+            ligneControleId,
+            superviseurId,
+            noteCalculee: NoteCalculee.ROUGE,
+          } as any,
+          order: { createdAt: 'DESC' },
+          take: 1,
+        });
+        const todayAudit = existingAudits.find(
+          (a) => a.createdAt.toISOString().startsWith(today) && a.id !== savedAudit.id,
+        );
+
+        if (!todayAudit) {
+          const dateEcheance = new Date();
+          dateEcheance.setDate(dateEcheance.getDate() + 30);
+
+          const capa = await this.capaService.createCapa(superviseurId, {
+            titre: `Non-conformité 5S — ${ligne.nomLigne}`,
+            description: `Audit 5S automatique. Score : ${scoreResult.scoreGlobal}/100. ${scoreResult.pilierPlusFaible} est le pilier le plus faible.`,
+            type: 'corrective' as any,
+            priority: CapaPriority.HAUTE,
+            dateEcheance,
+            ligneControleId,
+            nomLigne: ligne.nomLigne,
+            causeRacine: `Audit 5S automatique — score ${scoreResult.scoreGlobal}/100`,
+          });
+          savedAudit.capaDeclenche = true;
+          savedAudit.capaId = capa.id;
+          await this.auditRepo.save(savedAudit);
+        }
+      } catch (err: any) {
+        this.logger.warn(`CAPA automatique non créée: ${err?.message}`);
+      }
+    }
+
+    // Generate AI analysis asynchronously (fire and forget)
+    this.generateAnalyseIA(scoreResult, ligne.nomLigne, `${agent.firstName} ${agent.lastName}`)
+      .then(async (analyse) => {
+        savedAudit.analyseIA = analyse;
+        await this.auditRepo.save(savedAudit);
+      })
+      .catch((err) => {
+        this.logger.warn(`Analyse IA échouée: ${err?.message}`);
+        savedAudit.analyseIA = this.generateFallbackAnalyse(
+          scoreResult,
+          ligne.nomLigne,
+          `${agent.firstName} ${agent.lastName}`,
+        );
+        this.auditRepo.save(savedAudit).catch(() => {});
+      });
+
+    return savedAudit;
+  }
+
+  async getHistoriqueAudit(
+    ligneControleId: string,
+    limit = 10,
+  ): Promise<Audit5S[]> {
+    return this.auditRepo.find({
+      where: { ligneControleId },
+      order: { createdAt: 'DESC' },
+      take: limit,
+    });
+  }
+
+  async getStatsAudit5S(superviseurId: string): Promise<Stats5S> {
+    const now = new Date();
+    const debut = new Date(now.getFullYear(), now.getMonth(), 1);
+    const fin = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+    const audits = await this.auditRepo.find({
+      where: {
+        superviseurId,
+        createdAt: { _greaterThanOrEqual: debut, _lessThanOrEqual: fin } as any,
+      },
+      order: { createdAt: 'ASC' },
+    });
+
+    if (audits.length === 0) {
+      return {
+        moyenneScore: 0,
+        repartitionNotes: { vert: 0, orange: 0, rouge: 0 },
+        evolutionScoreParJour: [],
+        piliersPlusFaibles: [],
+        lignesMeilleureScore: [],
+        lignesPireScore: [],
+        totalAuditsEffectues: 0,
+      };
+    }
+
+    const totalScore = audits.reduce((s, a) => s + a.scoreGlobal, 0);
+    const moyenneScore = Math.round((totalScore / audits.length) * 10) / 10;
+
+    const repartitionNotes = { vert: 0, orange: 0, rouge: 0 };
+    for (const a of audits) {
+      repartitionNotes[a.noteCalculee]++;
+    }
+
+    // Evolution by day
+    const dayMap = new Map<string, number[]>();
+    for (const a of audits) {
+      const day = a.createdAt.toISOString().split('T')[0];
+      if (!dayMap.has(day)) dayMap.set(day, []);
+      dayMap.get(day)!.push(a.scoreGlobal);
+    }
+    const evolutionScoreParJour = Array.from(dayMap.entries()).map(
+      ([date, scores]) => ({
+        date,
+        moyenne:
+          Math.round((scores.reduce((s, v) => s + v, 0) / scores.length) * 10) /
+          10,
+      }),
+    );
+
+    // Piliers plus faibles
+    const pilierTotals = { s1: 0, s2: 0, s3: 0, s4: 0, s5: 0 };
+    for (const a of audits) {
+      pilierTotals.s1 += a.scoreS1;
+      pilierTotals.s2 += a.scoreS2;
+      pilierTotals.s3 += a.scoreS3;
+      pilierTotals.s4 += a.scoreS4;
+      pilierTotals.s5 += a.scoreS5;
+    }
+    const piliersPlusFaibles = Object.entries(pilierTotals)
+      .map(([pilier, total]) => ({
+        pilier: PILIER_LABELS[pilier as Pilier5S],
+        scoreMoyen: Math.round((total / audits.length) * 10) / 10,
+      }))
+      .sort((a, b) => a.scoreMoyen - b.scoreMoyen);
+
+    // Top/bottom lignes
+    const ligneMap = new Map<string, { total: number; count: number }>();
+    for (const a of audits) {
+      const existing = ligneMap.get(a.nomLigne) || { total: 0, count: 0 };
+      existing.total += a.scoreGlobal;
+      existing.count++;
+      ligneMap.set(a.nomLigne, existing);
+    }
+    const ligneScores = Array.from(ligneMap.entries())
+      .map(([nomLigne, { total, count }]) => ({
+        nomLigne,
+        scoreMoyen: Math.round((total / count) * 10) / 10,
+      }))
+      .sort((a, b) => b.scoreMoyen - a.scoreMoyen);
+
+    return {
+      moyenneScore,
+      repartitionNotes,
+      evolutionScoreParJour,
+      piliersPlusFaibles,
+      lignesMeilleureScore: ligneScores.slice(0, 3),
+      lignesPireScore: ligneScores.slice(-3).reverse(),
+      totalAuditsEffectues: audits.length,
+    };
+  }
+
+  async updateCriteres(
+    superviseurId: string,
+    dto: { criteres: { pilier: Pilier5S; label: string; points: number; ordre: number }[] },
+  ): Promise<void> {
+    // Validate points per pilier sum to 20
+    const pilierTotals: Record<string, number> = {};
+    for (const c of dto.criteres) {
+      pilierTotals[c.pilier] = (pilierTotals[c.pilier] || 0) + c.points;
+    }
+    for (const [pilier, total] of Object.entries(pilierTotals)) {
+      if (total !== 20) {
+        throw new Error(`Le pilier ${pilier} doit totaliser exactement 20 points (actuel : ${total})`);
+      }
+    }
+
+    // Deactivate existing
+    await this.critereRepo.update(
+      { tenantId: superviseurId },
+      { isActive: false },
+    );
+
+    // Create new
+    const newCriteres = dto.criteres.map((c) =>
+      this.critereRepo.create({
+        tenantId: superviseurId,
+        pilier: c.pilier,
+        label: c.label,
+        points: c.points,
+        ordre: c.ordre,
+        isActive: true,
+      }),
+    );
+    await this.critereRepo.save(newCriteres);
+  }
+}
