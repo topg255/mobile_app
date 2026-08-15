@@ -2142,7 +2142,7 @@ const LigneDetailModal: React.FC<{ ligne: LigneControle; onClose: () => void }> 
     if (!audit) return;
     setPdfLoading(true);
     try {
-      const res = await fetch(`http://localhost:3000/audit5s/${audit.id}/pdf`, {
+      const res = await fetch(`http://localhost:3000/api/audit5s/${audit.id}/pdf`, {
         headers: { Authorization: `Bearer ${token ?? localStorage.getItem('token')}` },
       });
       if (!res.ok) {
