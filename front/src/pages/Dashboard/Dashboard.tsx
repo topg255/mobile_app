@@ -2303,21 +2303,62 @@ const LigneDetailModal: React.FC<{ ligne: LigneControle; onClose: () => void }> 
                 </div>
 
                 {/* AI Analysis */}
-                {audit.analyseIA && audit.analyseIA !== 'Analyse en cours...' ? (
-                  <div style={{
-                    padding: '14px 16px', borderRadius: 12,
-                    background: 'linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%)',
-                    border: '1px solid #c7d2fe',
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                      <div style={{ width: 22, height: 22, borderRadius: 6, background: '#6366f120', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Sparkles size={12} color="#6366f1" />
+                {audit.analyseIA && audit.analyseIA !== 'Analyse en cours...' ? (() => {
+                  const parseAnalyse = (text: string) => {
+                    const sections: { title: string; content: string; color: string; bg: string }[] = [];
+                    const parts = text.split(/\n+/);
+                    let currentTitle = '';
+                    let currentContent: string[] = [];
+                    const sectionColors: Record<string, { color: string; bg: string }> = {
+                      'état': { color: '#6366f1', bg: '#eef2ff' },
+                      'point': { color: '#059669', bg: '#ecfdf5' },
+                      'priorité': { color: '#dc2626', bg: '#fef2f2' },
+                    };
+                    for (const part of parts) {
+                      const cleaned = part.replace(/\*\*/g, '').trim();
+                      const isTitle = /^(état|points?|priorité|action)/i.test(cleaned);
+                      if (isTitle) {
+                        if (currentTitle && currentContent.length > 0) {
+                          const key = currentTitle.toLowerCase().split(' ')[0];
+                          const c = sectionColors[key] || { color: '#475569', bg: '#f8fafc' };
+                          sections.push({ title: currentTitle, content: currentContent.join(' '), ...c });
+                        }
+                        currentTitle = cleaned;
+                        currentContent = [];
+                      } else if (cleaned) {
+                        currentContent.push(cleaned);
+                      }
+                    }
+                    if (currentTitle && currentContent.length > 0) {
+                      const key = currentTitle.toLowerCase().split(' ')[0];
+                      const c = sectionColors[key] || { color: '#475569', bg: '#f8fafc' };
+                      sections.push({ title: currentTitle, content: currentContent.join(' '), ...c });
+                    }
+                    if (sections.length === 0) {
+                      sections.push({ title: 'ANALYSE', content: text.replace(/\*\*/g, ''), color: '#6366f1', bg: '#eef2ff' });
+                    }
+                    return sections;
+                  };
+                  const sections = parseAnalyse(audit.analyseIA);
+                  return (
+                    <div style={{ padding: '14px 16px', borderRadius: 12, border: '1px solid #c7d2fe', background: '#f5f3ff' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                        <div style={{ width: 22, height: 22, borderRadius: 6, background: '#6366f120', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Sparkles size={12} color="#6366f1" />
+                        </div>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', letterSpacing: 0.5 }}>Analyse IA</span>
                       </div>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', letterSpacing: 0.5 }}>Analyse IA — Mistral AI</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {sections.map((s, i) => (
+                          <div key={i} style={{ padding: '10px 12px', borderRadius: 8, background: s.bg, borderLeft: `3px solid ${s.color}` }}>
+                            <div style={{ fontSize: 10, fontWeight: 700, color: s.color, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>{s.title}</div>
+                            <div style={{ fontSize: 12, lineHeight: 1.6, color: '#334155', whiteSpace: 'pre-line' }}>{s.content}</div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <p style={{ fontSize: 12, lineHeight: 1.7, color: '#3730a3', margin: 0, fontStyle: 'italic' }}>"{audit.analyseIA}"</p>
-                  </div>
-                ) : audit.analyseIA === 'Analyse en cours...' ? (
+                  );
+                })() : audit.analyseIA === 'Analyse en cours...' ? (
                   <div style={{
                     padding: '14px 16px', borderRadius: 12, border: '1px dashed #c7d2fe',
                     background: 'linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%)',

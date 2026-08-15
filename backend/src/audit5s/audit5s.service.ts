@@ -171,16 +171,34 @@ export class Audit5SService {
           : Math.min(scoreS1, scoreS2, scoreS3, scoreS4, scoreS5)),
       );
 
-      const prompt = `Tu es expert qualité LEONI. Un agent vient de réaliser un audit 5S.
-Voici les résultats : Score global ${scoreGlobal}/100 (${noteCalculee}).
-Pilier le plus faible : ${pilierPlusFaible} (${pilierPct}%).
-Scores par pilier : 1S=${scoreS1}%, 2S=${scoreS2}%, 3S=${scoreS3}%, 4S=${scoreS4}%, 5S=${scoreS5}%.
-Ligne : ${nomLigne}. Agent : ${agentName}.
-Génère une analyse courte (3-4 phrases max) en français avec :
-1. Une évaluation rapide du niveau général
-2. La priorité d'action sur le pilier le plus faible avec une action concrète
-3. Si rouge : mention que le superviseur sera notifié et un CAPA sera ouvert
-Sois direct et professionnel.`;
+      const prompt = `Tu es expert qualité LEONI. Analyse cet audit 5S et génère un rapport clair et structuré.
+
+Résultats de l'audit :
+- Ligne : ${nomLigne}
+- Agent : ${agentName}
+- Score global : ${scoreGlobal}/100 (${noteCalculee})
+- 1S Trier : ${scoreS1}/20
+- 2S Ranger : ${scoreS2}/20
+- 3S Nettoyer : ${scoreS3}/20
+- 4S Standardiser : ${scoreS4}/20
+- 5S Soutenir : ${scoreS5}/20
+- Pilier le plus faible : ${pilierPlusFaible}
+
+Format de réponse souhaité (en français, sans markdown ni astérisques) :
+
+ÉTAT GÉNÉRAL
+(1-2 phrases sur le niveau global)
+
+POINTS FORTS
+(piliers bien notés)
+
+POINTS À AMÉLIORER
+(piliers faibles avec actions concrètes)
+
+PRIORITÉ D'ACTION
+(une action immédiate)
+
+Sois direct, concret et professionnel. Utilise des retours à la ligne pour aérer le texte.`;
 
       const completion = await client.chat.complete({
         model: 'mistral-large-latest',
