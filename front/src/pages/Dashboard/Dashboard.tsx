@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { qualityAPI, authAPI } from '../../api';
+import { qualityAPI, authAPI, audit5sAPI } from '../../api';
 import { reportAPI } from '../../api';
 import { LigneControle, NoteQualite, User } from '../../types';
 import RapportLibraries from '../../components/RapportLibraries';
@@ -78,6 +78,7 @@ import {
   MailX,
   Loader2,
   ShieldCheck,
+  Sparkles,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -2120,58 +2121,208 @@ const EditLigneTab: React.FC<{ ligne: LigneControle; onSuccess: () => void; onCa
 };
 
 const LigneDetailModal: React.FC<{ ligne: LigneControle; onClose: () => void }> = ({ ligne, onClose }) => {
+  const { token } = useAuth();
+  const [audit, setAudit] = useState<any>(null);
+  const [loadingAudit, setLoadingAudit] = useState(true);
+  const [pdfLoading, setPdfLoading] = useState(false);
+
+  useEffect(() => {
+    setLoadingAudit(true);
+    audit5sAPI.getHistorique(ligne.id).then((res) => {
+      const audits = res.data;
+      setAudit(audits && audits.length > 0 ? audits[0] : null);
+    }).catch(() => setAudit(null)).finally(() => setLoadingAudit(false));
+  }, [ligne.id]);
+
+  const noteColor = ligne.note === 'vert' ? '#22c55e' : ligne.note === 'jaune' ? '#f97316' : '#ef4444';
+  const noteBg = ligne.note === 'vert' ? '#f0fdf4' : ligne.note === 'jaune' ? '#fff7ed' : '#fef2f2';
+  const noteLabel = ligne.note === 'vert' ? 'Vert' : ligne.note === 'jaune' ? 'Orange' : 'Rouge';
+
+  const handleDownloadPdf = async () => {
+    if (!audit) return;
+    setPdfLoading(true);
+    try {
+      const res = await fetch(`http://localhost:3000/audit5s/${audit.id}/pdf`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Erreur PDF');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `audit-5s-${ligne.nomLigne}-${audit.id}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { toast.error('Erreur lors du téléchargement'); } finally { setPdfLoading(false); }
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Détails de la ligne</h2>
-          <button className="modal-close" onClick={onClose}>
-            <X size={20} />
-          </button>
-        </div>
-        <div className="modal-body">
-          {ligne.image && (
-            <div className="modal-image">
-              <img src={`http://localhost:3000${ligne.image}`} alt={ligne.nomLigne} />
-            </div>
-          )}
-          <div className="detail-grid">
-            <div className="detail-item">
-              <span className="detail-label">Nom de la ligne</span>
-              <span className="detail-value">{ligne.nomLigne}</span>
-            </div>
-            <div className="detail-item">
-              <span className="detail-label">Heure</span>
-              <span className="detail-value">{ligne.heure || '-'}</span>
-            </div>
-            <div className="detail-item">
-              <span className="detail-label">Note</span>
-              <span className={`note-badge ${ligne.note}`}>{ligne.note}</span>
-            </div>
-            <div className="detail-item">
-              <span className="detail-label">Délai</span>
-              <span className="detail-value">{ligne.delais} min</span>
-            </div>
-            <div className="detail-item">
-              <span className="detail-label">Responsable</span>
-              <span className="detail-value">{ligne.responsable}</span>
-            </div>
-            <div className="detail-item">
-              <span className="detail-label">Agent</span>
-              <span className="detail-value">{ligne.agent?.firstName} {ligne.agent?.lastName}</span>
-            </div>
-            <div className="detail-item">
-              <span className="detail-label">Date de contrôle</span>
-              <span className="detail-value">{new Date(ligne.controleDate?.dateControle).toLocaleDateString('fr-FR')}</span>
-            </div>
-            <div className="detail-item">
-              <span className="detail-label">Créé le</span>
-              <span className="detail-value">{new Date(ligne.createdAt).toLocaleString('fr-FR')}</span>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560, maxHeight: '90vh' }}>
+        <div className="modal-header" style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: 14, marginBottom: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {ligne.image && (
+              <img src={`http://localhost:3000${ligne.image}`} alt="" style={{ width: 48, height: 48, borderRadius: 12, objectFit: 'cover', border: '2px solid #f1f5f9' }} />
+            )}
+            <div>
+              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>{ligne.nomLigne}</h2>
+              <span style={{ fontSize: 12, color: '#64748b' }}>
+                {new Date(ligne.controleDate?.dateControle).toLocaleDateString('fr-FR')} • {ligne.heure || '-'}
+              </span>
             </div>
           </div>
-          <div className="detail-item full-width">
-            <span className="detail-label">Détails</span>
-            <span className="detail-value">{ligne.details}</span>
+          <button className="modal-close" onClick={onClose}><X size={20} /></button>
+        </div>
+
+        <div className="modal-body" style={{ padding: '16px 20px', overflowY: 'auto', maxHeight: 'calc(90vh - 80px)' }}>
+          {/* Info Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 }}>
+            {[
+              { label: 'Note', value: <span style={{ padding: '3px 10px', borderRadius: 8, background: noteBg, color: noteColor, fontSize: 12, fontWeight: 700 }}>{noteLabel}</span> },
+              { label: 'Délai', value: <span style={{ fontSize: 13, fontWeight: 600 }}>{ligne.delais} min</span> },
+              { label: 'Responsable', value: <span style={{ fontSize: 13 }}>{ligne.responsable}</span> },
+              { label: 'Agent', value: <span style={{ fontSize: 13 }}>{ligne.agent?.firstName} {ligne.agent?.lastName}</span> },
+            ].map((item, i) => (
+              <div key={i} style={{ padding: '10px 12px', borderRadius: 10, background: '#f8fafc', border: '1px solid #f1f5f9' }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>{item.label}</div>
+                {item.value}
+              </div>
+            ))}
+          </div>
+
+          {/* Détails */}
+          {ligne.details && (
+            <div style={{ padding: '10px 12px', borderRadius: 10, background: '#f8fafc', border: '1px solid #f1f5f9', marginBottom: 18 }}>
+              <div style={{ fontSize: 10, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Détails</div>
+              <span style={{ fontSize: 13, color: '#475569' }}>{ligne.details}</span>
+            </div>
+          )}
+
+          {/* ── 5S AUDIT SECTION ── */}
+          <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 8, background: '#6366f118', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ClipboardList size={14} color="#6366f1" />
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>Audit 5S</span>
+              </div>
+              {audit && (
+                <button
+                  onClick={handleDownloadPdf}
+                  disabled={pdfLoading}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8,
+                    border: '1px solid #e2e8f0', background: '#fff', cursor: pdfLoading ? 'default' : 'pointer',
+                    fontSize: 11, fontWeight: 600, color: '#475569', transition: 'all 0.15s',
+                  }}
+                >
+                  {pdfLoading ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+                  PDF
+                </button>
+              )}
+            </div>
+
+            {loadingAudit ? (
+              <div style={{ textAlign: 'center', padding: 24, color: '#94a3b8' }}>
+                <Loader2 size={20} className="animate-spin" style={{ margin: '0 auto 8px' }} />
+                <div style={{ fontSize: 12 }}>Chargement...</div>
+              </div>
+            ) : audit ? (
+              <div>
+                {/* Score Global */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 16, padding: '14px 16px', borderRadius: 12,
+                  background: audit.noteCalculee === 'vert' ? '#f0fdf4' : audit.noteCalculee === 'orange' ? '#fff7ed' : '#fef2f2',
+                  border: `1px solid ${audit.noteCalculee === 'vert' ? '#bbf7d0' : audit.noteCalculee === 'orange' ? '#fed7aa' : '#fecaca'}`,
+                  marginBottom: 12,
+                }}>
+                  <div style={{ position: 'relative', width: 56, height: 56 }}>
+                    <svg width={56} height={56} style={{ transform: 'rotate(-90deg)' }}>
+                      <circle cx={28} cy={28} r={24} fill="none" stroke="#e5e7eb" strokeWidth={4} />
+                      <circle
+                        cx={28} cy={28} r={24} fill="none"
+                        stroke={audit.noteCalculee === 'vert' ? '#22c55e' : audit.noteCalculee === 'orange' ? '#f97316' : '#ef4444'}
+                        strokeWidth={4} strokeDasharray={150.8} strokeDashoffset={150.8 - (audit.scoreGlobal / 100) * 150.8}
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <span style={{
+                      position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 16, fontWeight: 800,
+                      color: audit.noteCalculee === 'vert' ? '#22c55e' : audit.noteCalculee === 'orange' ? '#f97316' : '#ef4444',
+                    }}>{audit.scoreGlobal}</span>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5 }}>Score Global</div>
+                    <div style={{
+                      fontSize: 20, fontWeight: 800, lineHeight: 1.1,
+                      color: audit.noteCalculee === 'vert' ? '#22c55e' : audit.noteCalculee === 'orange' ? '#f97316' : '#ef4444',
+                    }}>
+                      {audit.scoreGlobal}<span style={{ fontSize: 12, fontWeight: 500, color: '#94a3b8' }}>/100</span>
+                    </div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', marginTop: 2 }}>
+                      {audit.noteCalculee === 'vert' ? '✓ Conforme' : audit.noteCalculee === 'orange' ? '⚠ À améliorer' : '✕ Non conforme'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Scores par pilier */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', gap: 6, marginBottom: 12 }}>
+                  {[
+                    { label: '1S', score: audit.scoreS1, color: '#6366f1' },
+                    { label: '2S', score: audit.scoreS2, color: '#8b5cf6' },
+                    { label: '3S', score: audit.scoreS3, color: '#06b6d4' },
+                    { label: '4S', score: audit.scoreS4, color: '#f97316' },
+                    { label: '5S', score: audit.scoreS5, color: '#ec4899' },
+                  ].map((p, i) => (
+                    <div key={i} style={{ textAlign: 'center', padding: '8px 2px', borderRadius: 8, background: '#f8fafc', border: '1px solid #f1f5f9' }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: p.color, marginBottom: 3 }}>{p.label}</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: p.score >= 16 ? '#22c55e' : p.score >= 11 ? '#f97316' : '#ef4444' }}>{p.score}</div>
+                      <div style={{ height: 3, borderRadius: 2, background: '#e5e7eb', overflow: 'hidden', marginTop: 3 }}>
+                        <div style={{ height: '100%', width: `${(p.score / 20) * 100}%`, borderRadius: 2, background: p.score >= 16 ? '#22c55e' : p.score >= 11 ? '#f97316' : '#ef4444', transition: 'width 0.3s' }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* AI Analysis */}
+                {audit.analyseIA && audit.analyseIA !== 'Analyse en cours...' ? (
+                  <div style={{
+                    padding: '12px 14px', borderRadius: 10, border: '1px solid #e0e7ff', background: '#eef2ff',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6 }}>
+                      <Sparkles size={12} color="#6366f1" />
+                      <span style={{ fontSize: 10, fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', letterSpacing: 0.5 }}>Analyse IA</span>
+                    </div>
+                    <p style={{ fontSize: 12, lineHeight: 1.6, color: '#374151', margin: 0 }}>{audit.analyseIA}</p>
+                  </div>
+                ) : audit.analyseIA === 'Analyse en cours...' ? (
+                  <div style={{ padding: '12px 14px', borderRadius: 10, border: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Loader2 size={14} className="animate-spin" color="#6366f1" />
+                    <span style={{ fontSize: 12, color: '#94a3b8' }}>Analyse IA en cours...</span>
+                  </div>
+                ) : null}
+
+                {/* Meta info */}
+                <div style={{ display: 'flex', gap: 12, marginTop: 10, fontSize: 11, color: '#94a3b8' }}>
+                  <span>Agent: {audit.agentName}</span>
+                  <span>•</span>
+                  <span>{new Date(audit.createdAt).toLocaleDateString('fr-FR')}</span>
+                  {audit.dureeRemplissageSecondes && (
+                    <>
+                      <span>•</span>
+                      <span>{Math.floor(audit.dureeRemplissageSecondes / 60)}min {audit.dureeRemplissageSecondes % 60}s</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: 20, color: '#94a3b8', fontSize: 12 }}>
+                <ClipboardList size={24} style={{ margin: '0 auto 8px', opacity: 0.4 }} />
+                <div>Aucun audit 5S effectué</div>
+              </div>
+            )}
           </div>
         </div>
       </div>

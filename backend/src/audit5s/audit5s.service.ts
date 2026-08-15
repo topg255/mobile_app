@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Mistral } from '@mistralai/mistralai';
 import { ConfigService } from '@nestjs/config';
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { Audit5S, NoteCalculee } from './entities/audit5s.entity';
 import { Critere5S, Pilier5S } from './entities/critere5s.entity';
 import { DEFAULT_CRITERIA, PILIER_LABELS, DefaultCritere } from './data/default-criteria';
@@ -462,5 +463,134 @@ Sois direct et professionnel.`;
       }),
     );
     await this.critereRepo.save(newCriteres);
+  }
+
+  async generateAuditPdf(auditId: number): Promise<Buffer> {
+    const audit = await this.auditRepo.findOne({ where: { id: auditId } });
+    if (!audit) throw new Error('Audit non trouvé');
+
+    const pdf = await PDFDocument.create();
+    const helvetica = await pdf.embedFont(StandardFonts.Helvetica);
+    const helveticaBold = await pdf.embedFont(StandardFonts.HelveticaBold);
+
+    const page = pdf.addPage([595.28, 841.89]);
+    const w = page.getWidth();
+    let y = 800;
+
+    const NOTE_COLORS: Record<string, [number, number, number]> = {
+      vert: [0.13, 0.77, 0.37],
+      orange: [0.95, 0.45, 0.09],
+      rouge: [0.86, 0.15, 0.17],
+    };
+    const NOTE_LABELS: Record<string, string> = {
+      vert: 'VERT — Conforme',
+      orange: 'ORANGE — À améliorer',
+      rouge: 'ROUGE — Non conforme',
+    };
+
+    const [r, g, b] = NOTE_COLORS[audit.noteCalculee] || [0, 0, 0];
+
+    // Header bar
+    page.drawRectangle({ x: 0, y: 780, width: w, height: 62, color: rgb(0.06, 0.09, 0.17) });
+    page.drawText('RAPPORT AUDIT 5S', { x: 40, y: 803, size: 20, font: helveticaBold, color: rgb(1, 1, 1) });
+    page.drawText('LEONI Qualité IA', { x: w - 160, y: 808, size: 10, font: helvetica, color: rgb(0.6, 0.65, 0.72) });
+
+    // Line info
+    y = 755;
+    page.drawText(`Ligne : ${audit.nomLigne}`, { x: 40, y, size: 12, font: helveticaBold, color: rgb(0.1, 0.1, 0.1) });
+    page.drawText(`Agent : ${audit.agentName}`, { x: 40, y: y - 18, size: 10, font: helvetica, color: rgb(0.4, 0.4, 0.4) });
+    page.drawText(`Date : ${audit.createdAt.toLocaleDateString('fr-FR')}  ${audit.createdAt.toLocaleTimeString('fr-FR')}`, { x: 40, y: y - 34, size: 10, font: helvetica, color: rgb(0.4, 0.4, 0.4) });
+    if (audit.dureeRemplissageSecondes) {
+      const min = Math.floor(audit.dureeRemplissageSecondes / 60);
+      const sec = audit.dureeRemplissageSecondes % 60;
+      page.drawText(`Durée : ${min}min ${sec}s`, { x: 40, y: y - 50, size: 10, font: helvetica, color: rgb(0.4, 0.4, 0.4) });
+    }
+
+    // Score box
+    y = 680;
+    page.drawRectangle({ x: 40, y, width: w - 80, height: 80, borderColor: rgb(r, g, b), borderWidth: 2, color: rgb(r * 0.15 + 0.85, g * 0.15 + 0.85, b * 0.15 + 0.85) });
+    page.drawText('SCORE GLOBAL', { x: 60, y: y + 55, size: 9, font: helveticaBold, color: rgb(0.4, 0.4, 0.4) });
+    page.drawText(`${audit.scoreGlobal}`, { x: 60, y: y + 20, size: 36, font: helveticaBold, color: rgb(r, g, b) });
+    page.drawText('/ 100', { x: 140, y: y + 28, size: 14, font: helvetica, color: rgb(0.5, 0.5, 0.5) });
+    page.drawText(NOTE_LABELS[audit.noteCalculee] || audit.noteCalculee.toUpperCase(), { x: 220, y: y + 30, size: 14, font: helveticaBold, color: rgb(r, g, b) });
+
+    // Pilier scores
+    y = 580;
+    page.drawText('SCORES PAR PILIER', { x: 40, y, size: 10, font: helveticaBold, color: rgb(0.2, 0.2, 0.2) });
+
+    const PILIER_NAMES = ['1S — Seiri (Trier)', '2S — Seiton (Ranger)', '3S — Seiso (Nettoyer)', '4S — Seiketsu (Standardiser)', '5S — Shitsuke (Soutenir)'];
+    const pilierScores = [audit.scoreS1, audit.scoreS2, audit.scoreS3, audit.scoreS4, audit.scoreS5];
+
+    y -= 20;
+    for (let i = 0; i < 5; i++) {
+      const score = pilierScores[i];
+      const pct = score / 20;
+      const sr = score >= 16 ? 0.13 : score >= 11 ? 0.95 : 0.86;
+      const sg = score >= 16 ? 0.77 : score >= 11 ? 0.45 : 0.15;
+      const sb = score >= 16 ? 0.37 : score >= 11 ? 0.09 : 0.17;
+
+      page.drawText(PILIER_NAMES[i], { x: 60, y, size: 10, font: helvetica, color: rgb(0.3, 0.3, 0.3) });
+      page.drawText(`${score}/20`, { x: w - 120, y, size: 10, font: helveticaBold, color: rgb(sr, sg, sb) });
+
+      // Progress bar
+      const barX = 260;
+      const barW = 180;
+      page.drawRectangle({ x: barX, y: y - 2, width: barW, height: 8, color: rgb(0.93, 0.94, 0.96) });
+      if (pct > 0) {
+        page.drawRectangle({ x: barX, y: y - 2, width: barW * pct, height: 8, color: rgb(sr, sg, sb) });
+      }
+      y -= 26;
+    }
+
+    // AI Analysis
+    if (audit.analyseIA) {
+      y -= 10;
+      page.drawText('ANALYSE IA', { x: 40, y, size: 10, font: helveticaBold, color: rgb(0.39, 0.4, 0.95) });
+      y -= 5;
+      page.drawRectangle({ x: 40, y: y - 60, width: w - 80, height: 70, borderColor: rgb(0.82, 0.84, 0.92), borderWidth: 1, color: rgb(0.97, 0.97, 0.99) });
+
+      const lines = this.wrapText(audit.analyseIA, 90);
+      let ly = y - 15;
+      for (const line of lines.slice(0, 4)) {
+        page.drawText(line, { x: 55, y: ly, size: 9, font: helvetica, color: rgb(0.3, 0.3, 0.4) });
+        ly -= 13;
+      }
+      y = ly - 15;
+    }
+
+    // Agent comment
+    if (audit.commentaireAgent) {
+      y -= 5;
+      page.drawText('COMMENTAIRE AGENT', { x: 40, y, size: 10, font: helveticaBold, color: rgb(0.2, 0.2, 0.2) });
+      y -= 18;
+      const cLines = this.wrapText(audit.commentaireAgent, 90);
+      for (const line of cLines.slice(0, 3)) {
+        page.drawText(line, { x: 55, y, size: 9, font: helvetica, color: rgb(0.4, 0.4, 0.4) });
+        y -= 13;
+      }
+    }
+
+    // Footer
+    page.drawRectangle({ x: 0, y: 0, width: w, height: 30, color: rgb(0.06, 0.09, 0.17) });
+    page.drawText('LEONI Qualité IA — Rapport généré automatiquement', { x: 40, y: 10, size: 8, font: helvetica, color: rgb(0.5, 0.55, 0.62) });
+    page.drawText(`Réf: AUDIT-5S-${audit.id}`, { x: w - 200, y: 10, size: 8, font: helvetica, color: rgb(0.5, 0.55, 0.62) });
+
+    return Buffer.from(await pdf.save());
+  }
+
+  private wrapText(text: string, maxChars: number): string[] {
+    const words = text.split(' ');
+    const lines: string[] = [];
+    let current = '';
+    for (const word of words) {
+      if (current.length + word.length + 1 > maxChars) {
+        lines.push(current);
+        current = word;
+      } else {
+        current = current ? `${current} ${word}` : word;
+      }
+    }
+    if (current) lines.push(current);
+    return lines;
   }
 }

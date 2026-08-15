@@ -621,4 +621,6 @@ export const audit5sAPI = {
     points: number;
     ordre: number;
   }[]) => api.put('/audit5s/criteres', { criteres }),
+
+  getPdfUrl: (id: number): string => `${API_URL}/audit5s/${id}/pdf`,
 };

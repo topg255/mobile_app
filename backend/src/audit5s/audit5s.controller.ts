@@ -5,10 +5,12 @@ import {
   Put,
   Body,
   Param,
+  Res,
   UseGuards,
   Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -61,6 +63,19 @@ export class Audit5SController {
   @ApiOperation({ summary: 'Statistiques 5S du superviseur' })
   async getStats(@Request() req: any) {
     return this.audit5sService.getStatsAudit5S(req.user.id);
+  }
+
+  @Get(':id/pdf')
+  @Roles(UserRole.SUPERVISEUR_QUALITE, UserRole.AGENT_QUALITE, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Télécharger le PDF du rapport 5S' })
+  async getPdf(@Param('id') id: number, @Res() res: Response) {
+    const pdfBuffer = await this.audit5sService.generateAuditPdf(id);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="audit-5s-${id}.pdf"`,
+      'Content-Length': pdfBuffer.length,
+    });
+    res.end(pdfBuffer);
   }
 
   @Put('criteres')
