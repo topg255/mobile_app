@@ -6,6 +6,7 @@ import {
   Body,
   Param,
   Res,
+  ParseIntPipe,
   UseGuards,
   Request,
 } from '@nestjs/common';
@@ -68,7 +69,7 @@ export class Audit5SController {
   @Get(':id/pdf')
   @Roles(UserRole.SUPERVISEUR_QUALITE, UserRole.AGENT_QUALITE, UserRole.SUPER_ADMIN)
   @ApiOperation({ summary: 'Télécharger le PDF du rapport 5S' })
-  async getPdf(@Param('id') id: number, @Res() res: Response) {
+  async getPdf(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
     const pdfBuffer = await this.audit5sService.generateAuditPdf(id);
     res.set({
       'Content-Type': 'application/pdf',
