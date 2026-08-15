@@ -125,29 +125,45 @@ export default function Audit5SForm({ ligneControleId, nomLigne, onCompleted }: 
             }}>
               {auditResult.noteCalculee === 'vert' ? <CheckCircle2 size={28} color="#22c55e" /> : <AlertTriangle size={28} color={auditResult.noteCalculee === 'orange' ? '#f97316' : '#ef4444'} />}
             </div>
-            <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>Audit terminé</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: '#0f172a' }}>Audit terminé</h2>
             <p style={{ color: '#64748b', fontSize: 12, margin: '2px 0 0' }}>{nomLigne}</p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 14 }}>
-            <ScoreRing score={auditResult.scoreGlobal} size={64} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 16 }}>
+            <ScoreRing score={auditResult.scoreGlobal} size={68} />
             <div>
-              <div style={{ fontSize: 10, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5 }}>Score</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: auditResult.noteCalculee === 'vert' ? '#22c55e' : auditResult.noteCalculee === 'orange' ? '#f97316' : '#ef4444' }}>
-                {auditResult.scoreGlobal}/100
+              <div style={{ fontSize: 10, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>Score</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: auditResult.noteCalculee === 'vert' ? '#16a34a' : auditResult.noteCalculee === 'orange' ? '#ea580c' : '#dc2626', lineHeight: 1.1 }}>
+                {auditResult.scoreGlobal}<span style={{ fontSize: 13, fontWeight: 500, color: '#94a3b8' }}>/100</span>
               </div>
             </div>
           </div>
 
           {/* Mini pilier scores */}
-          <div style={{ display: 'flex', gap: 3, justifyContent: 'center', marginBottom: 14 }}>
+          <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 14 }}>
             {[auditResult.scoreS1, auditResult.scoreS2, auditResult.scoreS3, auditResult.scoreS4, auditResult.scoreS5].map((s, i) => {
               const Icon = PILIER_ICONS[i];
+              const pct = (s / 20) * 100;
+              const scoreColor = s >= 16 ? '#22c55e' : s >= 11 ? '#f97316' : '#ef4444';
               return (
-                <div key={i} style={{ flex: 1, textAlign: 'center', padding: '6px 0', borderRadius: 8, background: '#f8fafc', border: '1px solid #f1f5f9' }}>
-                  <Icon size={11} color={PILIER_COLORS[i]} />
-                  <div style={{ fontSize: 11, fontWeight: 700, color: s >= 16 ? '#22c55e' : s >= 11 ? '#f97316' : '#ef4444', marginTop: 2 }}>
-                    {s}<span style={{ fontWeight: 400, fontSize: 9, color: '#94a3b8' }}>/20</span>
+                <div key={i} style={{
+                  flex: 1, textAlign: 'center', padding: '8px 4px', borderRadius: 10,
+                  background: `${PILIER_COLORS[i]}08`, border: `1px solid ${PILIER_COLORS[i]}20`,
+                }}>
+                  <div style={{
+                    width: 26, height: 26, borderRadius: 7, margin: '0 auto 4',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: `${PILIER_COLORS[i]}15`,
+                  }}>
+                    <Icon size={13} color={PILIER_COLORS[i]} />
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: scoreColor }}>
+                    {s}
+                  </div>
+                  <div style={{
+                    height: 3, borderRadius: 2, background: '#f1f5f9', overflow: 'hidden', marginTop: 3,
+                  }}>
+                    <div style={{ height: '100%', width: `${pct}%`, borderRadius: 2, background: scoreColor, transition: 'width 0.4s' }} />
                   </div>
                 </div>
               );
@@ -236,8 +252,7 @@ export default function Audit5SForm({ ligneControleId, nomLigne, onCompleted }: 
                       border: `2px solid ${color}`,
                       cursor: 'pointer', position: 'relative', zIndex: 1,
                       transition: 'all 0.3s ease',
-                      transform: isActive ? 'scale(1.15)' : 'scale(1)',
-                      boxShadow: isActive ? `0 0 0 4px ${PILIER_COLORS[i]}20` : 'none',
+                      boxShadow: isActive ? `0 0 0 3px ${PILIER_COLORS[i]}30, 0 2px 8px ${PILIER_COLORS[i]}25` : 'none',
                     }}
                   >
                     {isDone ? <CheckCircle2 size={13} color="#22c55e" /> : <Icon size={12} color={color} />}
