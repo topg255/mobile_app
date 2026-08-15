@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  IsArray,
   IsEnum,
   IsNotEmpty,
   IsOptional,
@@ -83,4 +84,13 @@ export class CreateLigneControleDto {
   @IsUUID()
   @IsNotEmpty()
   controleDateId: string;
+
+  @ApiProperty({
+    description: 'Piliers 5S sélectionnés',
+    example: ['1S', '2S', '3S'],
+    required: false,
+  })
+  @IsArray()
+  @IsOptional()
+  piliers5S?: string[];
 }

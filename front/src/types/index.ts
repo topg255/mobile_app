@@ -55,6 +55,7 @@ export interface LigneControle {
   responsable: string;
   details: string;
   image?: string;
+  piliers5S?: string[];
   controleDate: ControleDate;
   agent: User;
   createdAt: string;

@@ -93,6 +93,7 @@ export class QualityService {
       delais: dto.delais,
       responsable: dto.responsable,
       details: dto.details,
+      piliers5S: dto.piliers5S || [],
       controleDate,
       agent: user,
     });

@@ -41,6 +41,9 @@ export class LigneControle {
   @Column({ type: 'text' })
   details: string;
 
+  @Column({ type: 'simple-array', nullable: true })
+  piliers5S: string[];
+
   @ManyToOne(() => ControleDate, { eager: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'controle_date_id' })
   controleDate: ControleDate;
