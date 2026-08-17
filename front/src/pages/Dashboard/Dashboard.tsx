@@ -203,7 +203,7 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
 
           {isSuperviseur && (
             <>
-              <span className="sidebar-section-title">Supervision</span>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '14px 12px 6px', borderTop: '1px solid #f1f5f9', marginTop: 4 }}>Supervision</div>
               <button
                 className={`nav-item ${activeTab === 'lignes' ? 'active' : ''}`}
                 onClick={() => handleTab('lignes')}
@@ -223,7 +223,7 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
                 <UserCheck size={18} /> <span>Mes Agents</span>
               </button>
 
-              <span className="sidebar-section-title">Qualité</span>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '14px 12px 6px', borderTop: '1px solid #f1f5f9', marginTop: 4 }}>Qualité</div>
               <button
                 className={`nav-item ${activeTab === 'capa' ? 'active' : ''}`}
                 onClick={() => handleTab('capa')}
@@ -237,7 +237,7 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
                 <Target size={18} /> <span>Objectifs Qualité</span>
               </button>
 
-              <span className="sidebar-section-title">Rapports</span>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '14px 12px 6px', borderTop: '1px solid #f1f5f9', marginTop: 4 }}>Rapports</div>
               <button
                 className={`nav-item ${activeTab === 'rapport' ? 'active' : ''}`}
                 onClick={() => handleTab('rapport')}
@@ -257,7 +257,7 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
                 <Folder size={18} /> <span>Rapport Libraries</span>
               </button>
 
-              <span className="sidebar-section-title">Outils</span>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '14px 12px 6px', borderTop: '1px solid #f1f5f9', marginTop: 4 }}>Outils</div>
               <button
                 className={`nav-item ${activeTab === 'calendar' ? 'active' : ''}`}
                 onClick={() => handleTab('calendar')}
@@ -281,7 +281,7 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
 
           {isAgent && (
             <>
-              <span className="sidebar-section-title">Mon travail</span>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '14px 12px 6px', borderTop: '1px solid #f1f5f9', marginTop: 4 }}>Mon travail</div>
               <button
                 className={`nav-item ${activeTab === 'mes-lignes' ? 'active' : ''}`}
                 onClick={() => handleTab('mes-lignes')}
@@ -311,7 +311,7 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
             </>
           )}
 
-          <span className="sidebar-section-title">Communication</span>
+          <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '14px 12px 6px', borderTop: '1px solid #f1f5f9', marginTop: 4 }}>Communication</div>
           <button
             className={`nav-item ${activeTab === 'messages' ? 'active' : ''}`}
             onClick={() => handleTab('messages')}
@@ -327,7 +327,7 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
             <span>Images & Dossiers</span>
           </button>
 
-          <span className="sidebar-section-title">Paramètres</span>
+          <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '14px 12px 6px', borderTop: '1px solid #f1f5f9', marginTop: 4 }}>Paramètres</div>
           <button
             className={`nav-item ${activeTab === 'push-settings' ? 'active' : ''}`}
             onClick={() => handleTab('push-settings')}
