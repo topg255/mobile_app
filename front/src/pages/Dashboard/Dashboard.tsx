@@ -203,7 +203,7 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
 
           {isSuperviseur && (
             <>
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '14px 12px 6px', borderTop: '1px solid #f1f5f9', marginTop: 4 }}>Supervision</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '14px 12px 6px', borderTop: '1px solid #f1f5f9', marginTop: 4, textAlign: 'left', width: '100%', boxSizing: 'border-box' }}>Supervision</div>
               <button
                 className={`nav-item ${activeTab === 'lignes' ? 'active' : ''}`}
                 onClick={() => handleTab('lignes')}
@@ -223,7 +223,7 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
                 <UserCheck size={18} /> <span>Mes Agents</span>
               </button>
 
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '14px 12px 6px', borderTop: '1px solid #f1f5f9', marginTop: 4 }}>Qualité</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '14px 12px 6px', borderTop: '1px solid #f1f5f9', marginTop: 4, textAlign: 'left', width: '100%', boxSizing: 'border-box' }}>Qualité</div>
               <button
                 className={`nav-item ${activeTab === 'capa' ? 'active' : ''}`}
                 onClick={() => handleTab('capa')}
@@ -237,7 +237,7 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
                 <Target size={18} /> <span>Objectifs Qualité</span>
               </button>
 
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '14px 12px 6px', borderTop: '1px solid #f1f5f9', marginTop: 4 }}>Rapports</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '14px 12px 6px', borderTop: '1px solid #f1f5f9', marginTop: 4, textAlign: 'left', width: '100%', boxSizing: 'border-box' }}>Rapports</div>
               <button
                 className={`nav-item ${activeTab === 'rapport' ? 'active' : ''}`}
                 onClick={() => handleTab('rapport')}
@@ -257,7 +257,7 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
                 <Folder size={18} /> <span>Rapport Libraries</span>
               </button>
 
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '14px 12px 6px', borderTop: '1px solid #f1f5f9', marginTop: 4 }}>Outils</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '14px 12px 6px', borderTop: '1px solid #f1f5f9', marginTop: 4, textAlign: 'left', width: '100%', boxSizing: 'border-box' }}>Outils</div>
               <button
                 className={`nav-item ${activeTab === 'calendar' ? 'active' : ''}`}
                 onClick={() => handleTab('calendar')}
@@ -281,7 +281,7 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
 
           {isAgent && (
             <>
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '14px 12px 6px', borderTop: '1px solid #f1f5f9', marginTop: 4 }}>Mon travail</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '14px 12px 6px', borderTop: '1px solid #f1f5f9', marginTop: 4, textAlign: 'left', width: '100%', boxSizing: 'border-box' }}>Mon travail</div>
               <button
                 className={`nav-item ${activeTab === 'mes-lignes' ? 'active' : ''}`}
                 onClick={() => handleTab('mes-lignes')}
@@ -311,7 +311,7 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
             </>
           )}
 
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '14px 12px 6px', borderTop: '1px solid #f1f5f9', marginTop: 4 }}>Communication</div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '14px 12px 6px', borderTop: '1px solid #f1f5f9', marginTop: 4, textAlign: 'left', width: '100%', boxSizing: 'border-box' }}>Communication</div>
           <button
             className={`nav-item ${activeTab === 'messages' ? 'active' : ''}`}
             onClick={() => handleTab('messages')}
@@ -327,7 +327,7 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
             <span>Images & Dossiers</span>
           </button>
 
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '14px 12px 6px', borderTop: '1px solid #f1f5f9', marginTop: 4 }}>Paramètres</div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '14px 12px 6px', borderTop: '1px solid #f1f5f9', marginTop: 4, textAlign: 'left', width: '100%', boxSizing: 'border-box' }}>Paramètres</div>
           <button
             className={`nav-item ${activeTab === 'push-settings' ? 'active' : ''}`}
             onClick={() => handleTab('push-settings')}
