@@ -486,17 +486,18 @@ html, body, #root {
 .sidebar-section-title {
   font-size: 11px;
   font-weight: 700;
-  color: #64748b;
+  color: #475569;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  padding: 0 8px;
-  margin-bottom: 4px;
-  margin-top: 6px;
+  padding: 14px 8px 4px;
+  margin-bottom: 2px;
   overflow: hidden;
   white-space: nowrap;
   user-select: none;
+  display: block;
+  width: 100%;
 }
-.sidebar.collapsed .sidebar-section-title { opacity: 0; height: 0; padding: 0; margin: 0; }
+.sidebar.collapsed .sidebar-section-title { opacity: 0; height: 0; padding: 0; margin: 0; display: none; }
 .sidebar-nav {
   flex: 1;
   padding: 4px 12px;
@@ -2744,8 +2745,8 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
   .sidebar { width: 72px; }
   .sidebar .nav-item span,
   .sidebar .user-info,
-  .sidebar .sidebar-logo-text,
-  .sidebar .sidebar-section-title { display: none; }
+  .sidebar .sidebar-logo-text { display: none; }
+  .sidebar .sidebar-section-title { font-size: 9px; letter-spacing: 0.5px; padding: 8px 4px 2px; }
   .sidebar .nav-item { justify-content: center; padding: 10px; }
   .sidebar .nav-item::before { display: none; }
   .sidebar .sidebar-footer { justify-content: center; }
