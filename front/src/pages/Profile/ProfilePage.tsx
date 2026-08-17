@@ -107,6 +107,10 @@ const ProfilePage: React.FC = () => {
   const [email, setEmail] = useState(user?.email || '');
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -141,11 +145,39 @@ const ProfilePage: React.FC = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      toast.success('Profil mis a jour');
-    } catch {
-      toast.error('Erreur');
+      await authAPI.updateProfile({ firstName, lastName, email });
+      toast.success('Profil mis a jour avec succes');
+      await refreshUser();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Erreur lors de la mise a jour');
     }
     setSaving(false);
+  };
+
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword) {
+      toast.error('Veuillez remplir tous les champs');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('Les mots de passe ne correspondent pas');
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error('Le nouveau mot de passe doit contenir au moins 6 caracteres');
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      await authAPI.changePassword({ currentPassword, newPassword });
+      toast.success('Mot de passe change avec succes');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Erreur lors du changement de mot de passe');
+    }
+    setChangingPassword(false);
   };
 
   const copyCode = async () => {
@@ -338,11 +370,10 @@ const ProfilePage: React.FC = () => {
                 <label className="profile-field-label">Email</label>
                 <input
                   type="email"
-                  className="profile-input profile-input-disabled"
+                  className="profile-input"
                   value={email}
-                  disabled
+                  onChange={(e) => setEmail(e.target.value)}
                 />
-                <span className="profile-field-hint">L'email ne peut pas etre modifie ici</span>
               </div>
               <div className="profile-field">
                 <label className="profile-field-label">Matricule</label>
@@ -377,21 +408,39 @@ const ProfilePage: React.FC = () => {
             <div className="profile-form-grid">
               <div className="profile-field">
                 <label className="profile-field-label">Mot de passe actuel</label>
-                <input type="password" className="profile-input" placeholder="********" />
+                <input
+                  type="password"
+                  className="profile-input"
+                  placeholder="********"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                />
               </div>
               <div className="profile-field">
                 <label className="profile-field-label">Nouveau mot de passe</label>
-                <input type="password" className="profile-input" placeholder="********" />
+                <input
+                  type="password"
+                  className="profile-input"
+                  placeholder="********"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
               </div>
               <div className="profile-field">
                 <label className="profile-field-label">Confirmer le mot de passe</label>
-                <input type="password" className="profile-input" placeholder="********" />
+                <input
+                  type="password"
+                  className="profile-input"
+                  placeholder="********"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
               </div>
             </div>
             <div className="profile-form-actions">
-              <button className="profile-save-btn">
+              <button className="profile-save-btn" onClick={handleChangePassword} disabled={changingPassword}>
                 <Lock size={16} />
-                Changer le mot de passe
+                {changingPassword ? 'Changement en cours...' : 'Changer le mot de passe'}
               </button>
             </div>
           </div>

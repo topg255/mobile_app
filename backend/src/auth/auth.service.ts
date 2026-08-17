@@ -8,6 +8,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
@@ -344,6 +346,52 @@ export class AuthService {
       message: 'Photo de profil mise a jour',
       profileImage: user.profileImage,
     };
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('Utilisateur non trouve');
+    }
+
+    if (dto.email && dto.email !== user.email) {
+      const existing = await this.userRepository.findOne({
+        where: { email: dto.email },
+      });
+      if (existing) {
+        throw new ConflictException('Cet email est deja utilise');
+      }
+      user.email = dto.email;
+    }
+
+    if (dto.firstName) user.firstName = dto.firstName;
+    if (dto.lastName) user.lastName = dto.lastName;
+
+    await this.userRepository.save(user);
+
+    const { password, resetToken, resetTokenExpires, ...rest } = user;
+    return { message: 'Profil mis a jour avec succes', user: rest };
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('Utilisateur non trouve');
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      dto.currentPassword,
+      user.password,
+    );
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Mot de passe actuel incorrect');
+    }
+
+    const salt = await bcrypt.genSalt(12);
+    user.password = await bcrypt.hash(dto.newPassword, salt);
+    await this.userRepository.save(user);
+
+    return { message: 'Mot de passe change avec succes' };
   }
 
   async approveAgentBySuperviseur(superviseurId: string, agentId: string) {

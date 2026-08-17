@@ -111,6 +111,12 @@ export const authAPI = {
     });
   },
 
+  updateProfile: (data: { firstName?: string; lastName?: string; email?: string }): Promise<{ data: { message: string; user: User } }> =>
+    api.patch('/auth/profile', data),
+
+  changePassword: (data: { currentPassword: string; newPassword: string }): Promise<{ data: { message: string } }> =>
+    api.post('/auth/change-password', data),
+
   getMyAgents: (): Promise<{ data: User[] }> =>
     api.get('/auth/agents'),
 
