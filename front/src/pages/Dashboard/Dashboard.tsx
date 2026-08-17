@@ -1853,11 +1853,11 @@ const AddLigneTab: React.FC<{ onSuccess: () => void; onEdit: (ligne: LigneContro
           <label style={{ fontSize: 12, fontWeight: 600 }}>Piliers 5S</label>
           <div className="piliers5s-scroll">
             {([
-              { key: '1S', name: 'Trier' },
+              { key: '1S', name: 'Éliminer' },
               { key: '2S', name: 'Ranger' },
               { key: '3S', name: 'Nettoyer' },
               { key: '4S', name: 'Standardiser' },
-              { key: '5S', name: 'Soutenir' },
+              { key: '5S', name: 'Suivre' },
             ] as const).map((p) => {
               const isSelected = selectedPiliers5S.includes(p.key);
               return (
