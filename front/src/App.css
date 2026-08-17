@@ -1690,6 +1690,9 @@ th { background: #f8fafc; font-weight: 600; color: #64748b; font-size: 12px; tex
 .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #475569; }
 .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 11px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #1e293b; background: #f8fafc; transition: all 0.2s; outline: none; }
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #2563eb; background: white; box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+
+.piliers5s-scroll { overflow-x: auto; display: flex; gap: 8px; scrollbar-width: none; }
+.piliers5s-scroll::-webkit-scrollbar { display: none; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .password-input { position: relative; }
 .password-input input { padding-right: 48px; }

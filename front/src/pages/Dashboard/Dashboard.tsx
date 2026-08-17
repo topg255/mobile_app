@@ -1853,6 +1853,65 @@ const AddLigneTab: React.FC<{ onSuccess: () => void; onEdit: (ligne: LigneContro
             <small className="date-hint">Date sélectionnée</small>
           )}
         </div>
+        <div className="form-group" style={{ flex: 2, minWidth: 0 }}>
+          <label style={{ fontSize: 12, fontWeight: 600 }}>Piliers 5S</label>
+          <div className="piliers5s-scroll">
+            {([
+              { key: '1S', name: 'Trier' },
+              { key: '2S', name: 'Ranger' },
+              { key: '3S', name: 'Nettoyer' },
+              { key: '4S', name: 'Standardiser' },
+              { key: '5S', name: 'Soutenir' },
+            ] as const).map((p) => {
+              const isSelected = selectedPiliers5S.includes(p.key);
+              return (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => {
+                    setSelectedPiliers5S((prev: string[]) =>
+                      isSelected ? prev.filter((k: string) => k !== p.key) : [...prev, p.key]
+                    );
+                  }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '6px 12px', borderRadius: 8, cursor: 'pointer',
+                    border: '1.5px solid #e2e8f0',
+                    background: isSelected ? '#f0f4ff' : '#fff',
+                    transition: 'all 0.15s ease',
+                    fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap',
+                    color: isSelected ? '#4f46e5' : '#64748b',
+                    flexShrink: 0,
+                  }}
+                >
+                  <div style={{
+                    width: 16, height: 16, borderRadius: 4,
+                    border: isSelected ? '2px solid #6366f1' : '2px solid #d1d5db',
+                    background: isSelected ? '#6366f1' : 'transparent',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.15s',
+                  }}>
+                    {isSelected && <CheckCircle2 size={10} color="#fff" />}
+                  </div>
+                  {p.key} — {p.name}
+                </button>
+              );
+            })}
+          </div>
+          {selectedPiliers5S.length > 0 && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, padding: '4px 10px',
+              borderRadius: 8, fontSize: 11, fontWeight: 600,
+              background: noteCalculee === 'vert' ? '#f0fdf4' : noteCalculee === 'jaune' ? '#fff7ed' : '#fef2f2',
+              color: noteCalculee === 'vert' ? '#15803d' : noteCalculee === 'jaune' ? '#c2410c' : '#dc2626',
+            }}>
+              {noteCalculee === 'vert' && <CheckCircle2 size={12} />}
+              {noteCalculee === 'jaune' && <AlertCircle size={12} />}
+              {noteCalculee === 'rouge' && <XCircle size={12} />}
+              {noteCalculee === 'vert' ? 'Conforme' : noteCalculee === 'jaune' ? 'À améliorer' : 'Non conforme'} — {selectedPiliers5S.length}/5
+            </div>
+          )}
+        </div>
       </div>
       <div className="form-row">
         <div className="form-group">
@@ -1957,65 +2016,6 @@ const AddLigneTab: React.FC<{ onSuccess: () => void; onEdit: (ligne: LigneContro
           </div>
         </div>
       )}
-      {/* 5S Pillars Selection */}
-      <div className="form-group">
-        <label style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, display: 'block' }}>Piliers 5S</label>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
-          {([
-            { key: '1S', name: 'Trier', color: '#6366f1', bg: '#eef2ff' },
-            { key: '2S', name: 'Ranger', color: '#8b5cf6', bg: '#f5f3ff' },
-            { key: '3S', name: 'Nettoyer', color: '#06b6d4', bg: '#ecfeff' },
-            { key: '4S', name: 'Standardiser', color: '#f97316', bg: '#fff7ed' },
-            { key: '5S', name: 'Soutenir', color: '#ec4899', bg: '#fdf2f8' },
-          ] as const).map((p) => {
-            const isSelected = selectedPiliers5S.includes(p.key);
-            return (
-              <button
-                key={p.key}
-                type="button"
-                onClick={() => {
-                  setSelectedPiliers5S((prev: string[]) =>
-                    isSelected ? prev.filter((k: string) => k !== p.key) : [...prev, p.key]
-                  );
-                }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '6px 12px', borderRadius: 8, cursor: 'pointer',
-                  border: isSelected ? `2px solid ${p.color}` : '2px solid #e2e8f0',
-                  background: isSelected ? p.bg : '#fff',
-                  transition: 'all 0.15s ease',
-                  fontSize: 12, fontWeight: 600,
-                  color: isSelected ? p.color : '#64748b',
-                }}
-              >
-                <div style={{
-                  width: 16, height: 16, borderRadius: 4,
-                  border: isSelected ? `2px solid ${p.color}` : '2px solid #d1d5db',
-                  background: isSelected ? p.color : 'transparent',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'all 0.15s',
-                }}>
-                  {isSelected && <CheckCircle2 size={10} color="#fff" />}
-                </div>
-                {p.key} — {p.name}
-              </button>
-            );
-          })}
-        </div>
-        {selectedPiliers5S.length > 0 && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 10,
-            background: noteCalculee === 'vert' ? '#f0fdf4' : noteCalculee === 'jaune' ? '#fff7ed' : '#fef2f2',
-            border: `1px solid ${noteCalculee === 'vert' ? '#bbf7d0' : noteCalculee === 'jaune' ? '#fed7aa' : '#fecaca'}`,
-            fontSize: 13, fontWeight: 600,
-            color: noteCalculee === 'vert' ? '#15803d' : noteCalculee === 'jaune' ? '#c2410c' : '#dc2626',
-          }}>
-            {noteCalculee === 'vert' && <><CheckCircle2 size={16} /> Conforme — {selectedPiliers5S.length}/5 piliers</>}
-            {noteCalculee === 'jaune' && <><AlertCircle size={16} /> À améliorer — {selectedPiliers5S.length}/5 piliers</>}
-            {noteCalculee === 'rouge' && <><XCircle size={16} /> Non conforme — {selectedPiliers5S.length}/5 piliers</>}
-          </div>
-        )}
-      </div>
       <button type="submit" className="btn btn-primary" disabled={loading}>
         <Plus size={16} /> Ajouter la ligne
       </button>
