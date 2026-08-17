@@ -242,14 +242,6 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
               <ClipboardList size={18} /> <span>CAPAs</span>
             </button>
           )}
-          {isSuperviseur && (
-            <button
-              className={`nav-item ${activeTab === 'audit5s' ? 'active' : ''}`}
-              onClick={() => handleTab('audit5s')}
-            >
-              <CheckCircle size={18} /> <span>Audit 5S</span>
-            </button>
-          )}
             </>
           )}
           {isAgent && (
@@ -841,12 +833,6 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
           {activeTab === 'my-tasks' && isAgent && <MyTasksPage />}
           {activeTab === 'signature' && isSuperviseur && <SignaturePage />}
           {activeTab === 'capa' && isSuperviseur && <CapaPage />}
-          {activeTab === 'audit5s' && isSuperviseur && (
-            <div style={{ padding: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Audit 5S — Vue d'ensemble</h2>
-              <p style={{ color: '#64748b', fontSize: 13 }}>Cliquez sur le badge "5S" à côté d'une ligne pour lancer un audit.</p>
-            </div>
-          )}
           {activeTab === 'messages' && <Chat onUnreadCountChange={setUnreadCount} />}
           {activeTab === 'images' && <ImageLibrary userRole={user?.role || ''} />}
 {activeTab === 'quality-objectives' && (
