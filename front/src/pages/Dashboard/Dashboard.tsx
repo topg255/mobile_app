@@ -200,8 +200,10 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
           >
             <LayoutDashboard size={18} /> <span>Vue d'ensemble</span>
           </button>
+
           {isSuperviseur && (
             <>
+              <div className="sidebar-section-title" style={{ padding: '16px 8px 6px', marginTop: 4 }}>Supervision</div>
               <button
                 className={`nav-item ${activeTab === 'lignes' ? 'active' : ''}`}
                 onClick={() => handleTab('lignes')}
@@ -220,32 +222,66 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
               >
                 <UserCheck size={18} /> <span>Mes Agents</span>
               </button>
-<button
-            className={`nav-item ${activeTab === 'calendar' ? 'active' : ''}`}
-            onClick={() => handleTab('calendar')}
-          >
-            <Calendar size={18} /> <span>Calendrier</span>
-          </button>
-          {isSuperviseur && (
-            <button
-              className={`nav-item ${activeTab === 'signature' ? 'active' : ''}`}
-              onClick={() => handleTab('signature')}
-            >
-              <PenLine size={18} /> <span>Ma signature</span>
-            </button>
-          )}
-          {isSuperviseur && (
-            <button
-              className={`nav-item ${activeTab === 'capa' ? 'active' : ''}`}
-              onClick={() => handleTab('capa')}
-            >
-              <ClipboardList size={18} /> <span>CAPAs</span>
-            </button>
-          )}
+
+              <div className="sidebar-section-title" style={{ padding: '16px 8px 6px', marginTop: 4 }}>Qualité</div>
+              <button
+                className={`nav-item ${activeTab === 'capa' ? 'active' : ''}`}
+                onClick={() => handleTab('capa')}
+              >
+                <ClipboardList size={18} /> <span>CAPAs</span>
+              </button>
+              <button
+                className={`nav-item ${activeTab === 'quality-objectives' ? 'active' : ''}`}
+                onClick={() => handleTab('quality-objectives')}
+              >
+                <Target size={18} /> <span>Objectifs Qualité</span>
+              </button>
+
+              <div className="sidebar-section-title" style={{ padding: '16px 8px 6px', marginTop: 4 }}>Rapports</div>
+              <button
+                className={`nav-item ${activeTab === 'rapport' ? 'active' : ''}`}
+                onClick={() => handleTab('rapport')}
+              >
+                <BarChart3 size={18} /> <span>Rapport</span>
+              </button>
+              <button
+                className={`nav-item ${activeTab === 'ai-reports' ? 'active' : ''}`}
+                onClick={() => handleTab('ai-reports')}
+              >
+                <Zap size={18} /> <span>Rapports IA</span>
+              </button>
+              <button
+                className={`nav-item ${activeTab === 'rapport-libraries' ? 'active' : ''}`}
+                onClick={() => handleTab('rapport-libraries')}
+              >
+                <Folder size={18} /> <span>Rapport Libraries</span>
+              </button>
+
+              <div className="sidebar-section-title" style={{ padding: '16px 8px 6px', marginTop: 4 }}>Outils</div>
+              <button
+                className={`nav-item ${activeTab === 'calendar' ? 'active' : ''}`}
+                onClick={() => handleTab('calendar')}
+              >
+                <Calendar size={18} /> <span>Calendrier</span>
+              </button>
+              <button
+                className={`nav-item ${activeTab === 'signature' ? 'active' : ''}`}
+                onClick={() => handleTab('signature')}
+              >
+                <PenLine size={18} /> <span>Ma signature</span>
+              </button>
+              <button
+                className={`nav-item ${activeTab === 'add-ligne' ? 'active' : ''}`}
+                onClick={() => handleTab('add-ligne')}
+              >
+                <Plus size={18} /> <span>Ajouter une ligne</span>
+              </button>
             </>
           )}
+
           {isAgent && (
             <>
+              <div className="sidebar-section-title" style={{ padding: '16px 8px 6px', marginTop: 4 }}>Mon travail</div>
               <button
                 className={`nav-item ${activeTab === 'mes-lignes' ? 'active' : ''}`}
                 onClick={() => handleTab('mes-lignes')}
@@ -258,46 +294,24 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
               >
                 <ClipboardList size={18} /> <span>Mes tâches</span>
               </button>
+              <button
+                className={`nav-item ${activeTab === 'add-ligne' ? 'active' : ''}`}
+                onClick={() => handleTab('add-ligne')}
+              >
+                <Plus size={18} /> <span>Ajouter une ligne</span>
+              </button>
+              {editingLigne && (
+                <button
+                  className={`nav-item ${activeTab === 'edit-ligne' ? 'active' : ''}`}
+                  onClick={() => handleTab('edit-ligne')}
+                >
+                  <FileSpreadsheet size={18} /> <span>Modifier ligne</span>
+                </button>
+              )}
             </>
           )}
-          <button
-            className={`nav-item ${activeTab === 'add-ligne' ? 'active' : ''}`}
-            onClick={() => handleTab('add-ligne')}
-          >
-            <Plus size={18} /> <span>Ajouter une ligne</span>
-          </button>
-          {isAgent && editingLigne && (
-            <button
-              className={`nav-item ${activeTab === 'edit-ligne' ? 'active' : ''}`}
-              onClick={() => handleTab('edit-ligne')}
-            >
-              <FileSpreadsheet size={18} /> <span>Modifier ligne</span>
-            </button>
-          )}
-          {isSuperviseur && (
-            <button
-              className={`nav-item ${activeTab === 'rapport' ? 'active' : ''}`}
-              onClick={() => handleTab('rapport')}
-            >
-              <BarChart3 size={18} /> <span>Rapport</span>
-            </button>
-          )}
-          {isSuperviseur && (
-            <button
-              className={`nav-item ${activeTab === 'ai-reports' ? 'active' : ''}`}
-              onClick={() => handleTab('ai-reports')}
-            >
-              <Zap size={18} /> <span>Rapports IA</span>
-            </button>
-          )}
-          {isSuperviseur && (
-            <button
-              className={`nav-item ${activeTab === 'rapport-libraries' ? 'active' : ''}`}
-              onClick={() => handleTab('rapport-libraries')}
-            >
-              <Folder size={18} /> <span>Rapport Libraries</span>
-            </button>
-          )}
+
+          <div className="sidebar-section-title" style={{ padding: '16px 8px 6px', marginTop: 4 }}>Communication</div>
           <button
             className={`nav-item ${activeTab === 'messages' ? 'active' : ''}`}
             onClick={() => handleTab('messages')}
@@ -312,12 +326,8 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
             <span>Images & Dossiers</span>
           </button>
-          <button
-            className={`nav-item ${activeTab === 'quality-objectives' ? 'active' : ''}`}
-            onClick={() => handleTab('quality-objectives')}
-          >
-            <Target size={18} /> <span>Objectifs Qualité</span>
-          </button>
+
+          <div className="sidebar-section-title" style={{ padding: '16px 8px 6px', marginTop: 4 }}>Paramètres</div>
           <button
             className={`nav-item ${activeTab === 'push-settings' ? 'active' : ''}`}
             onClick={() => handleTab('push-settings')}
