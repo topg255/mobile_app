@@ -203,7 +203,7 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
 
           {isSuperviseur && (
             <>
-              <div className="sidebar-section-title" style={{ padding: '16px 8px 6px', marginTop: 4 }}>Supervision</div>
+              <div className="sidebar-section-title">Supervision</div>
               <button
                 className={`nav-item ${activeTab === 'lignes' ? 'active' : ''}`}
                 onClick={() => handleTab('lignes')}
@@ -223,7 +223,7 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
                 <UserCheck size={18} /> <span>Mes Agents</span>
               </button>
 
-              <div className="sidebar-section-title" style={{ padding: '16px 8px 6px', marginTop: 4 }}>Qualité</div>
+              <div className="sidebar-section-title">Qualité</div>
               <button
                 className={`nav-item ${activeTab === 'capa' ? 'active' : ''}`}
                 onClick={() => handleTab('capa')}
@@ -237,7 +237,7 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
                 <Target size={18} /> <span>Objectifs Qualité</span>
               </button>
 
-              <div className="sidebar-section-title" style={{ padding: '16px 8px 6px', marginTop: 4 }}>Rapports</div>
+              <div className="sidebar-section-title">Rapports</div>
               <button
                 className={`nav-item ${activeTab === 'rapport' ? 'active' : ''}`}
                 onClick={() => handleTab('rapport')}
@@ -257,7 +257,7 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
                 <Folder size={18} /> <span>Rapport Libraries</span>
               </button>
 
-              <div className="sidebar-section-title" style={{ padding: '16px 8px 6px', marginTop: 4 }}>Outils</div>
+              <div className="sidebar-section-title">Outils</div>
               <button
                 className={`nav-item ${activeTab === 'calendar' ? 'active' : ''}`}
                 onClick={() => handleTab('calendar')}
@@ -281,7 +281,7 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
 
           {isAgent && (
             <>
-              <div className="sidebar-section-title" style={{ padding: '16px 8px 6px', marginTop: 4 }}>Mon travail</div>
+              <div className="sidebar-section-title">Mon travail</div>
               <button
                 className={`nav-item ${activeTab === 'mes-lignes' ? 'active' : ''}`}
                 onClick={() => handleTab('mes-lignes')}
@@ -311,7 +311,7 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
             </>
           )}
 
-          <div className="sidebar-section-title" style={{ padding: '16px 8px 6px', marginTop: 4 }}>Communication</div>
+          <div className="sidebar-section-title">Communication</div>
           <button
             className={`nav-item ${activeTab === 'messages' ? 'active' : ''}`}
             onClick={() => handleTab('messages')}
@@ -327,7 +327,7 @@ const Dashboard: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
             <span>Images & Dossiers</span>
           </button>
 
-          <div className="sidebar-section-title" style={{ padding: '16px 8px 6px', marginTop: 4 }}>Paramètres</div>
+          <div className="sidebar-section-title">Paramètres</div>
           <button
             className={`nav-item ${activeTab === 'push-settings' ? 'active' : ''}`}
             onClick={() => handleTab('push-settings')}
