@@ -9,6 +9,14 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, LessThan, Not } from 'typeorm';
 import { Mistral } from '@mistralai/mistralai';
+// ═══════════════════════════════════════════════════════════════
+// AZURE AI — Decommenter pour utiliser Azure OpenAI
+// ═══════════════════════════════════════════════════════════════
+// import { AzureOpenAI } from 'openai';
+//
+// OPENAI — Decommenter pour utiliser OpenAI directement
+// ═══════════════════════════════════════════════════════════════
+// import OpenAI from 'openai';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { Capa, CapaStatus, CapaPriority, CapaType } from './entities/capa.entity';
 import { CapaAction, ActionStatus, ActionType } from './entities/capa-action.entity';
@@ -66,6 +74,24 @@ export class CapaService {
     private readonly notificationService: NotificationService,
   ) {
     this.mistralApiKey = this.configService.get<string>('MISTRAL_API_KEY');
+
+    // ═══════════════════════════════════════════════════════════════
+    // AZURE AI — Decommenter pour initialiser le client Azure
+    // ═══════════════════════════════════════════════════════════════
+    // this.azureClient = new AzureOpenAI({
+    //   endpoint: this.configService.get<string>('AZURE_AI_ENDPOINT'),
+    //   apiKey: this.configService.get<string>('AZURE_AI_API_KEY'),
+    //   deployment: this.configService.get<string>('AZURE_AI_DEPLOYMENT_NAME'),
+    //   apiVersion: this.configService.get<string>('AZURE_AI_API_VERSION') || '2024-02-15-preview',
+    // });
+
+    // ═══════════════════════════════════════════════════════════════
+    // OPENAI — Decommenter pour initialiser le client OpenAI
+    // ═══════════════════════════════════════════════════════════════
+    // this.openaiClient = new OpenAI({
+    //   apiKey: this.configService.get<string>('OPENAI_API_KEY'),
+    //   organization: this.configService.get<string>('OPENAI_ORG_ID'),
+    // });
   }
 
   async generateReference(): Promise<string> {

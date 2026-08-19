@@ -2,6 +2,14 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Mistral } from '@mistralai/mistralai';
+// ═══════════════════════════════════════════════════════════════
+// AZURE AI — Decommenter pour utiliser Azure OpenAI
+// ═══════════════════════════════════════════════════════════════
+// import { AzureOpenAI } from 'openai';
+//
+// OPENAI — Decommenter pour utiliser OpenAI directement
+// ═══════════════════════════════════════════════════════════════
+// import OpenAI from 'openai';
 import { ConfigService } from '@nestjs/config';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { Audit5S, NoteCalculee } from './entities/audit5s.entity';
@@ -156,12 +164,40 @@ export class Audit5SService {
     agentName: string,
   ): Promise<string> {
     const mistralApiKey = this.configService.get<string>('MISTRAL_API_KEY');
+    // ═══════════════════════════════════════════════════════════════
+    // AZURE AI — Decommenter pour configurer Azure
+    // ═══════════════════════════════════════════════════════════════
+    // const azureEndpoint = this.configService.get<string>('AZURE_AI_ENDPOINT');
+    // const azureApiKey = this.configService.get<string>('AZURE_AI_API_KEY');
+    //
+    // OPENAI — Decommenter pour configurer OpenAI
+    // ═══════════════════════════════════════════════════════════════
+    // const openaiApiKey = this.configService.get<string>('OPENAI_API_KEY');
+
     if (!mistralApiKey) {
       return this.generateFallbackAnalyse(scoreResult, nomLigne, agentName);
     }
 
     try {
       const client = new Mistral({ apiKey: mistralApiKey });
+
+      // ═══════════════════════════════════════════════════════════════
+      // AZURE AI — Decommenter pour utiliser Azure au lieu de Mistral
+      // ═══════════════════════════════════════════════════════════════
+      // const client = new AzureOpenAI({
+      //   endpoint: azureEndpoint,
+      //   apiKey: azureApiKey,
+      //   deployment: this.configService.get<string>('AZURE_AI_DEPLOYMENT_NAME'),
+      //   apiVersion: this.configService.get<string>('AZURE_AI_API_VERSION') || '2024-02-15-preview',
+      // });
+
+      // ═══════════════════════════════════════════════════════════════
+      // OPENAI — Decommenter pour utiliser OpenAI au lieu de Mistral
+      // ═══════════════════════════════════════════════════════════════
+      // const client = new OpenAI({
+      //   apiKey: openaiApiKey,
+      //   organization: this.configService.get<string>('OPENAI_ORG_ID'),
+      // });
       const { scoreGlobal, noteCalculee, scoreS1, scoreS2, scoreS3, scoreS4, scoreS5, pilierPlusFaible } = scoreResult;
       const pilierPct = Math.round(
         ((scoreResult.scoreS1 === scoreResult.scoreS2 &&

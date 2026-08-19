@@ -4,6 +4,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Mistral } from '@mistralai/mistralai';
 import type { ChatCompletionRequestMessage } from '@mistralai/mistralai/models/components';
+// ═══════════════════════════════════════════════════════════════
+// AZURE AI — Decommenter pour utiliser Azure OpenAI
+// ═══════════════════════════════════════════════════════════════
+// import { AzureOpenAI } from 'openai';
+//
+// OPENAI — Decommenter pour utiliser OpenAI directement
+// ═══════════════════════════════════════════════════════════════
+// import OpenAI from 'openai';
 import {
   LigneControle,
   NoteQualite,
@@ -39,6 +47,14 @@ const SUGGESTIONS_PATTERN = /\|\|\|SUGGESTIONS:(\[.*?\])\|\|\|/s;
 export class CopilotService {
   private readonly logger = new Logger(CopilotService.name);
   private readonly mistral: Mistral;
+  // ═══════════════════════════════════════════════════════════════
+  // AZURE AI — Decommenter pour le client Azure
+  // ═══════════════════════════════════════════════════════════════
+  // private readonly azureClient: AzureOpenAI;
+  //
+  // OPENAI — Decommenter pour le client OpenAI
+  // ═══════════════════════════════════════════════════════════════
+  // private readonly openaiClient: OpenAI;
 
   constructor(
     @InjectRepository(LigneControle)
@@ -52,6 +68,24 @@ export class CopilotService {
     this.mistral = new Mistral({
       apiKey: this.configService.get<string>('MISTRAL_API_KEY') || '',
     });
+
+    // ═══════════════════════════════════════════════════════════════
+    // AZURE AI — Decommenter pour initialiser le client Azure
+    // ═══════════════════════════════════════════════════════════════
+    // this.azureClient = new AzureOpenAI({
+    //   endpoint: this.configService.get<string>('AZURE_AI_ENDPOINT'),
+    //   apiKey: this.configService.get<string>('AZURE_AI_API_KEY'),
+    //   deployment: this.configService.get<string>('AZURE_AI_DEPLOYMENT_NAME'),
+    //   apiVersion: this.configService.get<string>('AZURE_AI_API_VERSION') || '2024-02-15-preview',
+    // });
+
+    // ═══════════════════════════════════════════════════════════════
+    // OPENAI — Decommenter pour initialiser le client OpenAI
+    // ═══════════════════════════════════════════════════════════════
+    // this.openaiClient = new OpenAI({
+    //   apiKey: this.configService.get<string>('OPENAI_API_KEY'),
+    //   organization: this.configService.get<string>('OPENAI_ORG_ID'),
+    // });
   }
 
   private computeStats(lignes: LigneControle[]): StatsResult {
